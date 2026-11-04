@@ -9,7 +9,8 @@ function dlg(id, title, ...body) {
 function showStart() {
   const d = dlg('startDlg', S.startTitle, ...S.startBody.map(t => el('p', { text: t })));
   const ok = d.querySelector('button'); ok.textContent = S.startOk;
-  d.addEventListener('close', () => store.set('hoebm-start', 1), { once: true });
+  const seen = () => store.set('hoebm-start', 1);   // zapis od razu (zdarzenie close jest kolejkowane)
+  ok.addEventListener('click', seen); d.addEventListener('cancel', seen); d.addEventListener('close', seen, { once: true });
 }
 function showSources() {
   const keys = Object.keys(REG.sources).filter(k => visibleFigures().some(f => (f.refs || []).some(r => r[0] === k)));

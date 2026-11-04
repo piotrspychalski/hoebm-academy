@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.2] — 2026-11-05 (kontrola wszystkich widoków)
+
+### Zmienione
+- Logo usunięte z ramki ryciny na stronie (zostaje w studiu / rolce); logo w nagłówku strony wyostrza się z rozmycia przy wejściu (motyw „Science made clear”, bez animacji przy prefers-reduced-motion).
+- Telefon trzymany poziomo: układ poziomy ryciny (16:9), niższy nagłówek i dok — rycina nie jest już zasłaniana przez dok (skala 0,27 → 0,36).
+- Studio na telefonie / tablecie: dotknięcie ryciny = restart nagrania (jak R).
+
+### Naprawione
+- Krok „Next / ›” zatrzymywał się na granicy kadrów, więc dok pokazywał następny kadr, a kolejny krok jeden pomijał.
+- Rycina na ekranie 1280 × 800 wystawała 12 px poza okno.
+- Okno „Before you start” mogło wrócić po szybkim przeładowaniu (zapis dopiero w kolejkowanym zdarzeniu close).
+- Obsługa klawiszy odporna na zdarzenia spoza elementów strony.
+
 ## [0.4.1] — 2026-11-05 (testy liczb i strefy w CI)
 
 ### Dodane

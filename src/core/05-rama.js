@@ -5,7 +5,8 @@ const LOGO_AR = 425.4677 / 98.7696;
 
 function frameHeader(ctx, { label, title, highlight = -1, revealK = 1, markerK = 0 }) {
   txt(ctx, label, LY.L, LY.labelY, { font: font('mono', 600, 24), color: T.c.ink2, role: 'fig' });
-  if (_logo.complete && _logo.naturalWidth) ctx.drawImage(_logo, LY.R - LY.logoH * LOGO_AR, LY.logoY, LY.logoH * LOGO_AR, LY.logoH);
+  // Logo w ramce tylko w studiu (rolka nie ma nagłówka strony); na stronie logo jest w nagłówku (decyzja 2026-11-05)
+  if (STUDIO && _logo.complete && _logo.naturalWidth) ctx.drawImage(_logo, LY.R - LY.logoH * LOGO_AR, LY.logoY, LY.logoH * LOGO_AR, LY.logoH);
   ctx.strokeStyle = T.c.ink; ctx.lineWidth = T.line;
   ctx.beginPath(); ctx.moveTo(LY.L, LY.ruleY); ctx.lineTo(LY.R, LY.ruleY); ctx.stroke();
   const tf = font('display', 800, LY.titlePx), px = LY.titlePx;

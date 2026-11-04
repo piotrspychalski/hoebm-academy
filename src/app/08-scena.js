@@ -5,9 +5,12 @@ let ctx = null, lastNow = performance.now();
 // Kadr widoku: studio — pełne 9:16 (1080 × 1920, ze strefą Reels); telefon — pionowy obszar treści (y 245–1275);
 // komputer — układ poziomy 1440 × 810 (panele obok siebie). setView() przy starcie i przy zmianie komputer ↔ telefon.
 let VIEW = null;
+const landMQ = matchMedia('(orientation: landscape)');
 function setView() {
-  LY = !STUDIO && !MOBILE ? LAYOUTS.landscape : LAYOUTS.portrait;
-  VIEW = STUDIO ? { y0: 0, w: W, h: H } : MOBILE ? { y0: SAFE.y0 - 24, w: W, h: SAFE.y1 - SAFE.y0 + 51 } : { y0: 0, w: LY.W, h: LY.H };
+  // telefon trzymany poziomo dostaje układ poziomy (jak komputer) — w pionowym kadrze rycina byłaby za mała
+  const wide = !STUDIO && (!MOBILE || landMQ.matches);
+  LY = wide ? LAYOUTS.landscape : LAYOUTS.portrait;
+  VIEW = STUDIO ? { y0: 0, w: W, h: H } : !wide ? { y0: SAFE.y0 - 24, w: W, h: SAFE.y1 - SAFE.y0 + 51 } : { y0: 0, w: LY.W, h: LY.H };
   const c = cv(); if (c.width !== VIEW.w) c.width = VIEW.w; if (c.height !== VIEW.h) c.height = VIEW.h;
   document.documentElement.classList.toggle('wide', LY.id === 'landscape');
 }
@@ -23,13 +26,14 @@ const SCN = { mod: null, manual: false, p: {} };
 const curFig = () => figById(STATE.figure);
 const frames = () => (SCN.mod?.frames || []).filter(f => f.label);
 const frameEnd = () => (SCN.mod?.frames || []).find(f => f.end != null)?.end ?? 0;
-function frameIndex(ms) { const F = frames(); let i = 0; F.forEach((f, k) => { if (ms >= f.t - 1) i = k; }); return i; }
+// Kadr i obejmuje [t_i, t_{i+1}); granica należy do następnego kadru, dlatego krok zatrzymuje się 1 ms przed nią
+function frameIndex(ms) { const F = frames(); let i = 0; F.forEach((f, k) => { if (ms >= f.t) i = k; }); return i; }
 
 // Kadr i: odtwarzamy jego odcinek sekwencji i zatrzymujemy na końcu (krok „Dalej”)
 function playFrame(i) {
   const F = frames(); if (!F.length) return;
   SCN.manual = false;
-  const end = i + 1 < F.length ? F[i + 1].t : frameEnd();
+  const end = i + 1 < F.length ? F[i + 1].t - 1 : frameEnd();
   CLOCK.seek(F[i].t, end);
   syncUi();
 }
@@ -134,7 +138,7 @@ function initStage() {
   ctx = cv().getContext('2d');
   mountFigure();
   if (!STUDIO) addEventListener('keydown', e => {
-    if (e.target.matches('input, textarea') || document.querySelector('dialog[open]')) return;
+    if ((e.target instanceof Element && e.target.matches('input, textarea, select')) || document.querySelector('dialog[open]')) return;
     if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); step(1); }        // pilot do prezentacji: PageDown / PageUp
     else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); step(-1); }
     else if (e.key === 'f' || e.key === 'F') { if (STATE.figure) { toggleFav(STATE.figure); renderPanel(); renderList(); } }

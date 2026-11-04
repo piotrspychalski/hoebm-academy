@@ -39,7 +39,10 @@ button, input { font: inherit; color: inherit; }
 /* Nagłówek */
 .top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px max(16px, env(safe-area-inset-left)); border-bottom: var(--line) solid var(--ink); }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); margin-right: auto; }
-.brand img { height: 34px; width: auto; display: block; }
+.brand img { height: 34px; width: auto; display: block; animation: hoebm-clear 1.2s ease-out both; }
+/* Motyw marki „Science made clear”: logo w nagłówku wyostrza się z rozmycia przy wejściu na stronę */
+@keyframes hoebm-clear { from { filter: blur(8px); opacity: .35; } to { filter: blur(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .brand img { animation: none; } }
 .brand span { font: 600 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); border-left: var(--line) solid var(--ink); padding-left: 10px; }
 .search { flex: 0 1 260px; min-width: 0; border: 1.5px solid var(--ink); border-radius: 2px; background: var(--paper); padding: 7px 10px; }
 .btn { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 2px; padding: 7px 12px; font-weight: 600; cursor: pointer; color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
@@ -60,7 +63,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px)
 .stagecol { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; }
 /* Komputer (html.wide): rycina w układzie poziomym 1440 × 810 na pełną szerokość, opis pod nią w dwóch kolumnach.
    Telefon: pionowy obszar treści (1080 × 1030). Studio: pełne 9:16. */
-.stage-wrap { width: min(100%, calc((100vh - 210px) * 16 / 9), 1400px); }
+.stage-wrap { width: min(100%, calc((100vh - 250px) * 16 / 9), 1400px); }   /* 250 px = nagłówek + serie + lista rycin + odstępy */
 html.wide main { grid-template-columns: minmax(0, 1fr); max-width: 1440px; }
 html.wide .panel { border-left: 0; border-top: var(--line) solid var(--ink); padding: 16px 0 0; columns: 2 340px; column-gap: 40px; }
 html.wide .panel > * { break-inside: avoid; }
@@ -119,7 +122,18 @@ html.mobile footer { padding-bottom: 12px; }
 .mmenu h4 { font: 600 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 16px 0 8px; }
 .mrow { display: flex; flex-wrap: wrap; gap: 8px; }
 .mhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-@media (orientation: landscape) { html.mobile .stage-wrap { width: min(100%, calc((100dvh - 110px) * 1080 / 1030)); } html.mobile .mdots { display: none; } }
+/* Telefon poziomo: układ poziomy ryciny (16:9), niski nagłówek i dok, rycina na całą dostępną wysokość */
+@media (orientation: landscape) {
+  html.mobile .top { padding: 4px 12px; }
+  html.mobile .brand img { height: 22px; }
+  html.mobile #mMenuBtn { padding: 4px 10px; }
+  html.mobile main { padding: 4px 8px; }
+  html.mobile body { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
+  html.mobile .mdock { padding: 4px 10px calc(4px + env(safe-area-inset-bottom, 0px)); }
+  html.mobile .mnav { height: 38px; }
+  html.mobile .stage-wrap { width: min(100%, calc((100dvh - 96px) * 16 / 9)); }
+  html.mobile .mdots { display: none; }
+}
 
 /* ── Widok 3: STUDIO (tylko lokalnie, studio/index.html): telefon 9:16 na komputerze, do nagrywania ekranu.
    Sama scena 1080×1920 na całą wysokość okna, czarne tło, bez interfejsu i kursora; skróty w 12-studio.js. */
