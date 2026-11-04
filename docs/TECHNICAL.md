@@ -65,5 +65,6 @@ Kolory, kroje, grubości linii i czasy animacji są **tylko** w `:root` w `src/s
 - `rejestr.js`: schemat, PMID/DOI, cytaty w claims, brak `to_verify` w rycinach opublikowanych
 - `zakazane.js` + `zakazane.json`: dawki i nazwy handlowe w treści rycin
 - `kontrast.js`: tokeny wobec tła, WCAG AA
+- `liczby_strefa.js`: rdzeń (`dist/core.js`) w Node na atrapie canvasu; każda rycina × oba układy × cała sekwencja co 250 ms, każdy kadr i siatka suwaków (7 wartości na parametr). Sprawdza: (1) każda liczba w tekście o roli `content` ma claim tej ryciny i występuje w jego `display`/`derived`; `citation` = rok lub PMID źródła ryciny; `fig` = numer ryciny; (2) każdy tekst w `LY.bounds` (pion = strefa Reels); (3) brak nakładania się tekstów (2 px); (4) prostokąty paneli w granicach. Szerokości tekstu z `tests/szerokosci.json` (zmierzone w Chrome; odtworzenie: `tools/szerokosci.js`).
 
 Zrzuty w przeglądarce (1080×1920 i telefon), determinizm sekwencji i reduced motion są w prywatnym `lab-tools/hoebm-academy`.

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.1] — 2026-11-05 (testy liczb i strefy w CI)
+
+### Dodane
+- `tests/liczby_strefa.js` w CI: liczby bez źródła (claims, cytowania, numer FIG), granice układu / strefa bezpieczna Reels, nakładanie się tekstu — dla każdej ryciny, obu układów, całej sekwencji, kadrów i siatki suwaków (FIG. 1: 288 klatek). Sprawdzone na podłożonych błędach (liczba bez claimu, tekst poza strefą, nakładanie).
+- `tests/szerokosci.json` + `tools/szerokosci.js`: szerokości znaków zmierzone w Chrome (zgodność z przeglądarką ~0,1%).
+
 ## [0.4.0] — 2026-11-05 (układ poziomy na komputer)
 
 ### Dodane

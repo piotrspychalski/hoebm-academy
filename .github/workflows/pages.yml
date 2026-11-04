@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - name: Testy szybkie (budowa, rejestr i claims, zakazane treści, kontrast tokenów)
+      - name: Testy szybkie (budowa, rejestr i claims, zakazane treści, kontrast tokenów, liczby bez źródła i strefa bezpieczna)
         run: bash tests/uruchom_wszystkie.sh
         env:
           STUDIO_PATH: ${{ secrets.STUDIO_PATH }}   # studio online pod adresem znanym tylko autorowi (puste = bez studia)
