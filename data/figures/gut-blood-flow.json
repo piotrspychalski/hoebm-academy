@@ -1,0 +1,55 @@
+{
+  "id": "gut-blood-flow",
+  "fig": 1,
+  "series": "gut",
+  "status": "draft",
+  "title": ["Where does your blood go", "on a hard effort?"],
+  "highlight": 1,
+  "aim": "As exercise gets longer or harder, blood is redirected from the gut to the working muscles; carbohydrate advice during exercise depends on how long you go.",
+  "takeaways": [
+    "During exercise, blood flow is redistributed from the gut to the working muscles.",
+    "With prolonged and/or intense exercise, gut blood flow may fall by 80% or more.",
+    "Carbohydrate advice during exercise scales with duration, from a mouth rinse in about an hour to about 90 g/h in ultra-endurance events."
+  ],
+  "unknowns": [
+    "No data link g/h to heart-rate zones or gut blood flow."
+  ],
+  "refs": [
+    ["costa2017", "systematic review", "Threshold for significant GI perturbations (≥2 h at 60% VO2max)"],
+    ["terSteege2012", "review", "Splanchnic blood flow ↓ ≥80% with prolonged and/or intense exercise; redistribution to working muscles"],
+    ["jeukendrup2014", "review", "Carbohydrate intake during exercise by duration (mouth rinse ~1 h; ~60 g/h 2–3 h; ~90 g/h ultra, multiple transportable carbohydrates)"]
+  ],
+  "claims": [
+    {
+      "id": "sbf-80", "display": ["≥80%", "↓ ≥80%"],
+      "derived": [{ "display": "20%", "rule": "100% − 80%" }],
+      "quote": "With prolonged duration and/or intensity, the SBF may be decreased by 80% or more.",
+      "source": "terSteege2012", "location": "abstract", "status": "verified"
+    },
+    {
+      "id": "cho-1h", "display": ["~1 h", "mouth rinse"],
+      "quote": "during exercise lasting approximately 1 h in duration, a mouth rinse or small amounts of carbohydrate can result in a performance benefit",
+      "source": "jeukendrup2014", "location": "abstract", "status": "verified"
+    },
+    {
+      "id": "cho-60", "display": ["~60 g/h", "2–3 h"],
+      "quote": "A single carbohydrate source can be oxidized at rates up to approximately 60 g/h and this is the recommendation for exercise that is more prolonged (2-3 h).",
+      "source": "jeukendrup2014", "location": "abstract", "status": "verified"
+    },
+    {
+      "id": "cho-90", "display": ["~90 g/h"],
+      "quote": "For ultra-endurance events, the recommendation is higher at approximately 90 g/h.",
+      "source": "jeukendrup2014", "location": "abstract", "status": "verified"
+    },
+    {
+      "id": "gi-threshold", "display": ["≥2 h", "60% VO2max"],
+      "quote": "Exercise stress of ≥2 hours at 60% VO2max appears to be the threshold whereby significant gastrointestinal perturbations manifest, irrespective of fitness status.",
+      "source": "costa2017", "location": "abstract", "status": "to_verify",
+      "note": "PubMed record reads \"60% VO\" (subscript lost). Check spelling in the full text before publishing."
+    }
+  ],
+  "shapes": [
+    { "id": "gutFlow", "note": "smoothstep from 100% (rest) to 20% (≥80% fall); only the endpoint has a source (sbf-80)" },
+    { "id": "muscleFlow", "note": "direction only, no numbers" }
+  ]
+}

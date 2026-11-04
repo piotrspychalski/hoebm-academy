@@ -14,6 +14,8 @@ jobs:
         with: { node-version: 20 }
       - name: Testy szybkie (budowa, rejestr i claims, zakazane treści, kontrast tokenów)
         run: bash tests/uruchom_wszystkie.sh
+        env:
+          STUDIO_PATH: ${{ secrets.STUDIO_PATH }}   # studio online pod adresem znanym tylko autorowi (puste = bez studia)
       - uses: actions/upload-pages-artifact@v3
         with: { path: dist }
   deploy:

@@ -23,5 +23,5 @@ function showCite() {
 function initDialogs() {
   $('infoBtn').onclick = showStart; $('srcBtn').onclick = showSources; $('citeBtn').onclick = showCite;
   $('footer').textContent = S.footer(VERSION);
-  if (!store.get('hoebm-start', 0) && location.hash !== '#record') showStart();
+  if (!store.get('hoebm-start', 0)) showStart();
 }

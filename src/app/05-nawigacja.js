@@ -42,6 +42,19 @@ function openFigure(id) {
   STATE.figure ? u.searchParams.set('f', STATE.figure) : u.searchParams.delete('f');
   history.replaceState(null, '', u);
   renderList(); renderPanel(); mountFigure();
+  if (typeof updateMobile === 'function') updateMobile();
+}
+
+// Krok w przód / w tył: w M1 najpierw kadry ryciny, potem następna rycina (jak „Dalej” w SURGITOME); dziś — ryciny z bieżącej listy
+function stepFigure(d) {
+  const list = filtered(); if (!list.length) return;
+  const i = list.findIndex(f => f.id === STATE.figure);
+  const j = i < 0 ? (d > 0 ? 0 : list.length - 1) : i + d;
+  if (j >= 0 && j < list.length) openFigure(list[j].id);
+}
+function canStep(d) {
+  const list = filtered(), i = list.findIndex(f => f.id === STATE.figure);
+  return list.length > 0 && (i < 0 || (i + d >= 0 && i + d < list.length));
 }
 
 function initNav() {

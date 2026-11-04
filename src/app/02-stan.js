@@ -4,6 +4,9 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* brak pamięci: stan tylko w tej karcie */ } },
 };
 const params = new URLSearchParams(location.search);
+// Widok telefonu: ten sam warunek co w SURGITOME (02-motyw-renderer.js); w studiu nigdy (studio ma własny układ)
+const mobMQ = matchMedia('(max-width: 760px), (pointer: coarse) and (max-height: 520px)');
+let MOBILE = !STUDIO && mobMQ.matches;
 const LOCAL = ['localhost', '127.0.0.1', '[::1]', ''].includes(location.hostname);   // '' = file://
 const PREVIEW = LOCAL && params.has('preview');
 const STATE = {

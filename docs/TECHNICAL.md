@@ -11,6 +11,16 @@ Wynikiem jest **jeden samodzielny plik HTML** (Canvas 2D, bez bibliotek; fonty z
 Skrypt wczytuje i waliduje rejestr (`tools/registry.js`; przy błędach przerywa), skleja pliki z `src/core/` i `src/app/` w kolejności nazw
 i wstawia je w `src/shell.html` (`/*REG*/`, `/*CORE*/`, `/*APP*/`, `%LOGO%`, `%VERSION%`). Nie ma bundlera ani transpilacji; kod to jeden wspólny zakres (IIFE), a podział na pliki służy czytelności. Plik działa też z `file://`.
 
+## Trzy widoki
+| Widok | Plik | Kto | Jak |
+|---|---|---|---|
+| Komputer | `dist/index.html` | publiczny | serie, lista, scena + suwaki + „‹ Back / Next ›”, panel opisu; ← → / PageUp PageDown (pilot), F — ulubione |
+| Telefon | `dist/index.html` | publiczny | `html.mobile` przy `(max-width: 760px), (pointer: coarse) and (max-height: 520px)` (jak SURGITOME): menu ☰, dok ‹ n / N kadr › z kropkami, przesunięcie palcem, opis w arkuszu „i” |
+| Studio | `studio/index.html` (lokalnie) i `dist/<STUDIO_PATH>/` (online) | tylko autor | telefon 9:16 na komputerze, czarne tło, bez interfejsu i kursora; R — restart (1,5 s czystej klatki, potem cała sekwencja), Space — pauza, S — strefa bezpieczna, F — pełny ekran, ← → — rycina, H — pomoc |
+
+Studio budowane jest z tych samych plików + `src/studio/*` (`STUDIO = true`). Wersja publiczna nie zawiera kodu studia (test `budowa.js`).
+Studio online: CI dokłada je pod `dist/<STUDIO_PATH>/`, gdzie `STUDIO_PATH` to **sekret repozytorium** (min. 16 znaków), więc ścieżki nie ma w kodzie ani w logach; strona ma `noindex` i nie ma do niej linków. To ochrona przez nieznany adres, nie hasło. Szkice (`draft`) są widoczne tylko lokalnie z `?preview`, także w studiu, i mają znak wodny „DRAFT · NOT FOR PUBLICATION”.
+
 ## Tokeny
 Kolory, kroje, grubości linii i czasy animacji są **tylko** w `:root` w `src/shell.html`. `src/core/01-tokeny.js` czyta je do obiektu `T`
 (`T.c.ink`, `T.f.mono`, `T.revealMs`…); `font(rodzina, waga, px)` składa font canvasu. Serie danych rozróżniamy kształtem linii i podpisem, nie kolorem. `--blood` tylko dla krwi.
@@ -20,13 +30,15 @@ Kolory, kroje, grubości linii i czasy animacji są **tylko** w `:root` w `src/s
 - `01-tokeny.js`: `T`, `font()`, scena `W×H` = 1080×1920, strefa bezpieczna `SAFE` (x 65–1015, y 269–1248), marginesy `L`/`R`, `REDUCE` (prefers-reduced-motion), `smooth()`
 - `02-rng-ziarno.js`: `rng(seed)` (mulberry32), `grain()` (ziarno papieru, liczone raz)
 - `03-tekst.js`: `txt(ctx, s, x, y, {font, color, align, role, claim})` to jedyna droga rysowania tekstu; log klatki `window.__hoebmText()` (tekst, bbox, rola, claim) dla testów; `beginFrame()`
-- `04-prymitywy.js`: `marker()` (zakreślacz); w M1 osie, krzywe z playheadem, przepływ cząstek po Bézierze, słupki i zakresy, kreskowanie, etykiety paneli
+- `04-prymitywy.js`: `marker()` (zakreślacz), `bezAt`/`vessel` (naczynia), `particles` (faza = f(czas sekwencji) → determinizm), `hatchBox` (kreskowanie do poziomu), `panelLabel`, `readouts` (pasek odczytów), `keyAt` (klatki kluczowe, smoothstep), rejestr modułów `FIGMOD`
+- `10-gut-blood-flow.js`: FIG. 1 (port `reference/gut-blood-flow.html`: A — serce → jelito / mięśnie, B — przepływ trzewny % spoczynku; nowy C — węglowodany wg czasu wysiłku, próg Costa 2017). Moduł ryciny: `{ params, keys, frames, markerK(st), draw(ctx, st, ms, dt, seq) }`
 - `05-rama.js`: `framePaper`, `frameHeader` (FIG. n · SERIA, logo, linia, tytuł z wyostrzeniem, zakreślacz), `frameLegend` (od dołu strefy bezpiecznej), `frameSafeZone`
 
 **src/app — aplikacja**
 - `01` słownik tekstów (EN) i serie · `02` stan, `store` (localStorage w try/catch), `PREVIEW` · `05` nawigacja: serie, lista, wyszukiwarka, ulubione, `?f=<id>`
 - `06` panel opisu: cel, wnioski, czego nie wiemy, piśmiennictwo według ról (kolejność: rola, rok), linki PubMed/DOI, COI · `07` okna: start, źródła, cytowanie
-- `08` scena i pętla rysowania (w M1: zegar sekwencji, kadry, suwaki, `#record`) · `13` start po załadowaniu krojów
+- `08` scena: zegar `CLOCK` (restart z czystą klatką, seek, pauza, stop na końcu kadru), kadry (`step(±1)`: kadry ryciny, na końcach sąsiednia rycina), suwaki z `params` (ruszenie = tryb ręczny), znak wodny szkicu · `09` telefon · `13` start (widoki 1–2 albo studio)
+- `src/studio/01-studio.js`: studio (tylko w buildzie studia)
 
 ## Rejestr (`data/`)
 - `sources.json`: klucz → `{ vancouver, year, pmid?, doi?, url?, type, population, coi?, verified: {date, against} }`

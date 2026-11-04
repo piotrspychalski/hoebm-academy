@@ -22,8 +22,8 @@ function frameHeader(ctx, { label, title, highlight = -1, revealK = 1, markerK =
 }
 
 // Legenda: linie od dołu strefy bezpiecznej w górę (ostatnia linia kończy się nad SAFE.y1 łącznie z wydłużeniami liter)
-function frameLegend(ctx, lines) {
-  const f = font('mono', 400, 21), lh = 26, yLast = SAFE.y1 - 10;
+function frameLegend(ctx, lines, px = 21) {
+  const f = font('mono', 400, px), lh = Math.round(px * 1.25), yLast = SAFE.y1 - 10;
   lines.forEach((ln, i) => {
     const y = yLast - (lines.length - 1 - i) * lh;
     const parts = Array.isArray(ln) ? ln : [{ s: ln }];
