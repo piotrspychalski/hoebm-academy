@@ -58,10 +58,15 @@ button, input { font: inherit; color: inherit; }
 /* Układ: scena + panel opisu */
 main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: 24px; padding: 16px; max-width: 1320px; margin: 0 auto; }
 .stagecol { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; }
-/* Widoki publiczne pokazują tylko obszar treści ryciny (1080 × 1030, kadr z 9:16 bez pasów pod interfejs Reels) — prawie kwadrat, duży */
-.stage-wrap { width: min(100%, calc((100vh - 230px) * 1080 / 1030), 880px); }
+/* Komputer (html.wide): rycina w układzie poziomym 1440 × 810 na pełną szerokość, opis pod nią w dwóch kolumnach.
+   Telefon: pionowy obszar treści (1080 × 1030). Studio: pełne 9:16. */
+.stage-wrap { width: min(100%, calc((100vh - 210px) * 16 / 9), 1400px); }
+html.wide main { grid-template-columns: minmax(0, 1fr); max-width: 1440px; }
+html.wide .panel { border-left: 0; border-top: var(--line) solid var(--ink); padding: 16px 0 0; columns: 2 340px; column-gap: 40px; }
+html.wide .panel > * { break-inside: avoid; }
+html.wide .panel h2 { column-span: all; }
 canvas#stage { display: block; width: 100%; height: auto; background: var(--paper); border: 1px solid var(--hair); }
-.stagecol .controls { width: min(100%, 880px); }
+.stagecol .controls { width: min(100%, 1000px); }
 .controls { width: min(100%, 540px); display: grid; gap: 10px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .row label { font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); min-width: 72px; }

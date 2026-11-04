@@ -39,7 +39,7 @@ function mMenu(on) {
 }
 function initMobile() {
   const root = document.documentElement;
-  const onMQ = () => { MOBILE = mobMQ.matches; root.classList.toggle('mobile', MOBILE); if (!MOBILE) { mMenu(false); mPanel(false); } updateMobile(); };
+  const onMQ = () => { MOBILE = mobMQ.matches; root.classList.toggle('mobile', MOBILE); if (!MOBILE) { mMenu(false); mPanel(false); } setView(); updateMobile(); };
   mobMQ.addEventListener ? mobMQ.addEventListener('change', onMQ) : mobMQ.addListener(onMQ);
   onMQ();
   $('mMenuBtn').onclick = () => mMenu($('mMenu').hidden);

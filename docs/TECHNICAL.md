@@ -14,12 +14,17 @@ i wstawia je w `src/shell.html` (`/*REG*/`, `/*CORE*/`, `/*APP*/`, `%LOGO%`, `%V
 ## Trzy widoki
 | Widok | Plik | Kto | Jak |
 |---|---|---|---|
-| Komputer | `dist/index.html` | publiczny | serie, lista, scena + suwaki + „‹ Back / Next ›”, panel opisu; ← → / PageUp PageDown (pilot), F — ulubione |
-| Telefon | `dist/index.html` | publiczny | `html.mobile` przy `(max-width: 760px), (pointer: coarse) and (max-height: 520px)` (jak SURGITOME): menu ☰, dok ‹ n / N kadr › z kropkami, przesunięcie palcem, opis w arkuszu „i” |
+| Komputer | `dist/index.html` | publiczny | układ poziomy 1440 × 810 (`LAYOUTS.landscape`, panele obok siebie, opis pod ryciną); serie, lista, scena + suwaki + „‹ Back / Next ›”, panel opisu; ← → / PageUp PageDown (pilot), F — ulubione |
+| Telefon | `dist/index.html` | publiczny | układ pionowy, kadr obszaru treści 1080 × 1030; `html.mobile` przy `(max-width: 760px), (pointer: coarse) and (max-height: 520px)` (jak SURGITOME): menu ☰, dok ‹ n / N kadr › z kropkami, przesunięcie palcem, opis w arkuszu „i” |
 | Studio | `studio/index.html` (lokalnie) i `dist/<STUDIO_PATH>/` (online) | tylko autor | telefon 9:16 na komputerze, czarne tło, bez interfejsu i kursora; R — restart (1,5 s czystej klatki, potem cała sekwencja), Space — pauza, S — strefa bezpieczna, F — pełny ekran, ← → — rycina, H — pomoc |
 
 Studio budowane jest z tych samych plików + `src/studio/*` (`STUDIO = true`). Wersja publiczna nie zawiera kodu studia (test `budowa.js`).
 Studio online: CI dokłada je pod `dist/<STUDIO_PATH>/`, gdzie `STUDIO_PATH` to **sekret repozytorium** (min. 16 znaków), więc ścieżki nie ma w kodzie ani w logach; strona ma `noindex` i nie ma do niej linków. To ochrona przez nieznany adres, nie hasło. Szkice (`draft`) są widoczne tylko lokalnie z `?preview`, także w studiu, i mają znak wodny „DRAFT · NOT FOR PUBLICATION”.
+
+## Układy ryciny
+`src/core/01-tokeny.js`: `LAYOUTS.portrait` (1080 × 1920; studio i telefon) i `LAYOUTS.landscape` (1440 × 810; komputer). Bieżący układ to `LY` (ustawia `setView()` w scenie przy starcie i przy zmianie komputer ↔ telefon).
+Układ ma: marginesy `L`/`R`, położenie nagłówka i tytułu (`inline` — tytuł w jednej linii), odczyty (`readY`, `readH`), legendę (`legendBottom`, `legendPx`, `legendCols`), prostokąty paneli `boxes.A/B/C` i granice treści `bounds`.
+Moduł ryciny rysuje panele w `LY.boxes`; wysoki prostokąt (`h > 300`) = wariant poziomy (większe elementy, opisy nad wykresem).
 
 ## Tokeny
 Kolory, kroje, grubości linii i czasy animacji są **tylko** w `:root` w `src/shell.html`. `src/core/01-tokeny.js` czyta je do obiektu `T`

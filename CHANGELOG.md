@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0] — 2026-11-05 (układ poziomy na komputer)
+
+### Dodane
+- Układy ryciny w rdzeniu (`LAYOUTS`, bieżący `LY`): `portrait` 1080 × 1920 (studio, telefon) i `landscape` 1440 × 810 (komputer). Rama, odczyty i legenda zależą od układu; panele rysują się w prostokątach `LY.boxes`.
+- Komputer: tytuł w jednej linii, odczyty na całą szerokość, panele A | B | C obok siebie, rycina na pełną szerokość (do 1400 px), opis pod nią w dwóch kolumnach. Na ekranie 1440 × 900 skala ok. 0,85 (wcześniej ok. 0,35).
+- FIG. 1: wysokie panele w układzie poziomym (większe serce i narządy, wyższy wykres B, wyższe słupki C, opis progu Costa nad słupkami).
+
+### Bez zmian
+- Studio (rolka) i telefon: ten sam układ pionowy co w 0.3.1.
+
 ## [0.3.1] — 2026-11-04 (czytelność)
 
 ### Zmienione

@@ -2,8 +2,15 @@
 // Tryb sekwencji: stan = keyAt(klatki, czas). Tryb ręczny (ruszony suwak): stan = wartości suwaków.
 const cv = () => $('stage');
 let ctx = null, lastNow = performance.now();
-// Kadr widoku: studio — pełne 9:16 (1080 × 1920, ze strefą Reels); widoki publiczne — sam obszar treści (y 245–1275)
-const VIEW = STUDIO ? { y0: 0, h: H } : { y0: SAFE.y0 - 24, h: SAFE.y1 - SAFE.y0 + 51 };
+// Kadr widoku: studio — pełne 9:16 (1080 × 1920, ze strefą Reels); telefon — pionowy obszar treści (y 245–1275);
+// komputer — układ poziomy 1440 × 810 (panele obok siebie). setView() przy starcie i przy zmianie komputer ↔ telefon.
+let VIEW = null;
+function setView() {
+  LY = !STUDIO && !MOBILE ? LAYOUTS.landscape : LAYOUTS.portrait;
+  VIEW = STUDIO ? { y0: 0, w: W, h: H } : MOBILE ? { y0: SAFE.y0 - 24, w: W, h: SAFE.y1 - SAFE.y0 + 51 } : { y0: 0, w: LY.W, h: LY.H };
+  const c = cv(); if (c.width !== VIEW.w) c.width = VIEW.w; if (c.height !== VIEW.h) c.height = VIEW.h;
+  document.documentElement.classList.toggle('wide', LY.id === 'landscape');
+}
 const CLOCK = {
   start: performance.now(), paused: false, pausedAt: 0, hold: 0, stopAt: null,
   now() { return (this.paused ? this.pausedAt : performance.now()) - this.start - this.hold; },   // ms sekwencji (< 0 = czysta klatka)
@@ -99,7 +106,7 @@ function drawFigure(f, ms, dt) {
 }
 // Szkic (status draft) — znak wodny w strefie bezpiecznej, żeby niezweryfikowana rycina nie trafiła do nagrania
 function drawDraftMark() {
-  ctx.save(); ctx.translate(W / 2, (SAFE.y0 + SAFE.y1) / 2); ctx.rotate(-Math.PI / 9);
+  ctx.save(); ctx.translate((LY.bounds.x0 + LY.bounds.x1) / 2, (LY.bounds.y0 + LY.bounds.y1) / 2); ctx.rotate(-Math.PI / 9);
   ctx.globalAlpha = 0.14; ctx.font = font('display', 800, 150); ctx.fillStyle = T.c.blood; ctx.textAlign = 'center';
   ctx.fillText('DRAFT', 0, 0); ctx.font = font('mono', 600, 34); ctx.fillText('NOT FOR PUBLICATION', 0, 60); ctx.restore();
 }
@@ -123,7 +130,7 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 function initStage() {
-  cv().height = VIEW.h;
+  setView();
   ctx = cv().getContext('2d');
   mountFigure();
   if (!STUDIO) addEventListener('keydown', e => {

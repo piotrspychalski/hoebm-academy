@@ -47,16 +47,16 @@ function hatchBox(ctx, x, y, w, h, level, color = T.c.blood) {
   ctx.restore();
 }
 // Etykieta panelu (A, B, C)
-const panelLabel = (ctx, s, y) => txt(ctx, s, L, y, { font: font('display', 800, 36), role: 'fig' });
+const panelLabel = (ctx, s, b) => txt(ctx, s, b.x, b.y + 36, { font: font('display', 800, 36), role: 'fig' });   // w lewym górnym rogu prostokąta panelu
 // Pasek odczytów w stylu licznika rowerowego: fields = [{label, value, color?, claim?}]
-function readouts(ctx, y, fields, h = 82) {
-  const fw = (R - L) / fields.length;
+function readouts(ctx, fields, y = LY.readY, h = LY.readH) {
+  const L = LY.L, R = LY.R, fw = (R - L) / fields.length;
   ctx.strokeStyle = T.c.ink; ctx.lineWidth = T.line; ctx.strokeRect(L, y, R - L, h);
   fields.forEach((f, i) => {
     const x = L + fw * i;
     if (i) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.stroke(); }
     txt(ctx, f.label, x + 16, y + 27, { font: font('mono', 600, 18), color: T.c.ink2, role: 'fig' });
-    txt(ctx, f.value, x + 16, y + 68, { font: font('mono', 600, 34), color: f.color || T.c.ink, claim: f.claim });
+    txt(ctx, f.value, x + 16, y + h - 14, { font: font('mono', 600, h > 85 ? 38 : 34), color: f.color || T.c.ink, claim: f.claim });
   });
 }
 // Interpolacja klatek kluczowych sekwencji: keys = [[ms, {param: value}], …] → stan w chwili ms (smoothstep)
