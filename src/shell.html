@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HoEBM Academy</title>
+<meta name="description" content="Interactive schematic figures on endurance-sport physiology, with every number tied to its source. House of EBM, by Piotr Spychalski, MD, PhD.">
+<meta name="author" content="Piotr Spychalski, MD, PhD">
+<link rel="icon" href="%LOGO%">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Tokeny marki House of EBM (brand guide 04.11.2026) — JEDYNE miejsce z kolorami, krojami, grubościami i czasami.
+   src/core/01-tokeny.js czyta je przez getComputedStyle, więc canvas i HTML mają te same wartości. */
+:root {
+  --paper: #F2F0F1;        /* tło: jasny róż marki */
+  --ink: #1B5996;          /* linie, wykresy, tekst: granat marki */
+  --ink-2: #38305F;        /* tekst drugorzędny, legendy: ciemny fiolet marki */
+  --marker: #D9C0CF;       /* zakreślacz, wyróżnienia: ciemny róż marki */
+  --hair: #D9C0CF;         /* cienkie linie pomocnicze */
+  --blood: #C2185B;        /* krew — jedyny kolor spoza marki, znaczeniowy */
+  --display: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --line: 2px;             /* osie, ramki */
+  --line-bold: 6px;        /* krzywe danych */
+  --reveal-ms: 1200;       /* „Science made clear”: wyostrzenie tytułu */
+  --clean-ms: 1500;        /* #record: czysta klatka przed sekwencją */
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { background: var(--paper); color: var(--ink); font: 400 15px/1.5 var(--sans); }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--blood); outline-offset: 2px; }
+
+/* Nagłówek */
+.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px max(16px, env(safe-area-inset-left)); border-bottom: var(--line) solid var(--ink); }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); margin-right: auto; }
+.brand img { height: 34px; width: auto; display: block; }
+.brand span { font: 600 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); border-left: var(--line) solid var(--ink); padding-left: 10px; }
+.search { flex: 0 1 260px; min-width: 0; border: 1.5px solid var(--ink); border-radius: 2px; background: var(--paper); padding: 7px 10px; }
+.btn { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 2px; padding: 7px 12px; font-weight: 600; cursor: pointer; color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover, .btn[aria-pressed="true"] { background: var(--marker); }
+.btn.ghost { border-color: transparent; }
+
+/* Serie i lista rycin */
+.series { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; border-bottom: 1px solid var(--hair); scrollbar-width: thin; }
+.chip { flex: none; font: 600 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; border: 1.5px solid var(--ink); border-radius: 2px; padding: 5px 10px; background: var(--paper); cursor: pointer; color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.figlist { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; }
+.figbtn { flex: none; text-align: left; border: 1.5px solid var(--ink); border-radius: 2px; padding: 6px 10px; background: var(--paper); cursor: pointer; max-width: 260px; }
+.figbtn[aria-current="true"] { background: var(--marker); }
+.figbtn small { display: block; font: 600 11px var(--mono); color: var(--ink-2); letter-spacing: .06em; }
+
+/* Układ: scena + panel opisu */
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 380px); gap: 24px; padding: 16px; max-width: 1200px; margin: 0 auto; }
+.stagecol { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; }
+.stage-wrap { width: min(100%, calc((100vh - 260px) * 9 / 16), 540px); }
+canvas#stage { display: block; width: 100%; aspect-ratio: 9 / 16; background: var(--paper); border: 1px solid var(--hair); }
+.controls { width: min(100%, 540px); display: grid; gap: 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row label { font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); min-width: 72px; }
+.row input[type="range"] { flex: 1 1 180px; min-width: 0; accent-color: var(--blood); }
+.row output { font: 600 13px var(--mono); min-width: 80px; }
+.panel { border-left: var(--line) solid var(--ink); padding-left: 20px; min-width: 0; }
+.panel h2 { font: 800 22px/1.2 var(--display); margin: 0 0 8px; }
+.panel h3 { font: 600 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 20px 0 6px; }
+.panel ul, .panel ol { padding-left: 20px; margin: 0; }
+.panel li { margin: 4px 0; }
+.panel a { color: var(--ink); }
+.empty { color: var(--ink-2); }
+footer { border-top: 1px solid var(--hair); padding: 14px 16px 28px; font-size: 13px; color: var(--ink-2); text-align: center; }
+footer a { color: var(--ink-2); }
+
+/* Okna */
+dialog { border: var(--line) solid var(--ink); border-radius: 2px; background: var(--paper); color: var(--ink); max-width: min(560px, calc(100vw - 32px)); padding: 24px; }
+dialog::backdrop { background: rgba(56, 48, 95, .35); }
+dialog h2 { font: 800 24px/1.2 var(--display); margin: 0 0 12px; }
+dialog p { margin: 0 0 12px; }
+
+/* Telefon */
+@media (max-width: 820px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+  .panel { border-left: 0; border-top: var(--line) solid var(--ink); padding: 16px 0 0; }
+  .search { flex: 1 1 100%; order: 3; }
+  .top { gap: 6px; }
+  .top .btn { padding: 6px 8px; }
+  #favBtn span { display: none; }
+  .stage-wrap { width: min(100%, 540px); }
+}
+
+/* #record — czysta scena 9:16 do nagrania ekranu */
+body.rec { background: #000; overflow: hidden; cursor: none; }
+body.rec > :not(main), body.rec .panel, body.rec .controls { display: none !important; }
+body.rec main { display: flex; justify-content: center; align-items: center; padding: 0; max-width: none; height: 100vh; }
+body.rec .stage-wrap { width: min(100vw, 100vh * 9 / 16); }
+body.rec canvas#stage { border: 0; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./" aria-label="HoEBM Academy home"><img src="%LOGO%" alt="House of EBM"><span>Academy</span></a>
+  <input class="search" id="search" type="search" placeholder="Search figures" aria-label="Search figures" autocomplete="off">
+  <button class="btn" id="favBtn" type="button" aria-pressed="false" title="Favourites">★ <span>Favourites</span></button>
+  <button class="btn ghost" id="srcBtn" type="button">Sources</button>
+  <button class="btn ghost" id="citeBtn" type="button">How to cite</button>
+  <button class="btn ghost" id="infoBtn" type="button" aria-label="About HoEBM Academy">?</button>
+</header>
+<nav class="series" id="series" aria-label="Series"></nav>
+<nav class="figlist" id="figlist" aria-label="Figures"></nav>
+<main>
+  <div class="stagecol">
+    <div class="stage-wrap"><canvas id="stage" width="1080" height="1920" role="img" aria-label="Figure"></canvas></div>
+    <div class="controls" id="controls"></div>
+  </div>
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+</main>
+<footer id="footer"></footer>
+
+<dialog id="startDlg" aria-labelledby="startT"></dialog>
+<dialog id="srcDlg" aria-labelledby="srcT"></dialog>
+<dialog id="citeDlg" aria-labelledby="citeT"></dialog>
+
+<script>
+(() => {
+'use strict';
+/*REG*/
+const VERSION = '%VERSION%';
+const LOGO_SRC = '%LOGO%';
+/*CORE*/
+/*APP*/
+})();
+</script>
+</body>
+</html>

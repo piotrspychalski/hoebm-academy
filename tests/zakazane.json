@@ -1,0 +1,4 @@
+{
+  "dosePattern": "\\b\\d+([.,]\\d+)?\\s?(mg|µg|mcg|ug|IU|j\\.m\\.|mmol)(/kg)?\\b",
+  "brands": ["Gatorade", "Maurten", "SiS", "Science in Sport", "Powerbar", "Precision Fuel", "Beta Fuel", "Red Bull", "Ibuprom", "Nurofen", "Voltaren", "Panadol", "Tylenol", "Advil"]
+}

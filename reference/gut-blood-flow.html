@@ -1,0 +1,275 @@
+<title>Gut Blood Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: HoEBM brand (navy, two pinks, Montserrat) as a journal figure with ride-telemetry readouts. 9:16 stage (1080x1920 canvas) scaled to fit, controls below; #record = clean stage for screen capture. Single light look on purpose (paper). */
+:root {
+  --paper: #F2F0F1;
+  --ink: #1B5996;
+  --ink-2: #38305F;
+  --hair: #D9C0CF;
+  --blood: #C2185B;
+  --marker: #D9C0CF;
+  --display: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+html, body { height: 100%; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.stage-wrap { width: min(100%, calc((100vh - 220px) * 9 / 16), 540px); max-width: 100%; }
+canvas { display: block; width: 100%; aspect-ratio: 9 / 16; max-width: 100%; background: var(--paper); border: 1px solid var(--hair); }
+.controls { width: min(100%, 540px); display: grid; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+label { font: 500 13px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+input[type="range"] { flex: 1 1 200px; min-width: 0; accent-color: var(--blood); }
+button, .link {
+  font: 600 14px var(--sans); color: var(--ink); background: var(--paper);
+  border: 1.5px solid var(--ink); border-radius: 2px; padding: 8px 14px; cursor: pointer; text-decoration: none;
+}
+button:hover, .link:hover { background: var(--marker); }
+button:focus-visible, .link:focus-visible, input:focus-visible { outline: 2px solid var(--blood); outline-offset: 2px; }
+.note { font-size: 13px; color: var(--ink-2); line-height: 1.5; max-width: 65ch; }
+.note code { font-family: var(--mono); color: var(--ink); }
+#effortVal { font: 600 13px var(--mono); color: var(--ink); }
+body.rec { padding: 0; background: #000; justify-content: center; gap: 0; cursor: none; }
+body.rec .controls { display: none; }
+body.rec .stage-wrap { width: min(100vw, 100vh * 9 / 16); }
+body.rec canvas { border: 0; }
+</style>
+
+<div class="stage-wrap"><canvas id="stage" width="1080" height="1920" aria-label="Figure: as exercise gets harder or longer, blood flow to the gut falls while flow to working muscles rises."></canvas></div>
+
+<div class="controls">
+  <div class="row">
+    <label for="effort">Effort</label>
+    <input id="effort" type="range" min="0" max="100" value="0" aria-describedby="effortVal">
+    <span id="effortVal" aria-live="polite">REST</span>
+  </div>
+  <div class="row">
+    <button id="play" type="button">Play sequence</button>
+    <button id="safe" type="button" aria-pressed="false">Show Reels safe zone</button>
+    <a class="link" href="#record">Recording mode</a>
+  </div>
+  <p class="note">Recording mode: full-screen 9:16, no controls, 1.5 s clean frame, then a 12 s sequence. Keys: <code>Space</code> pause, <code>R</code> restart, <code>S</code> safe zone, <code>F</code> fullscreen, <code>Esc</code> back.</p>
+  <p class="note">Schematic, not to scale. The only number shown (gut blood flow down by 80% or more with prolonged or intense exercise) is from ter Steege &amp; Kolkman, Aliment Pharmacol Ther 2012;35:516–528, PMID 22229513. Muscle flow is shown as direction only. Education, not medical advice.</p>
+</div>
+
+<script>
+(() => {
+  const W = 1080, H = 1920;
+  const SAFE = { top: 269, bottom: 1248, side: 65 };
+  const L = SAFE.side + 30, R = W - SAFE.side - 30;
+  const cv = document.getElementById('stage');
+  const ctx = cv.getContext('2d');
+  const slider = document.getElementById('effort');
+  const valOut = document.getElementById('effortVal');
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const C = { paper: css('--paper'), ink: css('--ink'), ink2: css('--ink-2'), hair: css('--hair'), blood: css('--blood'), marker: css('--marker') };
+  const DISPLAY = '"Montserrat", "Helvetica Neue", Arial, sans-serif';
+  const SANS = '"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif';
+  const MONO = '"IBM Plex Mono", Menlo, monospace';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Seeded PRNG so the paper grain and marker edges are identical in every recording
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // Paper grain (drawn once)
+  const grain = document.createElement('canvas'); grain.width = W; grain.height = H;
+  (() => {
+    const g = grain.getContext('2d'); const img = g.createImageData(W, H);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = rnd() < 0.5 ? 0 : 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = rnd() * 14;
+    }
+    g.putImageData(img, 0, 0);
+  })();
+  // Marker stroke shape (uneven edges), generated once
+  const markerJitter = Array.from({ length: 24 }, () => rnd());
+
+  let t = 0, showSafe = false, seq = null;
+  const smooth = x => x * x * (3 - 2 * x);
+  const gutFlow = e => 1 - 0.8 * smooth(e);     // rest = 100%, max effort = 20% (-80%)
+  const muscleFlow = e => 0.25 + 0.75 * e;      // direction only
+  const phase = e => e < 0.15 ? 'REST' : e < 0.6 ? 'EASY' : 'HARD / LONG';
+
+  function txt(s, x, y, font, color, align = 'left') {
+    ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic'; ctx.fillText(s, x, y);
+  }
+  function marker(x, y, w, h) {   // highlighter band with uneven ends and edges
+    ctx.save(); ctx.globalAlpha = 0.9; ctx.fillStyle = C.marker; ctx.beginPath();
+    const n = 12, j = markerJitter;
+    ctx.moveTo(x + j[0] * 10, y + j[1] * 6);
+    for (let i = 1; i <= n; i++) ctx.lineTo(x + w * i / n, y + (j[i] - 0.5) * 6);
+    ctx.lineTo(x + w + j[13] * 8, y + h * 0.5);
+    for (let i = n; i >= 0; i--) ctx.lineTo(x + w * i / n, y + h + (j[i + 11 > 23 ? 23 : i + 11] - 0.5) * 6);
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+
+  const logo = new Image(); logo.src = "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIzMTIuMjY2MSAzMjkuMTE1MiA0MjUuNDY3NyA5OC43Njk2IiB3aWR0aD0iNTAwMCIgaGVpZ2h0PSIxMTYwLjcxNzk1ODE0MzQ3MzciIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiPjxkZWZzPjwvZGVmcz48c3R5bGU+LmFENnoxbllraGNvbG9yIHtmaWxsOiMxQjU5OTY7ZmlsbC1vcGFjaXR5OjE7fS5ha0NhQU5KazFjY29sb3Ige2ZpbGw6IzFCNTk5NjtmaWxsLW9wYWNpdHk6MC43ODt9LmFrQ2FBTkprMWNjb2xvci1mbG9vIHtmbG9vZC1jb2xvcjojMUI1OTk2O2Zsb29kLW9wYWNpdHk6MC43ODt9LmFOM0JxUXltLTQwZmlsdGVyLWZsb28ge2Zsb29kLWNvbG9yOiNEOUMwQ0Y7Zmxvb2Qtb3BhY2l0eTowLjU7fS5hb3FWdW5YZVFrY29sb3Ige2ZpbGw6IzFCNTk5NjtmaWxsLW9wYWNpdHk6MC43ODt9LmFvcVZ1blhlUWtjb2xvci1mbG9vIHtmbG9vZC1jb2xvcjojMUI1OTk2O2Zsb29kLW9wYWNpdHk6MC43ODt9LmFTZkcxWWpJcDVjb2xvci1mbG9vIHtmbG9vZC1jb2xvcjojMUI1OTk2O2Zsb29kLW9wYWNpdHk6MC43ODt9LmF4bWcyaEh2WTljb2xvciB7ZmlsbDojMUI1OTk2O2ZpbGwtb3BhY2l0eTowLjc4O30uY29tcGFueU5hbWUge2ZpbGw6IzFCNTk5NjtmaWxsLW9wYWNpdHk6MTt9Lmljb24xIHtmaWxsOiNEOUMwQ0Y7ZmlsbC1vcGFjaXR5OjE7fS5pY29uMiB7ZmlsbDojMzgzMDVGO2ZpbGwtb3BhY2l0eToxO30uaWNvbjMge2ZpbGw6IzFCNTk5NjtmaWxsLW9wYWNpdHk6MTt9LnNoYXBlU3Ryb2tlLXN0ciB7c3Ryb2tlOiNEOUMwQ0Y7c3Ryb2tlLW9wYWNpdHk6MTt9PC9zdHlsZT48ZGVmcz4KICAgICAgPGZpbHRlcgogICAgICAgIHg9Ii0xMDAwIgogICAgICAgIHk9Ii0xMDAwIgogICAgICAgIHdpZHRoPSI1MDAwIgogICAgICAgIGhlaWdodD0iNTAwMCIKICAgICAgICBpZD0icUF2RkhrVXl0IgogICAgICAgIGZpbHRlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIKICAgICAgICBwcmltaXRpdmVVbml0cz0idXNlclNwYWNlT25Vc2UiCiAgICAgICAgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj4KICAgICAgICA8ZmVHYXVzc2lhbkJsdXIgIHJlc3VsdD0iUWRXUFlRc0tIRiIgc3RkRGV2aWF0aW9uPSIyIiAvPgogICAgICA8L2ZpbHRlcj4KICAgICAgPGZpbHRlcgogICAgICAgIHg9Ii0xMDAwIgogICAgICAgIHk9Ii0xMDAwIgogICAgICAgIHdpZHRoPSI1MDAwIgogICAgICAgIGhlaWdodD0iNTAwMCIKICAgICAgICBpZD0ia21rb1g2Mi1kIgogICAgICAgIGZpbHRlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIKICAgICAgICBwcmltaXRpdmVVbml0cz0idXNlclNwYWNlT25Vc2UiCiAgICAgICAgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj4KICAgICAgICA8ZmVHYXVzc2lhbkJsdXIgIHJlc3VsdD0iRHFnV3Y5YTNXRyIgc3RkRGV2aWF0aW9uPSIxIiAvPgogICAgICA8L2ZpbHRlcj4KICAgICAgPGZpbHRlcgogICAgICAgIHg9Ii0xMDAwIgogICAgICAgIHk9Ii0xMDAwIgogICAgICAgIHdpZHRoPSI1MDAwIgogICAgICAgIGhlaWdodD0iNTAwMCIKICAgICAgICBpZD0iTjNCcVF5bS00IgogICAgICAgIGZpbHRlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIKICAgICAgICBwcmltaXRpdmVVbml0cz0idXNlclNwYWNlT25Vc2UiCiAgICAgICAgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj4KICAgICAgICA8ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiIC8+PC9mZU1lcmdlPgogICAgICA8L2ZpbHRlcj48L2RlZnM+PGcgb3BhY2l0eT0iMSIgdHJhbnNmb3JtPSJyb3RhdGUoMTE5LjQgNDAwLjkxNjggMzYyLjU3MTkpIj4KPHN2ZyB3aWR0aD0iNTkuNjM0MiIgaGVpZ2h0PSI2OC4xNTMyIiB4PSI0MDAuOTE2OCIgeT0iMzYyLjU3MTkiIHZlcnNpb249IjEuMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSIgdmlld0JveD0iMzAgMjAgMTQwIDE2MCI+CiAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgMSAwIDApIiA+PGc+PHBhdGggZD0iTTMxLjEgMTQwLjNMMTAwIDIwLjJsNjguOSAxMjAuMSAxLjEtODIuMS03MC0zOC4xVjIwbC0uMS4xVjIwdi4xTDMwIDU4LjJsMS4xIDgyLjF6IiBkYXRhLWNvbG9yPSIxIiBjbGFzcz0iaWNvbjEiPjwvcGF0aD48cGF0aCBkPSJNMTAxLjggMTgwbDY3LjMtMzkuM2gtMTM4bDcwLjcgMzkuM3oiIGRhdGEtY29sb3I9IjEiIGNsYXNzPSJpY29uMSI+PC9wYXRoPjwvZz48L2c+Cjwvc3ZnPgo8L2c+PGcgb3BhY2l0eT0iMSIgdHJhbnNmb3JtPSJyb3RhdGUoMCA0MTYuNTE1NyAzNTQuNzgyNCkiPgo8c3ZnIHdpZHRoPSIzMjEuMjE4MSIgaGVpZ2h0PSIzNC4wNzY1IiB4PSI0MTYuNTE1NyIgeT0iMzU0Ljc4MjQiIHZlcnNpb249IjEuMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSIgdmlld0JveD0iMy4zMiAtMzAgMjg1LjggMzAuMzIiPgogIDxnIHRyYW5zZm9ybT0ibWF0cml4KDEgMCAwIDEgMCAwKSIgY2xhc3M9ImFENnoxbllraGNvbG9yIj48cGF0aCBkPSJNMjIuNTItMjhMMjktMjhMMjkgMEwyMi41MiAwTDIyLjUyLTExLjQ4TDkuODAtMTEuNDhMOS44MCAwTDMuMzIgMEwzLjMyLTI4TDkuODAtMjhMOS44MC0xNi45NkwyMi41Mi0xNi45NkwyMi41Mi0yOFogTTQ1LjQ0IDAuMzJRNDIuMDQgMC4zMiAzOS4zNC0xLjEwUTM2LjY0LTIuNTIgMzUuMTItNS4wNFEzMy42MC03LjU2IDMzLjYwLTEwLjc2TDMzLjYwLTEwLjc2UTMzLjYwLTEzLjk2IDM1LjEyLTE2LjQ4UTM2LjY0LTE5IDM5LjM0LTIwLjQyUTQyLjA0LTIxLjg0IDQ1LjQ0LTIxLjg0TDQ1LjQ0LTIxLjg0UTQ4Ljg0LTIxLjg0IDUxLjUyLTIwLjQyUTU0LjIwLTE5IDU1LjcyLTE2LjQ4UTU3LjI0LTEzLjk2IDU3LjI0LTEwLjc2TDU3LjI0LTEwLjc2UTU3LjI0LTcuNTYgNTUuNzItNS4wNFE1NC4yMC0yLjUyIDUxLjUyLTEuMTBRNDguODQgMC4zMiA0NS40NCAwLjMyTDQ1LjQ0IDAuMzJaTTQ1LjQ0LTQuODBRNDcuODQtNC44MCA0OS4zOC02LjQyUTUwLjkyLTguMDQgNTAuOTItMTAuNzZMNTAuOTItMTAuNzZRNTAuOTItMTMuNDggNDkuMzgtMTUuMTBRNDcuODQtMTYuNzIgNDUuNDQtMTYuNzJMNDUuNDQtMTYuNzJRNDMuMDQtMTYuNzIgNDEuNDgtMTUuMTBRMzkuOTItMTMuNDggMzkuOTItMTAuNzZMMzkuOTItMTAuNzZRMzkuOTItOC4wNCA0MS40OC02LjQyUTQzLjA0LTQuODAgNDUuNDQtNC44MEw0NS40NC00LjgwWiBNNzYuODQtMjEuNTJMODMuMDgtMjEuNTJMODMuMDggMEw3Ny4xNiAwTDc3LjE2LTIuNTZRNzUuOTItMS4xNiA3NC4yMC0wLjQyUTcyLjQ4IDAuMzIgNzAuNDggMC4zMkw3MC40OCAwLjMyUTY2LjI0IDAuMzIgNjMuNzYtMi4xMlE2MS4yOC00LjU2IDYxLjI4LTkuMzZMNjEuMjgtOS4zNkw2MS4yOC0yMS41Mkw2Ny41Mi0yMS41Mkw2Ny41Mi0xMC4yOFE2Ny41Mi01LjA4IDcxLjg4LTUuMDhMNzEuODgtNS4wOFE3NC4xMi01LjA4IDc1LjQ4LTYuNTRRNzYuODQtOCA3Ni44NC0xMC44OEw3Ni44NC0xMC44OEw3Ni44NC0yMS41MlogTTk2LjEyIDAuMzJROTMuNDQgMC4zMiA5MC44OC0wLjM0UTg4LjMyLTEgODYuODAtMkw4Ni44MC0yTDg4Ljg4LTYuNDhROTAuMzItNS41NiA5Mi4zNi00Ljk4UTk0LjQwLTQuNDAgOTYuMzYtNC40MEw5Ni4zNi00LjQwUTEwMC4zMi00LjQwIDEwMC4zMi02LjM2TDEwMC4zMi02LjM2UTEwMC4zMi03LjI4IDk5LjI0LTcuNjhROTguMTYtOC4wOCA5NS45Mi04LjM2TDk1LjkyLTguMzZROTMuMjgtOC43NiA5MS41Ni05LjI4UTg5Ljg0LTkuODAgODguNTgtMTEuMTJRODcuMzItMTIuNDQgODcuMzItMTQuODhMODcuMzItMTQuODhRODcuMzItMTYuOTIgODguNTAtMTguNTBRODkuNjgtMjAuMDggOTEuOTQtMjAuOTZROTQuMjAtMjEuODQgOTcuMjgtMjEuODRMOTcuMjgtMjEuODRROTkuNTYtMjEuODQgMTAxLjgyLTIxLjM0UTEwNC4wOC0yMC44NCAxMDUuNTYtMTkuOTZMMTA1LjU2LTE5Ljk2TDEwMy40OC0xNS41MlExMDAuNjQtMTcuMTIgOTcuMjgtMTcuMTJMOTcuMjgtMTcuMTJROTUuMjgtMTcuMTIgOTQuMjgtMTYuNTZROTMuMjgtMTYgOTMuMjgtMTUuMTJMOTMuMjgtMTUuMTJROTMuMjgtMTQuMTIgOTQuMzYtMTMuNzJROTUuNDQtMTMuMzIgOTcuODAtMTIuOTZMOTcuODAtMTIuOTZRMTAwLjQ0LTEyLjUyIDEwMi4xMi0xMi4wMlExMDMuODAtMTEuNTIgMTA1LjA0LTEwLjIwUTEwNi4yOC04Ljg4IDEwNi4yOC02LjUyTDEwNi4yOC02LjUyUTEwNi4yOC00LjUyIDEwNS4wOC0yLjk2UTEwMy44OC0xLjQwIDEwMS41OC0wLjU0UTk5LjI4IDAuMzIgOTYuMTIgMC4zMkw5Ni4xMiAwLjMyWiBNMTMxLjIwLTEwLjY4UTEzMS4yMC0xMC41NiAxMzEuMDgtOUwxMzEuMDgtOUwxMTQuODAtOVExMTUuMjQtNyAxMTYuODgtNS44NFExMTguNTItNC42OCAxMjAuOTYtNC42OEwxMjAuOTYtNC42OFExMjIuNjQtNC42OCAxMjMuOTQtNS4xOFExMjUuMjQtNS42OCAxMjYuMzYtNi43NkwxMjYuMzYtNi43NkwxMjkuNjgtMy4xNlExMjYuNjQgMC4zMiAxMjAuODAgMC4zMkwxMjAuODAgMC4zMlExMTcuMTYgMC4zMiAxMTQuMzYtMS4xMFExMTEuNTYtMi41MiAxMTAuMDQtNS4wNFExMDguNTItNy41NiAxMDguNTItMTAuNzZMMTA4LjUyLTEwLjc2UTEwOC41Mi0xMy45MiAxMTAuMDItMTYuNDZRMTExLjUyLTE5IDExNC4xNC0yMC40MlExMTYuNzYtMjEuODQgMTIwLjAwLTIxLjg0TDEyMC4wMC0yMS44NFExMjMuMTYtMjEuODQgMTI1LjcyLTIwLjQ4UTEyOC4yOC0xOS4xMiAxMjkuNzQtMTYuNThRMTMxLjIwLTE0LjA0IDEzMS4yMC0xMC42OEwxMzEuMjAtMTAuNjhaTTEyMC4wNC0xNy4xMlExMTcuOTItMTcuMTIgMTE2LjQ4LTE1LjkyUTExNS4wNC0xNC43MiAxMTQuNzItMTIuNjRMMTE0LjcyLTEyLjY0TDEyNS4zMi0xMi42NFExMjUuMDAtMTQuNjggMTIzLjU2LTE1LjkwUTEyMi4xMi0xNy4xMiAxMjAuMDQtMTcuMTJMMTIwLjA0LTE3LjEyWiBNMTU2LjkyIDAuMzJRMTUzLjUyIDAuMzIgMTUwLjgyLTEuMTBRMTQ4LjEyLTIuNTIgMTQ2LjYwLTUuMDRRMTQ1LjA4LTcuNTYgMTQ1LjA4LTEwLjc2TDE0NS4wOC0xMC43NlExNDUuMDgtMTMuOTYgMTQ2LjYwLTE2LjQ4UTE0OC4xMi0xOSAxNTAuODItMjAuNDJRMTUzLjUyLTIxLjg0IDE1Ni45Mi0yMS44NEwxNTYuOTItMjEuODRRMTYwLjMyLTIxLjg0IDE2My0yMC40MlExNjUuNjgtMTkgMTY3LjIwLTE2LjQ4UTE2OC43Mi0xMy45NiAxNjguNzItMTAuNzZMMTY4LjcyLTEwLjc2UTE2OC43Mi03LjU2IDE2Ny4yMC01LjA0UTE2NS42OC0yLjUyIDE2My0xLjEwUTE2MC4zMiAwLjMyIDE1Ni45MiAwLjMyTDE1Ni45MiAwLjMyWk0xNTYuOTItNC44MFExNTkuMzItNC44MCAxNjAuODYtNi40MlExNjIuNDAtOC4wNCAxNjIuNDAtMTAuNzZMMTYyLjQwLTEwLjc2UTE2Mi40MC0xMy40OCAxNjAuODYtMTUuMTBRMTU5LjMyLTE2LjcyIDE1Ni45Mi0xNi43MkwxNTYuOTItMTYuNzJRMTU0LjUyLTE2LjcyIDE1Mi45Ni0xNS4xMFExNTEuNDAtMTMuNDggMTUxLjQwLTEwLjc2TDE1MS40MC0xMC43NlExNTEuNDAtOC4wNCAxNTIuOTYtNi40MlExNTQuNTItNC44MCAxNTYuOTItNC44MEwxNTYuOTItNC44MFogTTE3OS43Mi0yMS45NkwxNzkuNzItMjEuMDRMMTg1LjI0LTIxLjA0TDE4NS4yNC0xNi4yNEwxNzkuODgtMTYuMjRMMTc5Ljg4IDBMMTczLjY0IDBMMTczLjY0LTE2LjI0TDE3MC4zMi0xNi4yNEwxNzAuMzItMjEuMDRMMTczLjY0LTIxLjA0TDE3My42NC0yMlExNzMuNjQtMjUuNjggMTc1LjgyLTI3Ljg0UTE3OC0zMCAxODEuOTYtMzBMMTgxLjk2LTMwUTE4My4zNi0zMCAxODQuNjItMjkuNzBRMTg1Ljg4LTI5LjQwIDE4Ni43Mi0yOC44NEwxODYuNzItMjguODRMMTg1LjA4LTI0LjMyUTE4NC0yNS4wOCAxODIuNTYtMjUuMDhMMTgyLjU2LTI1LjA4UTE3OS43Mi0yNS4wOCAxNzkuNzItMjEuOTZMMTc5LjcyLTIxLjk2WiBNMjA2LjU2LTUuMjBMMjIxLjgwLTUuMjBMMjIxLjgwIDBMMjAwLjEyIDBMMjAwLjEyLTI4TDIyMS4yOC0yOEwyMjEuMjgtMjIuODBMMjA2LjU2LTIyLjgwTDIwNi41Ni0xNi43MkwyMTkuNTYtMTYuNzJMMjE5LjU2LTExLjY4TDIwNi41Ni0xMS42OEwyMDYuNTYtNS4yMFogTTI0Ny41Mi0xNC41NlEyNDkuOTItMTMuODAgMjUxLjI4LTEyLjAyUTI1Mi42NC0xMC4yNCAyNTIuNjQtNy42NEwyNTIuNjQtNy42NFEyNTIuNjQtMy45NiAyNDkuNzgtMS45OFEyNDYuOTIgMCAyNDEuNDQgMEwyNDEuNDQgMEwyMjYuOTYgMEwyMjYuOTYtMjhMMjQwLjY0LTI4UTI0NS43Ni0yOCAyNDguNTAtMjYuMDRRMjUxLjI0LTI0LjA4IDI1MS4yNC0yMC43MkwyNTEuMjQtMjAuNzJRMjUxLjI0LTE4LjY4IDI1MC4yNi0xNy4wOFEyNDkuMjgtMTUuNDggMjQ3LjUyLTE0LjU2TDI0Ny41Mi0xNC41NlpNMjM5Ljg0LTIzLjEyTDIzMy40MC0yMy4xMkwyMzMuNDAtMTYuNTJMMjM5Ljg0LTE2LjUyUTI0Mi4yNC0xNi41MiAyNDMuNDgtMTcuMzZRMjQ0LjcyLTE4LjIwIDI0NC43Mi0xOS44NEwyNDQuNzItMTkuODRRMjQ0LjcyLTIxLjQ4IDI0My40OC0yMi4zMFEyNDIuMjQtMjMuMTIgMjM5Ljg0LTIzLjEyTDIzOS44NC0yMy4xMlpNMjQwLjk2LTQuODhRMjQzLjUyLTQuODggMjQ0LjgyLTUuNzJRMjQ2LjEyLTYuNTYgMjQ2LjEyLTguMzJMMjQ2LjEyLTguMzJRMjQ2LjEyLTExLjgwIDI0MC45Ni0xMS44MEwyNDAuOTYtMTEuODBMMjMzLjQwLTExLjgwTDIzMy40MC00Ljg4TDI0MC45Ni00Ljg4WiBNMjg5LjEyIDBMMjgzLjA0IDBMMjgzLTE2LjgwTDI3NC43Ni0yLjk2TDI3MS44NC0yLjk2TDI2My42NC0xNi40NEwyNjMuNjQgMEwyNTcuNTYgMEwyNTcuNTYtMjhMMjYyLjkyLTI4TDI3My40MC0xMC42MEwyODMuNzItMjhMMjg5LjA0LTI4TDI4OS4xMiAwWiIvPjwvZz4KPC9zdmc+CjwvZz48ZyBvcGFjaXR5PSIxIiB0cmFuc2Zvcm09InJvdGF0ZSgwIDM5OS40Nzc1IDMzNy43NDQ0KSI+Cjxzdmcgd2lkdGg9IjMuNDA3NiIgaGVpZ2h0PSI2OC4xNTI5IiB4PSIzOTkuNDc3NSIgeT0iMzM3Ljc0NDQiIHZlcnNpb249IjEuMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSIgdmlld0JveD0iMCAwIDMuNDA3NiA2OC4xNTI5Ij4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMy40MDc2IiBoZWlnaHQ9IjY4LjE1MjkiIGNsYXNzPSJjb21wYW55TmFtZSBzaGFwZVN0cm9rZS1zdHIiIHN0eWxlPSJzdHJva2Utd2lkdGg6MDsiIHJ4PSIwcHgiIHJ5PSIwcHgiIC8+Cjwvc3ZnPgo8L2c+PGcgZmlsdGVyPSJ1cmwoI3FBdkZIa1V5dCkiPjxnIG9wYWNpdHk9IjEiIHRyYW5zZm9ybT0icm90YXRlKDAgNDUzLjUxNTcgNDA1Ljg5NzMpIj4KPHN2ZyB3aWR0aD0iOTkuNDU2IiBoZWlnaHQ9IjE1Ljk4NzUiIHg9IjQ1My41MTU3IiB5PSI0MDUuODk3MyIgdmVyc2lvbj0iMS4xIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIiB2aWV3Qm94PSIxLjY0IC0zMC4yOCAxOTAuMzYgMzAuNiI+CiAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgMSAwIDApIiBjbGFzcz0iYW9xVnVuWGVRa2NvbG9yIj48cGF0aCBkPSJNMTIuMzYgMC4zMlE5LjIwIDAuMzIgNi4yNi0wLjY2UTMuMzItMS42NCAxLjY0LTMuMjBMMS42NC0zLjIwTDMuMTItNi4zMlE0LjcyLTQuODggNy4yMi0zLjk4UTkuNzItMy4wOCAxMi4zNi0zLjA4TDEyLjM2LTMuMDhRMTUuODQtMy4wOCAxNy41Ni00LjI2UTE5LjI4LTUuNDQgMTkuMjgtNy40MEwxOS4yOC03LjQwUTE5LjI4LTguODQgMTguMzQtOS43NFExNy40MC0xMC42NCAxNi4wMi0xMS4xMlExNC42NC0xMS42MCAxMi4xMi0xMi4yMEwxMi4xMi0xMi4yMFE4Ljk2LTEyLjk2IDcuMDItMTMuNzJRNS4wOC0xNC40OCAzLjcwLTE2LjA2UTIuMzItMTcuNjQgMi4zMi0yMC4zMkwyLjMyLTIwLjMyUTIuMzItMjIuNTYgMy41MC0yNC4zNlE0LjY4LTI2LjE2IDcuMDgtMjcuMjRROS40OC0yOC4zMiAxMy4wNC0yOC4zMkwxMy4wNC0yOC4zMlExNS41Mi0yOC4zMiAxNy45Mi0yNy42OFEyMC4zMi0yNy4wNCAyMi4wNC0yNS44NEwyMi4wNC0yNS44NEwyMC43Mi0yMi42NFExOC45Ni0yMy43NiAxNi45Ni0yNC4zNFExNC45Ni0yNC45MiAxMy4wNC0yNC45MkwxMy4wNC0yNC45MlE5LjY0LTI0LjkyIDcuOTQtMjMuNjhRNi4yNC0yMi40NCA2LjI0LTIwLjQ4TDYuMjQtMjAuNDhRNi4yNC0xOS4wNCA3LjIwLTE4LjE0UTguMTYtMTcuMjQgOS41OC0xNi43NFExMS0xNi4yNCAxMy40NC0xNS42OEwxMy40NC0xNS42OFExNi42MC0xNC45MiAxOC41Mi0xNC4xNlEyMC40NC0xMy40MCAyMS44Mi0xMS44NFEyMy4yMC0xMC4yOCAyMy4yMC03LjY0TDIzLjIwLTcuNjRRMjMuMjAtNS40NCAyMi0zLjYyUTIwLjgwLTEuODAgMTguMzYtMC43NFExNS45MiAwLjMyIDEyLjM2IDAuMzJMMTIuMzYgMC4zMlogTTQzLjcyIDAuMjRRNDAuNDggMC4yNCAzNy45NC0xLjE2UTM1LjQwLTIuNTYgMzMuOTYtNS4wMlEzMi41Mi03LjQ4IDMyLjUyLTEwLjYwTDMyLjUyLTEwLjYwUTMyLjUyLTEzLjcyIDMzLjk2LTE2LjE4UTM1LjQwLTE4LjY0IDM3Ljk0LTIwLjAyUTQwLjQ4LTIxLjQwIDQzLjcyLTIxLjQwTDQzLjcyLTIxLjQwUTQ2LjYwLTIxLjQwIDQ4Ljg2LTIwLjI0UTUxLjEyLTE5LjA4IDUyLjM2LTE2Ljg4TDUyLjM2LTE2Ljg4TDQ5LjQ0LTE1UTQ4LjQ0LTE2LjUyIDQ2Ljk2LTE3LjI4UTQ1LjQ4LTE4LjA0IDQzLjY4LTE4LjA0TDQzLjY4LTE4LjA0UTQxLjYwLTE4LjA0IDM5Ljk0LTE3LjEyUTM4LjI4LTE2LjIwIDM3LjM0LTE0LjUwUTM2LjQwLTEyLjgwIDM2LjQwLTEwLjYwTDM2LjQwLTEwLjYwUTM2LjQwLTguMzYgMzcuMzQtNi42NlEzOC4yOC00Ljk2IDM5Ljk0LTQuMDRRNDEuNjAtMy4xMiA0My42OC0zLjEyTDQzLjY4LTMuMTJRNDUuNDgtMy4xMiA0Ni45Ni0zLjg4UTQ4LjQ0LTQuNjQgNDkuNDQtNi4xNkw0OS40NC02LjE2TDUyLjM2LTQuMzJRNTEuMTItMi4xMiA0OC44Ni0wLjk0UTQ2LjYwIDAuMjQgNDMuNzIgMC4yNEw0My43MiAwLjI0WiBNNjMuMzIgMEw2My4zMi0yMS4yMEw2Ny4xNi0yMS4yMEw2Ny4xNiAwTDYzLjMyIDBaTTY1LjI0LTI1LjI4UTY0LjEyLTI1LjI4IDYzLjM4LTI2UTYyLjY0LTI2LjcyIDYyLjY0LTI3Ljc2TDYyLjY0LTI3Ljc2UTYyLjY0LTI4LjgwIDYzLjM4LTI5LjU0UTY0LjEyLTMwLjI4IDY1LjI0LTMwLjI4TDY1LjI0LTMwLjI4UTY2LjM2LTMwLjI4IDY3LjEwLTI5LjU4UTY3Ljg0LTI4Ljg4IDY3Ljg0LTI3Ljg0TDY3Ljg0LTI3Ljg0UTY3Ljg0LTI2Ljc2IDY3LjEwLTI2LjAyUTY2LjM2LTI1LjI4IDY1LjI0LTI1LjI4TDY1LjI0LTI1LjI4WiBNOTkuNjQtMTAuNDhROTkuNjQtMTAuMDQgOTkuNTYtOS4zMkw5OS41Ni05LjMyTDgyLjM2LTkuMzJRODIuNzItNi41MiA4NC44Mi00LjgyUTg2LjkyLTMuMTIgOTAuMDQtMy4xMkw5MC4wNC0zLjEyUTkzLjg0LTMuMTIgOTYuMTYtNS42OEw5Ni4xNi01LjY4TDk4LjI4LTMuMjBROTYuODQtMS41MiA5NC43MC0wLjY0UTkyLjU2IDAuMjQgODkuOTIgMC4yNEw4OS45MiAwLjI0UTg2LjU2IDAuMjQgODMuOTYtMS4xNFE4MS4zNi0yLjUyIDc5Ljk0LTVRNzguNTItNy40OCA3OC41Mi0xMC42MEw3OC41Mi0xMC42MFE3OC41Mi0xMy42OCA3OS45MC0xNi4xNlE4MS4yOC0xOC42NCA4My43MC0yMC4wMlE4Ni4xMi0yMS40MCA4OS4xNi0yMS40MEw4OS4xNi0yMS40MFE5Mi4yMC0yMS40MCA5NC41OC0yMC4wMlE5Ni45Ni0xOC42NCA5OC4zMC0xNi4xNlE5OS42NC0xMy42OCA5OS42NC0xMC40OEw5OS42NC0xMC40OFpNODkuMTYtMTguMTZRODYuNDAtMTguMTYgODQuNTQtMTYuNDhRODIuNjgtMTQuODAgODIuMzYtMTIuMDhMODIuMzYtMTIuMDhMOTUuOTYtMTIuMDhROTUuNjQtMTQuNzYgOTMuNzgtMTYuNDZROTEuOTItMTguMTYgODkuMTYtMTguMTZMODkuMTYtMTguMTZaIE0xMjIuMjgtMjEuNDBRMTI2LjMyLTIxLjQwIDEyOC43MC0xOS4wNlExMzEuMDgtMTYuNzIgMTMxLjA4LTEyLjIwTDEzMS4wOC0xMi4yMEwxMzEuMDggMEwxMjcuMjQgMEwxMjcuMjQtMTEuNzZRMTI3LjI0LTE0Ljg0IDEyNS43Ni0xNi40MFExMjQuMjgtMTcuOTYgMTIxLjUyLTE3Ljk2TDEyMS41Mi0xNy45NlExMTguNDAtMTcuOTYgMTE2LjYwLTE2LjE0UTExNC44MC0xNC4zMiAxMTQuODAtMTAuOTJMMTE0LjgwLTEwLjkyTDExNC44MCAwTDExMC45NiAwTDExMC45Ni0yMS4yMEwxMTQuNjQtMjEuMjBMMTE0LjY0LTE4UTExNS44MC0xOS42NCAxMTcuNzgtMjAuNTJRMTE5Ljc2LTIxLjQwIDEyMi4yOC0yMS40MEwxMjIuMjgtMjEuNDBaIE0xNTMuNTYgMC4yNFExNTAuMzIgMC4yNCAxNDcuNzgtMS4xNlExNDUuMjQtMi41NiAxNDMuODAtNS4wMlExNDIuMzYtNy40OCAxNDIuMzYtMTAuNjBMMTQyLjM2LTEwLjYwUTE0Mi4zNi0xMy43MiAxNDMuODAtMTYuMThRMTQ1LjI0LTE4LjY0IDE0Ny43OC0yMC4wMlExNTAuMzItMjEuNDAgMTUzLjU2LTIxLjQwTDE1My41Ni0yMS40MFExNTYuNDQtMjEuNDAgMTU4LjcwLTIwLjI0UTE2MC45Ni0xOS4wOCAxNjIuMjAtMTYuODhMMTYyLjIwLTE2Ljg4TDE1OS4yOC0xNVExNTguMjgtMTYuNTIgMTU2LjgwLTE3LjI4UTE1NS4zMi0xOC4wNCAxNTMuNTItMTguMDRMMTUzLjUyLTE4LjA0UTE1MS40NC0xOC4wNCAxNDkuNzgtMTcuMTJRMTQ4LjEyLTE2LjIwIDE0Ny4xOC0xNC41MFExNDYuMjQtMTIuODAgMTQ2LjI0LTEwLjYwTDE0Ni4yNC0xMC42MFExNDYuMjQtOC4zNiAxNDcuMTgtNi42NlExNDguMTItNC45NiAxNDkuNzgtNC4wNFExNTEuNDQtMy4xMiAxNTMuNTItMy4xMkwxNTMuNTItMy4xMlExNTUuMzItMy4xMiAxNTYuODAtMy44OFExNTguMjgtNC42NCAxNTkuMjgtNi4xNkwxNTkuMjgtNi4xNkwxNjIuMjAtNC4zMlExNjAuOTYtMi4xMiAxNTguNzAtMC45NFExNTYuNDQgMC4yNCAxNTMuNTYgMC4yNEwxNTMuNTYgMC4yNFogTTE5Mi4wMC0xMC40OFExOTIuMDAtMTAuMDQgMTkxLjkyLTkuMzJMMTkxLjkyLTkuMzJMMTc0LjcyLTkuMzJRMTc1LjA4LTYuNTIgMTc3LjE4LTQuODJRMTc5LjI4LTMuMTIgMTgyLjQwLTMuMTJMMTgyLjQwLTMuMTJRMTg2LjIwLTMuMTIgMTg4LjUyLTUuNjhMMTg4LjUyLTUuNjhMMTkwLjY0LTMuMjBRMTg5LjIwLTEuNTIgMTg3LjA2LTAuNjRRMTg0LjkyIDAuMjQgMTgyLjI4IDAuMjRMMTgyLjI4IDAuMjRRMTc4LjkyIDAuMjQgMTc2LjMyLTEuMTRRMTczLjcyLTIuNTIgMTcyLjMwLTVRMTcwLjg4LTcuNDggMTcwLjg4LTEwLjYwTDE3MC44OC0xMC42MFExNzAuODgtMTMuNjggMTcyLjI2LTE2LjE2UTE3My42NC0xOC42NCAxNzYuMDYtMjAuMDJRMTc4LjQ4LTIxLjQwIDE4MS41Mi0yMS40MEwxODEuNTItMjEuNDBRMTg0LjU2LTIxLjQwIDE4Ni45NC0yMC4wMlExODkuMzItMTguNjQgMTkwLjY2LTE2LjE2UTE5Mi4wMC0xMy42OCAxOTIuMDAtMTAuNDhMMTkyLjAwLTEwLjQ4Wk0xODEuNTItMTguMTZRMTc4Ljc2LTE4LjE2IDE3Ni45MC0xNi40OFExNzUuMDQtMTQuODAgMTc0LjcyLTEyLjA4TDE3NC43Mi0xMi4wOEwxODguMzItMTIuMDhRMTg4LjAwLTE0Ljc2IDE4Ni4xNC0xNi40NlExODQuMjgtMTguMTYgMTgxLjUyLTE4LjE2TDE4MS41Mi0xOC4xNloiLz48L2c+Cjwvc3ZnPgo8L2c+PC9nPjxnIGZpbHRlcj0idXJsKCNrbWtvWDYyLWQpIj48ZyBvcGFjaXR5PSIxIiB0cmFuc2Zvcm09InJvdGF0ZSgwIDU2MS45NjYyIDQwNi4wNzQ5KSI+Cjxzdmcgd2lkdGg9IjY4LjMxNzIiIGhlaWdodD0iMTUuNjMyMyIgeD0iNTYxLjk2NjIiIHk9IjQwNi4wNzQ5IiB2ZXJzaW9uPSIxLjEiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHZpZXdCb3g9IjMuNjQgLTI5LjY4IDEzMC43NjAwMDAwMDAwMDAwMiAyOS45MiI+CiAgPGcgdHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgMSAwIDApIiBjbGFzcz0iYWtDYUFOSmsxY2NvbG9yIj48cGF0aCBkPSJNMzAuMTYtMjEuNDBRMzQuMTYtMjEuNDAgMzYuNTAtMTkuMDhRMzguODQtMTYuNzYgMzguODQtMTIuMjBMMzguODQtMTIuMjBMMzguODQgMEwzNSAwTDM1LTExLjc2UTM1LTE0Ljg0IDMzLjU4LTE2LjQwUTMyLjE2LTE3Ljk2IDI5LjUyLTE3Ljk2TDI5LjUyLTE3Ljk2UTI2LjYwLTE3Ljk2IDI0Ljg4LTE2LjE0UTIzLjE2LTE0LjMyIDIzLjE2LTEwLjkyTDIzLjE2LTEwLjkyTDIzLjE2IDBMMTkuMzIgMEwxOS4zMi0xMS43NlExOS4zMi0xNC44NCAxNy45MC0xNi40MFExNi40OC0xNy45NiAxMy44NC0xNy45NkwxMy44NC0xNy45NlExMC45Mi0xNy45NiA5LjIwLTE2LjE0UTcuNDgtMTQuMzIgNy40OC0xMC45Mkw3LjQ4LTEwLjkyTDcuNDggMEwzLjY0IDBMMy42NC0yMS4yMEw3LjMyLTIxLjIwTDcuMzItMTguMDRROC40OC0xOS42OCAxMC4zNi0yMC41NFExMi4yNC0yMS40MCAxNC42NC0yMS40MEwxNC42NC0yMS40MFExNy4xMi0yMS40MCAxOS4wNC0yMC40MFEyMC45Ni0xOS40MCAyMi0xNy40OEwyMi0xNy40OFEyMy4yMC0xOS4zMiAyNS4zNC0yMC4zNlEyNy40OC0yMS40MCAzMC4xNi0yMS40MEwzMC4xNi0yMS40MFogTTU5LjY0LTIxLjQwUTY0LjA0LTIxLjQwIDY2LjM4LTE5LjI0UTY4LjcyLTE3LjA4IDY4LjcyLTEyLjgwTDY4LjcyLTEyLjgwTDY4LjcyIDBMNjUuMDggMEw2NS4wOC0yLjgwUTY0LjEyLTEuMzIgNjIuMzQtMC41NFE2MC41NiAwLjI0IDU4LjEyIDAuMjRMNTguMTIgMC4yNFE1NC41NiAwLjI0IDUyLjQyLTEuNDhRNTAuMjgtMy4yMCA1MC4yOC02TDUwLjI4LTZRNTAuMjgtOC44MCA1Mi4zMi0xMC41MFE1NC4zNi0xMi4yMCA1OC44MC0xMi4yMEw1OC44MC0xMi4yMEw2NC44OC0xMi4yMEw2NC44OC0xMi45NlE2NC44OC0xNS40NCA2My40NC0xNi43NlE2Mi0xOC4wOCA1OS4yMC0xOC4wOEw1OS4yMC0xOC4wOFE1Ny4zMi0xOC4wOCA1NS41Mi0xNy40NlE1My43Mi0xNi44NCA1Mi40OC0xNS44MEw1Mi40OC0xNS44MEw1MC44OC0xOC42OFE1Mi41Mi0yMCA1NC44MC0yMC43MFE1Ny4wOC0yMS40MCA1OS42NC0yMS40MEw1OS42NC0yMS40MFpNNTguNzYtMi43MlE2MC45Ni0yLjcyIDYyLjU2LTMuNzBRNjQuMTYtNC42OCA2NC44OC02LjQ4TDY0Ljg4LTYuNDhMNjQuODgtOS40NEw1OC45Ni05LjQ0UTU0LjA4LTkuNDQgNTQuMDgtNi4xNkw1NC4wOC02LjE2UTU0LjA4LTQuNTYgNTUuMzItMy42NFE1Ni41Ni0yLjcyIDU4Ljc2LTIuNzJMNTguNzYtMi43MlogTTk4LjEyLTI5LjY4TDEwMS45Ni0yOS42OEwxMDEuOTYgMEw5OC4yOCAwTDk4LjI4LTMuMzZROTctMS42MCA5NS4wNC0wLjY4UTkzLjA4IDAuMjQgOTAuNzIgMC4yNEw5MC43MiAwLjI0UTg3LjY0IDAuMjQgODUuMjAtMS4xMlE4Mi43Ni0yLjQ4IDgxLjM4LTQuOTRRODAuMDAtNy40MCA4MC4wMC0xMC42MEw4MC4wMC0xMC42MFE4MC4wMC0xMy44MCA4MS4zOC0xNi4yNFE4Mi43Ni0xOC42OCA4NS4yMC0yMC4wNFE4Ny42NC0yMS40MCA5MC43Mi0yMS40MEw5MC43Mi0yMS40MFE5My0yMS40MCA5NC45Mi0yMC41NFE5Ni44NC0xOS42OCA5OC4xMi0xOEw5OC4xMi0xOEw5OC4xMi0yOS42OFpNOTEuMDQtMy4xMlE5My4wNC0zLjEyIDk0LjY4LTQuMDZROTYuMzItNSA5Ny4yNC02LjcwUTk4LjE2LTguNDAgOTguMTYtMTAuNjBMOTguMTYtMTAuNjBROTguMTYtMTIuODAgOTcuMjQtMTQuNTBROTYuMzItMTYuMjAgOTQuNjgtMTcuMTJROTMuMDQtMTguMDQgOTEuMDQtMTguMDRMOTEuMDQtMTguMDRRODktMTguMDQgODcuMzgtMTcuMTJRODUuNzYtMTYuMjAgODQuODItMTQuNTBRODMuODgtMTIuODAgODMuODgtMTAuNjBMODMuODgtMTAuNjBRODMuODgtOC40MCA4NC44Mi02LjcwUTg1Ljc2LTUgODcuMzgtNC4wNlE4OS0zLjEyIDkxLjA0LTMuMTJMOTEuMDQtMy4xMlogTTEzNC40MC0xMC40OFExMzQuNDAtMTAuMDQgMTM0LjMyLTkuMzJMMTM0LjMyLTkuMzJMMTE3LjEyLTkuMzJRMTE3LjQ4LTYuNTIgMTE5LjU4LTQuODJRMTIxLjY4LTMuMTIgMTI0LjgwLTMuMTJMMTI0LjgwLTMuMTJRMTI4LjYwLTMuMTIgMTMwLjkyLTUuNjhMMTMwLjkyLTUuNjhMMTMzLjA0LTMuMjBRMTMxLjYwLTEuNTIgMTI5LjQ2LTAuNjRRMTI3LjMyIDAuMjQgMTI0LjY4IDAuMjRMMTI0LjY4IDAuMjRRMTIxLjMyIDAuMjQgMTE4LjcyLTEuMTRRMTE2LjEyLTIuNTIgMTE0LjcwLTVRMTEzLjI4LTcuNDggMTEzLjI4LTEwLjYwTDExMy4yOC0xMC42MFExMTMuMjgtMTMuNjggMTE0LjY2LTE2LjE2UTExNi4wNC0xOC42NCAxMTguNDYtMjAuMDJRMTIwLjg4LTIxLjQwIDEyMy45Mi0yMS40MEwxMjMuOTItMjEuNDBRMTI2Ljk2LTIxLjQwIDEyOS4zNC0yMC4wMlExMzEuNzItMTguNjQgMTMzLjA2LTE2LjE2UTEzNC40MC0xMy42OCAxMzQuNDAtMTAuNDhMMTM0LjQwLTEwLjQ4Wk0xMjMuOTItMTguMTZRMTIxLjE2LTE4LjE2IDExOS4zMC0xNi40OFExMTcuNDQtMTQuODAgMTE3LjEyLTEyLjA4TDExNy4xMi0xMi4wOEwxMzAuNzItMTIuMDhRMTMwLjQwLTE0Ljc2IDEyOC41NC0xNi40NlExMjYuNjgtMTguMTYgMTIzLjkyLTE4LjE2TDEyMy45Mi0xOC4xNloiLz48L2c+Cjwvc3ZnPgo8L2c+PC9nPjxnIG9wYWNpdHk9IjEiIHRyYW5zZm9ybT0icm90YXRlKDAgNjM4LjYyMzIgNDA2LjI1MjYpIj4KPHN2ZyB3aWR0aD0iNjIuMTEwNiIgaGVpZ2h0PSIxNS42MzIyIiB4PSI2MzguNjIzMiIgeT0iNDA2LjI1MjYiIHZlcnNpb249IjEuMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSIgdmlld0JveD0iMS42OCAtMjkuNjggMTE4Ljg4IDI5LjkyIj4KICA8ZyB0cmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAxIDAgMCkiIGNsYXNzPSJheG1nMmhIdlk5Y29sb3IiPjxwYXRoIGQ9Ik0xMi44OCAwLjI0UTkuNjQgMC4yNCA3LjEwLTEuMTZRNC41Ni0yLjU2IDMuMTItNS4wMlExLjY4LTcuNDggMS42OC0xMC42MEwxLjY4LTEwLjYwUTEuNjgtMTMuNzIgMy4xMi0xNi4xOFE0LjU2LTE4LjY0IDcuMTAtMjAuMDJROS42NC0yMS40MCAxMi44OC0yMS40MEwxMi44OC0yMS40MFExNS43Ni0yMS40MCAxOC4wMi0yMC4yNFEyMC4yOC0xOS4wOCAyMS41Mi0xNi44OEwyMS41Mi0xNi44OEwxOC42MC0xNVExNy42MC0xNi41MiAxNi4xMi0xNy4yOFExNC42NC0xOC4wNCAxMi44NC0xOC4wNEwxMi44NC0xOC4wNFExMC43Ni0xOC4wNCA5LjEwLTE3LjEyUTcuNDQtMTYuMjAgNi41MC0xNC41MFE1LjU2LTEyLjgwIDUuNTYtMTAuNjBMNS41Ni0xMC42MFE1LjU2LTguMzYgNi41MC02LjY2UTcuNDQtNC45NiA5LjEwLTQuMDRRMTAuNzYtMy4xMiAxMi44NC0zLjEyTDEyLjg0LTMuMTJRMTQuNjQtMy4xMiAxNi4xMi0zLjg4UTE3LjYwLTQuNjQgMTguNjAtNi4xNkwxOC42MC02LjE2TDIxLjUyLTQuMzJRMjAuMjgtMi4xMiAxOC4wMi0wLjk0UTE1Ljc2IDAuMjQgMTIuODggMC4yNEwxMi44OCAwLjI0WiBNMzIuMjAgMEwzMi4yMC0yOS42OEwzNi4wNC0yOS42OEwzNi4wNCAwTDMyLjIwIDBaIE02OC41Mi0xMC40OFE2OC41Mi0xMC4wNCA2OC40NC05LjMyTDY4LjQ0LTkuMzJMNTEuMjQtOS4zMlE1MS42MC02LjUyIDUzLjcwLTQuODJRNTUuODAtMy4xMiA1OC45Mi0zLjEyTDU4LjkyLTMuMTJRNjIuNzItMy4xMiA2NS4wNC01LjY4TDY1LjA0LTUuNjhMNjcuMTYtMy4yMFE2NS43Mi0xLjUyIDYzLjU4LTAuNjRRNjEuNDQgMC4yNCA1OC44MCAwLjI0TDU4LjgwIDAuMjRRNTUuNDQgMC4yNCA1Mi44NC0xLjE0UTUwLjI0LTIuNTIgNDguODItNVE0Ny40MC03LjQ4IDQ3LjQwLTEwLjYwTDQ3LjQwLTEwLjYwUTQ3LjQwLTEzLjY4IDQ4Ljc4LTE2LjE2UTUwLjE2LTE4LjY0IDUyLjU4LTIwLjAyUTU1LTIxLjQwIDU4LjA0LTIxLjQwTDU4LjA0LTIxLjQwUTYxLjA4LTIxLjQwIDYzLjQ2LTIwLjAyUTY1Ljg0LTE4LjY0IDY3LjE4LTE2LjE2UTY4LjUyLTEzLjY4IDY4LjUyLTEwLjQ4TDY4LjUyLTEwLjQ4Wk01OC4wNC0xOC4xNlE1NS4yOC0xOC4xNiA1My40Mi0xNi40OFE1MS41Ni0xNC44MCA1MS4yNC0xMi4wOEw1MS4yNC0xMi4wOEw2NC44NC0xMi4wOFE2NC41Mi0xNC43NiA2Mi42Ni0xNi40NlE2MC44MC0xOC4xNiA1OC4wNC0xOC4xNkw1OC4wNC0xOC4xNlogTTg2Ljk2LTIxLjQwUTkxLjM2LTIxLjQwIDkzLjcwLTE5LjI0UTk2LjA0LTE3LjA4IDk2LjA0LTEyLjgwTDk2LjA0LTEyLjgwTDk2LjA0IDBMOTIuNDAgMEw5Mi40MC0yLjgwUTkxLjQ0LTEuMzIgODkuNjYtMC41NFE4Ny44OCAwLjI0IDg1LjQ0IDAuMjRMODUuNDQgMC4yNFE4MS44OCAwLjI0IDc5Ljc0LTEuNDhRNzcuNjAtMy4yMCA3Ny42MC02TDc3LjYwLTZRNzcuNjAtOC44MCA3OS42NC0xMC41MFE4MS42OC0xMi4yMCA4Ni4xMi0xMi4yMEw4Ni4xMi0xMi4yMEw5Mi4yMC0xMi4yMEw5Mi4yMC0xMi45NlE5Mi4yMC0xNS40NCA5MC43Ni0xNi43NlE4OS4zMi0xOC4wOCA4Ni41Mi0xOC4wOEw4Ni41Mi0xOC4wOFE4NC42NC0xOC4wOCA4Mi44NC0xNy40NlE4MS4wNC0xNi44NCA3OS44MC0xNS44MEw3OS44MC0xNS44MEw3OC4yMC0xOC42OFE3OS44NC0yMCA4Mi4xMi0yMC43MFE4NC40MC0yMS40MCA4Ni45Ni0yMS40MEw4Ni45Ni0yMS40MFpNODYuMDgtMi43MlE4OC4yOC0yLjcyIDg5Ljg4LTMuNzBROTEuNDgtNC42OCA5Mi4yMC02LjQ4TDkyLjIwLTYuNDhMOTIuMjAtOS40NEw4Ni4yOC05LjQ0UTgxLjQwLTkuNDQgODEuNDAtNi4xNkw4MS40MC02LjE2UTgxLjQwLTQuNTYgODIuNjQtMy42NFE4My44OC0yLjcyIDg2LjA4LTIuNzJMODYuMDgtMi43MlogTTExMi44NC0xNy42NFExMTMuODQtMTkuNDggMTE1LjgwLTIwLjQ0UTExNy43Ni0yMS40MCAxMjAuNTYtMjEuNDBMMTIwLjU2LTIxLjQwTDEyMC41Ni0xNy42OFExMjAuMjQtMTcuNzIgMTE5LjY4LTE3LjcyTDExOS42OC0xNy43MlExMTYuNTYtMTcuNzIgMTE0Ljc4LTE1Ljg2UTExMy4wMC0xNCAxMTMuMDAtMTAuNTZMMTEzLjAwLTEwLjU2TDExMy4wMCAwTDEwOS4xNiAwTDEwOS4xNi0yMS4yMEwxMTIuODQtMjEuMjBMMTEyLjg0LTE3LjY0WiIvPjwvZz4KPC9zdmc+CjwvZz48L3N2Zz4=";
+  // Brand motif "Science made clear": title comes into focus during the clean opening frame
+  let revealStart = performance.now();
+  function reveal(drawFn) {
+    const k = reduce ? 1 : Math.min(1, (performance.now() - revealStart) / 1200);
+    const blur = 14 * (1 - smooth(k));
+    ctx.save();
+    if ('filter' in ctx && blur > 0.3) ctx.filter = `blur(${blur.toFixed(1)}px)`; else if (blur > 0.3) ctx.globalAlpha = 0.3 + 0.7 * k;
+    drawFn(); ctx.restore();
+  }
+
+  // Panel A geometry
+  const heart = { x: 540, y: 690 }, gut = { x: 300, y: 850 }, mus = { x: 780, y: 850 };
+  const bez = (a, b, u) => {
+    const cx = (a.x + b.x) / 2, cy = a.y + 30;
+    return [(1 - u) ** 2 * a.x + 2 * (1 - u) * u * cx + u * u * b.x, (1 - u) ** 2 * a.y + 2 * (1 - u) * u * cy + u * u * b.y];
+  };
+  const parts = Array.from({ length: 80 }, (_, i) => ({ side: i % 2, u: rnd(), on: rnd() }));
+  function vessel(a, b, width, dashed) {
+    ctx.save(); ctx.strokeStyle = C.blood; ctx.lineWidth = width; ctx.lineCap = 'round';
+    if (dashed) ctx.setLineDash([2, width + 10]);
+    ctx.beginPath();
+    for (let u = 0; u <= 1.001; u += 0.02) { const [x, y] = bez(a, b, u); u === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+    ctx.stroke(); ctx.restore();
+  }
+  function organ(p, label, flow) {
+    ctx.save(); ctx.strokeStyle = C.ink; ctx.lineWidth = 3;
+    ctx.fillStyle = C.paper; ctx.beginPath(); ctx.rect(p.x - 130, p.y, 260, 86); ctx.fill(); ctx.stroke();
+    // fill level = relative flow (hatched look)
+    ctx.beginPath(); ctx.rect(p.x - 130, p.y, 260, 86); ctx.clip();
+    ctx.strokeStyle = C.blood; ctx.lineWidth = 2; ctx.globalAlpha = 0.25 + 0.75 * Math.min(1, flow);
+    const top = p.y + 86 - 86 * Math.min(1, flow);
+    for (let x = p.x - 230; x < p.x + 130; x += 14) { ctx.beginPath(); ctx.moveTo(x, p.y + 86); ctx.lineTo(x + 86, top); ctx.stroke(); }
+    ctx.restore();
+    txt(label, p.x, p.y + 124, `500 34px ${SANS}`, C.ink, 'center');
+  }
+
+  function draw(dt) {
+    const g = gutFlow(t), m = muscleFlow(t);
+    ctx.fillStyle = C.paper; ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(grain, 0, 0);
+
+    // Header
+    txt('FIG. 1  ·  GUT', L, 312, `600 24px ${MONO}`, C.ink2);
+    if (logo.complete && logo.naturalWidth) { const lh = 46, lw = lh * 425.4677 / 98.7696; ctx.drawImage(logo, R - lw, 278, lw, lh); }
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(L, 330); ctx.lineTo(R, 330); ctx.stroke();
+    const line2 = 'on a hard effort?';
+    ctx.font = `800 64px ${DISPLAY}`; const w2 = ctx.measureText(line2).width;
+    if (t >= 0.6) marker(L - 8, 446, (w2 + 16) * Math.min(1, (t - 0.6) / 0.25), 64);
+    reveal(() => { txt('Where does your blood go', L, 410, `800 64px ${DISPLAY}`, C.ink);
+    txt(line2, L, 488, `800 64px ${DISPLAY}`, C.ink); });
+
+    // Telemetry strip (Garmin-style data fields)
+    const fy = 528, fh = 92, fw = (R - L) / 2;
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeRect(L, fy, R - L, fh);
+    ctx.beginPath(); ctx.moveTo(L + fw, fy); ctx.lineTo(L + fw, fy + fh); ctx.stroke();
+    txt('EFFORT', L + 18, fy + 30, `600 20px ${MONO}`, C.ink2);
+    txt(phase(t), L + 18, fy + 76, `600 40px ${MONO}`, C.ink);
+    txt('GUT BLOOD FLOW', L + fw + 18, fy + 30, `600 20px ${MONO}`, C.ink2);
+    txt(t >= 0.85 ? '↓ ≥80%' : t >= 0.15 ? '↓' : '—', L + fw + 18, fy + 76, `600 40px ${MONO}`, t >= 0.85 ? C.blood : C.ink);
+
+    // Panel A: schematic
+    txt('A', L, 682, `800 40px ${DISPLAY}`, C.ink);
+    vessel(heart, gut, 6 + 22 * g, false);
+    vessel(heart, mus, 6 + 22 * m, false);
+    if (!reduce) {
+      for (const p of parts) {
+        const flow = p.side ? m : g;
+        p.u += dt * 0.00045 * (0.4 + flow);
+        if (p.u > 1) { p.u = 0; p.on = Math.random(); }
+        if (p.on > flow) continue;
+        const [x, y] = bez(heart, p.side ? mus : gut, p.u);
+        ctx.fillStyle = C.paper; ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.fillStyle = C.paper; ctx.strokeStyle = C.ink; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(heart.x, heart.y, 44, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    txt('Heart', heart.x, heart.y + 11, `600 28px ${SANS}`, C.ink, 'center');
+    organ(gut, 'Gut', g);
+    organ(mus, 'Working muscles', m);
+
+    // Panel B: gut flow vs effort, drawn up to the playhead
+    const bx0 = L + 120, bx1 = R - 10, by0 = 1160, by1 = 1080;
+    txt('B', L, 1062, `800 40px ${DISPLAY}`, C.ink);
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(bx0, by1 - 10); ctx.lineTo(bx0, by0); ctx.lineTo(bx1, by0); ctx.stroke();
+    const yOf = v => by0 - (by0 - by1) * v;
+    txt('100%', bx0 - 12, yOf(1) + 8, `400 20px ${MONO}`, C.ink2, 'right');
+    txt('20%', bx0 - 12, yOf(0.2) + 8, `400 20px ${MONO}`, C.ink2, 'right');
+    ctx.save(); ctx.strokeStyle = C.hair; ctx.setLineDash([4, 6]);
+    [1, 0.2].forEach(v => { ctx.beginPath(); ctx.moveTo(bx0, yOf(v)); ctx.lineTo(bx1, yOf(v)); ctx.stroke(); });
+    ctx.restore();
+    txt('Gut blood flow, % of rest', bx0 + 10, by1 - 16, `500 22px ${SANS}`, C.ink2);
+    txt('rest → longer / harder', bx1, by0 + 28, `400 20px ${MONO}`, C.ink2, 'right');
+    ctx.strokeStyle = C.blood; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
+    const steps = Math.max(1, Math.round(60 * t));
+    for (let i = 0; i <= steps; i++) {
+      const e = (i / 60), x = bx0 + (bx1 - bx0) * e, y = yOf(gutFlow(e));
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    const px = bx0 + (bx1 - bx0) * t;
+    ctx.fillStyle = C.blood; ctx.beginPath(); ctx.arc(px, yOf(g), 9, 0, Math.PI * 2); ctx.fill();
+
+    // Legend (figure caption), inside the safe zone
+    txt('Schematic, not to scale. Gut flow ↓ ≥80%: ter Steege & Kolkman 2012,', L, 1222, `400 21px ${MONO}`, C.ink2);
+    txt('Aliment Pharmacol Ther, PMID 22229513. Muscle flow: direction only.', L, 1246, `400 21px ${MONO}`, C.ink2);
+
+    if (showSafe) {
+      ctx.fillStyle = 'rgba(217,192,207,0.55)';
+      ctx.fillRect(0, 0, W, SAFE.top); ctx.fillRect(0, SAFE.bottom, W, H - SAFE.bottom);
+      ctx.fillRect(0, SAFE.top, SAFE.side, SAFE.bottom - SAFE.top); ctx.fillRect(W - SAFE.side, SAFE.top, SAFE.side, SAFE.bottom - SAFE.top);
+      txt('Reels UI covers this area', W / 2, SAFE.bottom + 80, `600 30px ${SANS}`, C.ink, 'center');
+    }
+  }
+
+  const KEYS = [[0, 0], [1500, 0], [4000, 0.4], [6000, 0.4], [8500, 1], [12500, 1]];
+  function seqValue(ms) {
+    for (let i = 1; i < KEYS.length; i++) {
+      const [t0, v0] = KEYS[i - 1], [t1, v1] = KEYS[i];
+      if (ms <= t1) return v0 + (v1 - v0) * smooth((ms - t0) / (t1 - t0 || 1));
+    }
+    return KEYS[KEYS.length - 1][1];
+  }
+  const startSeq = () => { seq = { start: performance.now(), paused: false, pausedAt: 0 }; revealStart = performance.now(); };
+  function setT(v) { t = v; slider.value = Math.round(v * 100); valOut.textContent = phase(v); }
+
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(50, now - last); last = now;
+    if (seq && !seq.paused) setT(seqValue(now - seq.start));
+    draw(seq && seq.paused ? 0 : dt);
+    requestAnimationFrame(loop);
+  }
+  slider.addEventListener('input', () => { seq = null; setT(slider.value / 100); });
+  document.getElementById('play').addEventListener('click', startSeq);
+  const safeBtn = document.getElementById('safe');
+  const toggleSafe = () => { showSafe = !showSafe; safeBtn.setAttribute('aria-pressed', String(showSafe)); safeBtn.textContent = showSafe ? 'Hide Reels safe zone' : 'Show Reels safe zone'; };
+  safeBtn.addEventListener('click', toggleSafe);
+  function applyMode() {
+    const rec = location.hash === '#record';
+    document.body.classList.toggle('rec', rec);
+    if (rec) { showSafe = false; setT(0); startSeq(); }
+  }
+  addEventListener('hashchange', applyMode);
+  addEventListener('keydown', e => {
+    if (e.target === slider) return;
+    if (e.key === ' ') { e.preventDefault(); if (seq) { if (seq.paused) { seq.start += performance.now() - seq.pausedAt; seq.paused = false; } else { seq.paused = true; seq.pausedAt = performance.now(); } } }
+    else if (e.key === 'r' || e.key === 'R') { setT(0); startSeq(); }
+    else if (e.key === 's' || e.key === 'S') toggleSafe();
+    else if (e.key === 'f' || e.key === 'F') cv.requestFullscreen?.().catch(() => {});
+    else if (e.key === 'Escape' && location.hash === '#record') location.hash = '';
+  });
+
+  const fontsReady = document.fonts
+    ? Promise.all([`800 64px ${DISPLAY}`, `600 40px ${MONO}`, `500 34px ${SANS}`].map(f => document.fonts.load(f))).catch(() => {})
+    : Promise.resolve();
+  fontsReady.then(() => { applyMode(); requestAnimationFrame(loop); });
+})();
+</script>
