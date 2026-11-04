@@ -158,7 +158,13 @@ const C = { paper: '#F2F0F1', ink: '#1B5996', ink2: '#38305F', marker: '#D9C0CF'
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = id => document.getElementById(id);
 const el = (tag, a = {}, parent) => { const n = document.createElementNS(NS, tag); for (const k in a) n.setAttribute(k, a[k]); if (parent) parent.appendChild(n); return n; };
-const tx = (parent, s, x, y, o = {}) => { const t = el('text', { x, y, 'font-family': o.mono ? 'IBM Plex Mono, monospace' : 'IBM Plex Sans, sans-serif', 'font-size': o.size || 14, 'font-weight': o.w || 500, fill: o.fill || C.ink, 'text-anchor': o.anchor || 'start' }, parent); t.textContent = s; return t; };
+// Etykiety: IBM Plex Sans, zdania (bez kapitalików); o.head = nazwa narządu (Montserrat); o.mono zostawione jako „mała etykieta” (+3 px, krój sans)
+const tx = (parent, s, x, y, o = {}) => {
+  const fam = o.head ? 'Montserrat, Helvetica Neue, Arial, sans-serif' : 'IBM Plex Sans, Helvetica Neue, Arial, sans-serif';
+  const size = o.head ? (o.size || 16) : o.mono ? (o.size || 11) + 3 : (o.size || 14);
+  const t = el('text', { x, y, 'font-family': fam, 'font-size': size, 'font-weight': o.head ? 700 : (o.w === 600 ? 600 : 400), 'font-style': o.it ? 'italic' : 'normal', fill: o.fill || C.ink2, 'text-anchor': o.anchor || 'start' }, parent);
+  t.textContent = s; return t;
+};
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
 
@@ -250,7 +256,7 @@ const TOPICS = [
     b: ['BCAA (leucine, isoleucine, valine) are taken up and oxidised mainly in muscle (BCAT → BCKDH).',
         'Their oxidation rises with intensity and when glycogen is low, but stays a small share of energy.',
         'The nitrogen leaves muscle as alanine and glutamine; alanine goes to the liver for gluconeogenesis (glucose–alanine cycle).'] },
-  { id: 'mito', name: 'Mitochondrion', organ: 'mito', flows: ['glcMus', 'ffa', 'bcaa', 'lacOut'],
+  { id: 'mito', name: 'Mitochondrion', organ: 'mito', flows: ['glcMus', 'ffa', 'bcaa', 'lacOut', 'rbcMus'],
     b: ['All roads lead to acetyl-CoA: pyruvate via PDH, fatty acids via CPT1 and β-oxidation, BCAA via BCKDH.',
         'TCA cycle → NADH/FADH₂ → electron transport chain → ATP; O₂ is used, CO₂ is made.',
         'When glycolysis outruns PDH and mitochondrial capacity, pyruvate is reduced to lactate (LDH).',
@@ -320,8 +326,8 @@ el('rect', { x: 470, y: 130, width: 60, height: 460, rx: 30, fill: C.paper, stro
 el('rect', { x: 480, y: 140, width: 40, height: 440, rx: 20, fill: C.blood, opacity: 0.08 }, blood);
 const heart = el('g', { class: 'organ', 'data-organ': 'blood' }, gOrg);
 const heartPath = el('path', { d: 'M500,118 C470,98 462,66 482,56 C494,50 500,60 500,66 C500,60 506,50 518,56 C538,66 530,98 500,118 Z', fill: C.blood, stroke: C.blood, 'stroke-width': 1 }, heart);
-tx(gLab, 'Heart', 545, 80, { mono: true, size: 12, w: 600, fill: C.ink2 });
-tx(gLab, 'BLOOD', 500, 610, { mono: true, size: 12, w: 600, fill: C.blood, anchor: 'middle' });
+tx(gLab, 'Heart', 540, 92, { it: true });
+tx(gLab, 'Blood', 500, 612, { head: true, fill: C.blood, anchor: 'middle' });
 
 // Wątroba: płaty, pęcherzyk, glikogen (wypełnienie od dołu)
 const liver = el('g', { class: 'organ', 'data-organ': 'liver', tabindex: 0, role: 'button', 'aria-label': 'Liver' }, gOrg);
@@ -332,12 +338,12 @@ const livGly = el('rect', { x: 90, y: 110, width: 260, height: 160, fill: 'url(#
 el('path', { d: LIVER_D, fill: 'none', stroke: C.ink, 'stroke-width': 3, class: 'hl' }, liver);
 el('path', { d: 'M205,122 C215,160 210,200 192,250', fill: 'none', stroke: C.ink, 'stroke-width': 1.5, opacity: 0.6 }, liver);
 el('ellipse', { cx: 238, cy: 250, rx: 13, ry: 8, fill: C.paper, stroke: C.ink2, 'stroke-width': 1.5 }, liver);
-tx(gLab, 'LIVER', 130, 108, { mono: true, size: 13, w: 600 });
-tx(gLab, 'glycogen', 100, 285, { mono: true, size: 11, fill: C.ink2 });
+tx(gLab, 'Liver', 100, 106, { head: true, fill: C.ink });
+tx(gLab, 'glycogen', 96, 282, { it: true, size: 13 });
 
 // GI: żołądek + jelito cienkie (rura = dwa obrysy) + okrężnica + naczynia krezkowe
 const gut = el('g', { class: 'organ', 'data-organ': 'gut', tabindex: 0, role: 'button', 'aria-label': 'Gut' }, gOrg);
-el('rect', { x: 70, y: 300, width: 280, height: 280, rx: 18, fill: 'transparent', stroke: 'transparent', 'stroke-width': 3, class: 'hl' }, gut);
+el('rect', { x: 66, y: 306, width: 280, height: 276, rx: 10, fill: 'transparent', stroke: 'transparent', 'stroke-width': 1.5, class: 'box' }, gut);
 const tube = (d, w) => { el('path', { d, fill: 'none', stroke: C.ink, 'stroke-width': w + 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, gut); el('path', { d, fill: 'none', stroke: C.paper, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, gut); };
 // okrężnica (rama)
 tube('M105,560 L105,410 Q105,392 123,392 L300,392 Q322,392 322,412 L322,560', 15);
@@ -355,17 +361,17 @@ const mesEls = MES.map(d => el('path', { d, fill: 'none', stroke: C.blood, 'stro
 const gutResidue = el('g', {}, gut);
 for (let i = 0; i < 10; i++) { const p = el('polygon', { points: '0,-4 3.5,-2 3.5,2 0,4 -3.5,2 -3.5,-2', fill: C.ink, opacity: 0 }, gutResidue); p._u = (i + 0.5) / 10; }
 const siPath = el('path', { d: SI, fill: 'none', stroke: 'none' }, gut);
-tx(gLab, 'GUT', 80, 305, { mono: true, size: 13, w: 600 });
-tx(gLab, 'portal vein', 158, 290, { mono: true, size: 10, fill: C.ink2 });
+tx(gLab, 'Gut', 76, 330, { head: true, fill: C.ink });
+tx(gLab, 'portal vein', 210, 288, { it: true, size: 13 });
 
 // Tkanka tłuszczowa
 const adip = el('g', { class: 'organ', 'data-organ': 'adipose', tabindex: 0, role: 'button', 'aria-label': 'Adipose tissue' }, gOrg);
-el('rect', { x: 690, y: 95, width: 200, height: 92, rx: 14, fill: 'transparent', stroke: 'transparent', class: 'hl' }, adip);
+el('rect', { x: 690, y: 92, width: 200, height: 98, rx: 10, fill: 'transparent', stroke: 'transparent', 'stroke-width': 1.5, class: 'box' }, adip);
 [[720, 120, 20], [760, 115, 22], [800, 122, 20], [840, 116, 21], [870, 135, 15], [735, 160, 19], [775, 158, 21], [815, 160, 20], [852, 165, 16]].forEach(([x, y, r]) => {
   el('circle', { cx: x, cy: y, r, fill: C.marker, stroke: C.ink, 'stroke-width': 1.6 }, adip);
   el('circle', { cx: x + r * 0.45, cy: y + r * 0.45, r: 2.2, fill: C.ink }, adip);
 });
-tx(gLab, 'ADIPOSE', 790, 90, { mono: true, size: 12, w: 600, anchor: 'middle' });
+tx(gLab, 'Adipose tissue', 790, 84, { head: true, fill: C.ink, anchor: 'middle' });
 
 // Mięsień: brzusiec wrzecionowaty, ścięgna, pęczki, glikogen, naczynia włosowate, mitochondria
 const mus = el('g', { class: 'organ', 'data-organ': 'muscle', tabindex: 0, role: 'button', 'aria-label': 'Working muscle' }, gOrg);
@@ -381,24 +387,24 @@ const capEls = [[-3, 0.2], [-1, 0.5], [2, 0.35], [3, 0.7]].map(([k, o]) => el('p
 const mitoG = el('g', { 'clip-path': 'url(#clipMus)' }, mus);
 [[740, 395], [800, 455], [860, 400], [905, 450], [770, 480], [830, 370]].forEach(([x, y]) => el('ellipse', { cx: x, cy: y, rx: 9, ry: 5, fill: C.paper, stroke: C.ink2, 'stroke-width': 1.5 }, mitoG));
 el('path', { d: MUS_D, fill: 'none', stroke: C.ink, 'stroke-width': 3, class: 'hl' }, mus);
-tx(gLab, 'WORKING MUSCLE', 816, 316, { mono: true, size: 13, w: 600, anchor: 'middle' });
-tx(gLab, 'glycogen', 950, 520, { mono: true, size: 11, fill: C.ink2, anchor: 'end' });
+tx(gLab, 'Working muscle', 816, 312, { head: true, fill: C.ink, anchor: 'middle' });
+tx(gLab, 'glycogen', 690, 528, { it: true, size: 13, anchor: 'end' });
 // lupa → mitochondrium
 const lens = el('g', { class: 'organ', 'data-organ': 'mito', tabindex: 0, role: 'button', 'aria-label': 'Zoom into the mitochondrion' }, gOrg);
 el('line', { x1: 912, y1: 556, x2: 890, y2: 520, stroke: C.ink, 'stroke-width': 4, 'stroke-linecap': 'round' }, lens);
 el('circle', { cx: 928, cy: 580, r: 26, fill: C.paper, stroke: C.ink, 'stroke-width': 2.5, class: 'hl' }, lens);
 el('ellipse', { cx: 928, cy: 580, rx: 16, ry: 9, fill: C.marker, stroke: C.ink2, 'stroke-width': 1.5 }, lens);
 el('path', { d: 'M916,580 q3,-6 6,0 t6,0 t6,0', fill: 'none', stroke: C.ink2, 'stroke-width': 1.2 }, lens);
-tx(gLab, 'mitochondrion ›', 896, 614, { mono: true, size: 10, fill: C.ink2, anchor: 'end' });
+tx(gLab, 'mitochondrion', 896, 600, { it: true, size: 13, anchor: 'end' });
 
 // Etykiety przepływów (skrót)
 const flowLab = {
   glcMus: ['glucose', 590, 394], ffa: ['fatty acids', 585, 240], lacOut: ['lactate', 590, 464], bcaa: ['BCAA', 600, 411],
-  ala: ['alanine · glutamine', 400, 594], glcHep: ['glucose', 380, 208], glcPortal: ['absorbed CHO', 206, 330], lacLiv: ['lactate (Cori)', 425, 300],
-  lacHeart: ['lactate → heart', 520, 300], rbcGut: ['gut flow', 360, 424], rbcMus: ['muscle flow', 560, 374], rbcLiv: ['hepatic artery', 360, 164], gly: ['glycerol', 410, 64]
+  ala: ['alanine, glutamine', 400, 596], glcHep: ['glucose', 380, 208], glcPortal: ['absorbed carbohydrate', 210, 312], lacLiv: ['lactate (Cori)', 425, 300],
+  lacHeart: ['lactate to heart', 520, 300], rbcGut: ['gut flow', 360, 424], rbcMus: ['muscle flow', 540, 368], rbcLiv: ['hepatic artery', 360, 164], gly: ['glycerol', 410, 64]
 };
 const flowLabEls = {};
-for (const k in flowLab) { const [s, x, y] = flowLab[k]; flowLabEls[k] = tx(gLab, s, x, y, { mono: true, size: 10, fill: C.ink2 }); }
+for (const k in flowLab) { const [s, x, y] = flowLab[k]; flowLabEls[k] = tx(gLab, s, x, y, { it: true, size: 13 }); }
 
 /* ───────────── PANEL SZCZEGÓŁÓW (rysunki narządów) ───────────── */
 const det = $('detail');
@@ -418,7 +424,6 @@ const DETAIL = {
   gut() {
     // Kosmki jelitowe: światło (góra) → enterocyty (SGLT1, GLUT5 szczytowo; GLUT2 podstawnie) → kapilara w kosmku
     const p = det, gf = gutFlow(S.e), cap = absCap(S.e);
-    tx(p, 'LUMEN', 12, 20, { mono: true, size: 10, fill: C.ink2 });
     for (let v = 0; v < 3; v++) {
       const x = 80 + v * 130;
       el('path', { d: `M${x - 48},230 L${x - 48},90 Q${x - 48},44 ${x},44 Q${x + 48},44 ${x + 48},90 L${x + 48},230`, fill: C.marker, stroke: C.ink, 'stroke-width': 2 }, p);
@@ -433,12 +438,16 @@ const DETAIL = {
       const nA = Math.round(6 * Math.min(S.intake, cap));
       for (let i = 0; i < nA; i++) hexAt(p, x - 3 + JIT[v * 10 + i] * 6, 110 + i * 18, C.ink);
     }
-    if (true) { tx(p, 'SGLT1', 22, 112, { mono: true, size: 9 }); tx(p, 'GLUT5', 132, 108, { mono: true, size: 9 }); tx(p, 'GLUT2', 20, 186, { mono: true, size: 9 }); }
+    // legenda transporterów pod kosmkami (zamiast etykiet na rysunku)
+    el('circle', { cx: 16, cy: 262, r: 5, fill: C.paper, stroke: C.ink, 'stroke-width': 2 }, p); tx(p, 'SGLT1, glucose', 26, 266, { size: 12 });
+    el('rect', { x: 137, y: 256, width: 11, height: 11, fill: C.paper, stroke: C.ink, 'stroke-width': 2 }, p); tx(p, 'GLUT5, fructose', 154, 266, { size: 12 });
+    el('circle', { cx: 278, cy: 262, r: 4.5, fill: C.ink }, p); tx(p, 'GLUT2, to blood', 288, 266, { size: 12 });
     // CHO w świetle: podaż i niewchłonięta reszta
     const nIn = Math.round(16 * S.intake), nUn = Math.round(16 * Math.max(0, S.intake - cap));
-    for (let i = 0; i < nIn; i++) { const x = 20 + JIT[40 + i] * 380, y = 26 + JIT[60 + i] * 14; hexAt(p, x, y, i < nUn ? C.blood : C.ink, i < nUn ? 1 : 0.45); }
-    tx(p, 'capillary: blood flow ' + (gf > 0.75 ? 'high' : gf > 0.45 ? 'reduced' : 'low'), 410, 250, { mono: true, size: 10, fill: C.blood, anchor: 'end' });
-    if (nUn) tx(p, 'unabsorbed CHO', 410, 20, { mono: true, size: 10, fill: C.blood, anchor: 'end', w: 600 });
+    for (let i = 0; i < nIn; i++) { const x = 70 + JIT[40 + i] * 270, y = 16 + JIT[60 + i] * 16; hexAt(p, x, y, i < nUn ? C.blood : C.ink, i < nUn ? 1 : 0.45); }
+    tx(p, 'lumen', 6, 22, { it: true, size: 12 });
+    tx(p, 'flow in villus ' + (gf > 0.75 ? 'high' : gf > 0.45 ? 'reduced' : 'low'), 414, 244, { it: true, size: 12, fill: C.blood, anchor: 'end' });
+    if (nUn) tx(p, 'not absorbed', 414, 22, { it: true, size: 12, fill: C.blood, anchor: 'end', w: 600 });
   },
   liver() {
     const p = det, gl = cur.glyL;
@@ -478,55 +487,60 @@ const DETAIL = {
     tx(p, 'fatty-acid delivery and uptake may limit fat use.', 10, 254, { mono: true, size: 10, fill: C.ink2 });
   },
   muscle() {
+    // włókno (góra), kapilara (dół), transport między nimi; podpisy pod kapilarą, legenda w jednym wierszu
     const p = det, gm = cur.glyM, F = cur.flows;
-    el('rect', { x: 80, y: 40, width: 260, height: 170, rx: 30, fill: C.paper, stroke: C.ink, 'stroke-width': 2.5 }, p);
-    tx(p, 'muscle fibre', 210, 32, { mono: true, size: 10, fill: C.ink2, anchor: 'middle' });
-    for (let k = 0; k < 7; k++) el('line', { x1: 100 + k * 36, y1: 46, x2: 100 + k * 36, y2: 204, stroke: C.ink, 'stroke-width': 0.8, opacity: 0.35 }, p);
-    const n = Math.round(46 * gm);
-    for (let i = 0; i < n; i++) el('circle', { cx: 100 + JIT[i] * 220, cy: 60 + JIT[i + 60] * 130, r: 3.5, fill: 'url(#hatchG)', stroke: C.ink, 'stroke-width': 0.7 }, p);
-    [[130, 90], [210, 160], [290, 95], [250, 120]].forEach(([x, y]) => { el('rect', { x: x - 6, y: y - 4, width: 12, height: 8, rx: 4, fill: C.marker, stroke: C.ink, 'stroke-width': 1 }, p); });
-    [[160, 150], [250, 75], [300, 170], [120, 180]].forEach(([x, y]) => { el('ellipse', { cx: x, cy: y, rx: 16, ry: 8, fill: C.paper, stroke: C.ink2, 'stroke-width': 1.8 }, p); el('path', { d: `M${x - 10},${y} q3,-6 6,0 t6,0 t6,0`, fill: 'none', stroke: C.ink2 }, p); });
-    // kapilara
-    el('line', { x1: 10, y1: 228, x2: 410, y2: 228, stroke: C.blood, 'stroke-width': 3 + 10 * musFlow(S.e), 'stroke-linecap': 'round', opacity: 0.8 }, p);
-    tx(p, 'capillary', 14, 252, { mono: true, size: 10, fill: C.blood });
-    arrow(p, 30, 214, 90, 160, 1 + 25 * F.glcMus / 5, C.ink, ['GLUT4: glucose', 6, 110]);
-    arrow(p, 50, 214, 100, 196, 1 + 4 * F.ffa, C.ink, ['CD36: fatty acids', 6, 150]);
-    arrow(p, 340, 150, 400, 214, 1 + 4 * F.lacOut, C.ink2, ['MCT: lactate', 412, 140, 'end']);
-    arrow(p, 380, 214, 340, 190, 1 + 0.5 * F.bcaa, C.ink, ['BCAA', 412, 196, 'end']);
-    tx(p, 'glycogen granules · lipid droplets · mitochondria', 210, 226 - 8, { mono: true, size: 9, fill: C.ink2, anchor: 'middle' });
+    el('rect', { x: 20, y: 22, width: 380, height: 136, rx: 40, fill: C.paper, stroke: C.ink, 'stroke-width': 2.5 }, p);
+    for (let k = 0; k < 10; k++) el('line', { x1: 58 + k * 34, y1: 26, x2: 58 + k * 34, y2: 154, stroke: C.ink, 'stroke-width': 0.8, opacity: 0.25 }, p);
+    const n = Math.round(60 * gm);
+    for (let i = 0; i < n; i++) el('circle', { cx: 50 + JIT[i] * 320, cy: 40 + JIT[i + 60] * 100, r: 3.5, fill: 'url(#hatchG)', stroke: C.ink, 'stroke-width': 0.7 }, p);
+    [[110, 60], [215, 128], [300, 66], [345, 120], [70, 120]].forEach(([x, y]) => el('rect', { x: x - 7, y: y - 4, width: 14, height: 8, rx: 4, fill: C.marker, stroke: C.ink, 'stroke-width': 1 }, p));
+    [[150, 120], [250, 58], [330, 98], [95, 92], [190, 76]].forEach(([x, y]) => { el('ellipse', { cx: x, cy: y, rx: 17, ry: 8, fill: C.paper, stroke: C.ink2, 'stroke-width': 1.8 }, p); el('path', { d: `M${x - 10},${y} q3,-6 6,0 t6,0 t6,0`, fill: 'none', stroke: C.ink2 }, p); });
+    el('line', { x1: 10, y1: 206, x2: 410, y2: 206, stroke: C.blood, 'stroke-width': 3 + 10 * musFlow(S.e), 'stroke-linecap': 'round', opacity: 0.8 }, p);
+    arrow(p, 70, 198, 80, 162, 1 + 5 * F.glcMus, C.ink);
+    arrow(p, 165, 198, 170, 162, 1 + 4 * F.ffa, C.ink);
+    arrow(p, 255, 198, 258, 162, 1 + 0.5 * F.bcaa, C.ink);
+    arrow(p, 345, 162, 350, 198, 1 + 4 * F.lacOut, C.ink2);
+    [['glucose', 'GLUT4', 74], ['fatty acids', 'CD36', 167], ['BCAA', '', 256], ['lactate out', 'MCT', 348]].forEach(([a, b, x]) => { tx(p, a, x, 236, { size: 12, anchor: 'middle' }); if (b) tx(p, b, x, 250, { it: true, size: 11, anchor: 'middle' }); });
+    tx(p, 'capillary', 412, 194, { it: true, size: 12, fill: C.blood, anchor: 'end' });
+    tx(p, 'muscle fibre', 30, 16, { it: true, size: 12 });
+    el('circle', { cx: 22, cy: 270, r: 3.5, fill: 'url(#hatchG)', stroke: C.ink, 'stroke-width': .7 }, p); tx(p, 'glycogen', 30, 274, { size: 12 });
+    el('rect', { x: 100, y: 266, width: 14, height: 8, rx: 4, fill: C.marker, stroke: C.ink }, p); tx(p, 'lipid droplet', 120, 274, { size: 12 });
+    el('ellipse', { cx: 218, cy: 270, rx: 11, ry: 5.5, fill: C.paper, stroke: C.ink2, 'stroke-width': 1.5 }, p); tx(p, 'mitochondrion', 234, 274, { size: 12 });
   },
   mito() {
     const p = det, m = cur.m, E = cur.E;
-    el('ellipse', { cx: 230, cy: 140, rx: 180, ry: 105, fill: C.marker, stroke: C.ink, 'stroke-width': 2.5 }, p);
-    el('path', { d: 'M70,140 q20,-55 40,0 t40,0 t40,0 t40,0 t40,0 t40,0 t40,0', fill: 'none', stroke: C.ink2, 'stroke-width': 2, opacity: 0.6 }, p);
-    // TCA i ETC
-    el('circle', { cx: 230, cy: 145, r: 34, fill: C.paper, stroke: C.ink, 'stroke-width': 2 + 6 * (m.cox + m.f + m.b) * E }, p);
-    tx(p, 'TCA', 230, 150, { mono: true, size: 12, w: 600, anchor: 'middle' });
-    el('rect', { x: 330, y: 105, width: 50, height: 80, rx: 6, fill: C.paper, stroke: C.ink, 'stroke-width': 2 }, p);
-    tx(p, 'ETC', 355, 142, { mono: true, size: 11, w: 600, anchor: 'middle' }); tx(p, 'ATP', 355, 160, { mono: true, size: 11, w: 600, anchor: 'middle', fill: C.blood });
-    arrow(p, 266, 145, 328, 145, 2 + 6 * E, C.ink, ['NADH', 296, 136, 'middle']);
-    tx(p, 'acetyl-CoA', 175, 108, { mono: true, size: 10, anchor: 'middle', w: 600 });
-    arrow(p, 175, 112, 205, 122, 2, C.ink);
+    // mitochondrium po prawej; wejścia z cytoplazmy po lewej; pirogronian rozgałęzia się: PDH (do środka) albo LDH (mleczan, w górę)
+    el('ellipse', { cx: 270, cy: 140, rx: 145, ry: 98, fill: C.marker, stroke: C.ink, 'stroke-width': 2.5 }, p);
+    el('path', { d: 'M150,150 q16,-48 32,0 t32,0 t32,0 t32,0 t32,0 t32,0 t32,0', fill: 'none', stroke: C.ink2, 'stroke-width': 1.6, opacity: 0.45 }, p);
+    el('circle', { cx: 262, cy: 140, r: 32, fill: C.paper, stroke: C.ink, 'stroke-width': 2 + 6 * (m.cox + m.f + m.b) * E }, p);
+    tx(p, 'TCA', 262, 145, { head: true, size: 14, fill: C.ink, anchor: 'middle' });
+    el('rect', { x: 340, y: 108, width: 50, height: 66, rx: 6, fill: C.paper, stroke: C.ink, 'stroke-width': 2 }, p);
+    tx(p, 'ETC', 365, 136, { head: true, size: 13, fill: C.ink, anchor: 'middle' }); tx(p, 'ATP', 365, 158, { head: true, size: 13, fill: C.blood, anchor: 'middle' });
+    arrow(p, 296, 140, 338, 140, 2 + 5 * E, C.ink);
+    tx(p, 'acetyl-CoA', 196, 92, { size: 12, w: 600, anchor: 'middle' });
+    arrow(p, 200, 98, 238, 118, 2, C.ink);
     // wejścia
-    arrow(p, 10, 70, 160, 98, 1 + 10 * m.cox * E, C.ink, ['pyruvate · PDH', 10, 62]);
-    arrow(p, 10, 210, 160, 115, 1 + 10 * m.f * E, C.ink, ['fatty acyl · CPT1 · β-ox', 10, 228]);
-    arrow(p, 230, 252, 230, 182, 1 + 60 * m.b * E, C.ink, ['BCAA · BCKDH', 238, 250]);
-    // mleczan
-    arrow(p, 30, 120, 30, 40, 1 + 10 * m.clac * E, C.ink2, ['LDH → lactate', 40, 36]);
-    tx(p, 'O₂ → H₂O · CO₂ out', 410, 230, { mono: true, size: 10, fill: C.ink2, anchor: 'end' });
+    tx(p, 'pyruvate', 8, 82, { size: 13, w: 600 });
+    arrow(p, 66, 92, 182, 100, 1 + 10 * m.cox * E, C.ink); tx(p, 'PDH', 120, 112, { it: true, size: 12 });
+    arrow(p, 30, 72, 30, 22, 1 + 10 * m.clac * E, C.ink2); tx(p, 'lactate (LDH)', 40, 26, { size: 12, fill: C.ink2 });
+    tx(p, 'fatty acids', 8, 200, { size: 13, w: 600 });
+    arrow(p, 70, 190, 186, 106, 1 + 10 * m.f * E, C.ink); tx(p, 'CPT1, β-oxidation', 100, 172, { it: true, size: 12 });
+    tx(p, 'BCAA', 228, 268, { size: 13, w: 600, anchor: 'end' });
+    arrow(p, 236, 262, 252, 176, 1 + 60 * m.b * E, C.ink); tx(p, 'BCKDH', 252, 214, { it: true, size: 12 });
+    tx(p, 'O₂ in, CO₂ out', 412, 268, { it: true, size: 12, anchor: 'end' });
   }
 };
 
 /* ───────────── RENDER ───────────── */
-const intLabel = e => e < 0.1 ? 'REST' : e < 0.35 ? 'EASY' : e < 0.55 ? 'MODERATE' : e < 0.75 ? 'THRESHOLD' : e < 0.9 ? 'HARD' : 'SEVERE';
+const intLabel = e => e < 0.1 ? 'rest' : e < 0.35 ? 'easy' : e < 0.55 ? 'moderate' : e < 0.75 ? 'threshold' : e < 0.9 ? 'hard' : 'severe';
 const fmtT = t => `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, '0')} h`;
 
 function renderMap() {
   const F = cur.flows, topic = TOPICS.find(x => x.id === S.topic);
   for (const id in flowEls) {
     const fe = flowEls[id], d = FLOWDEF[id], on = topic.flows.includes(id) || (d.kind === 'rbc' && S.topic === 'flow');
-    fe.g.style.opacity = on ? 1 : 0.18;
-    flowLabEls[id].style.opacity = on ? 1 : 0.25;
+    fe.g.style.opacity = on ? 1 : 0.14;
+    flowLabEls[id].style.opacity = on ? 1 : 0;
     if (d.w) fe.path.setAttribute('stroke-width', d.w(F[id]));
     fe.rate = F[id]; fe.on = on;
   }
@@ -543,7 +557,7 @@ function gauge(label, v, cls = '') { return `<div class="g ${cls}"><span>${label
 
 function renderPanel() {
   const o = ORGANS[S.organ], topic = TOPICS.find(x => x.id === S.topic), m = cur.m;
-  $('crumb').textContent = `${topic.name} · ${o.name}`;
+  $('crumb').textContent = S.organ === 'mito' ? 'Zoom into a working muscle fibre' : `${topic.name}, seen in the ${o.name.toLowerCase()}`;
   $('title').textContent = o.name;
   $('lead').textContent = o.lead;
   clear(det); DETAIL[S.organ]();
@@ -560,9 +574,9 @@ function renderPanel() {
   if (cur.bg < 0.95) al.push('Liver glycogen low: blood glucose is falling.');
   if (S.intake - absCap(S.e) > 0.05) al.push('Intake exceeds what the gut can absorb at this intensity: GI symptoms more likely.');
   $('alert').innerHTML = al.join('<br>'); $('alert').classList.toggle('on', al.length > 0);
-  $('topicH').textContent = 'Topic: ' + topic.name;
+  $('topicH').textContent = 'What happens';
   $('bullets').innerHTML = topic.b.map(s => `<li>${s}</li>`).join('');
-  $('organs').innerHTML = Object.keys(ORGANS).map(k => `<button type="button" data-organ="${k}" aria-pressed="${k === S.organ}">${ORGANS[k].name}</button>`).join('');
+  $('organs').innerHTML = 'Go to: ' + Object.keys(ORGANS).map(k => `<button type="button" data-organ="${k}" aria-pressed="${k === S.organ}">${ORGANS[k].name.toLowerCase()}</button>`).join('<span class="sep">/</span>');
 }
 
 /* Wykresy */
@@ -576,7 +590,7 @@ function axes(svg, xl, yl, xt) {
   (xt || []).forEach(([u, s]) => tx(svg, s, X0 + u * (X1 - X0), 184, { mono: true, size: 9, fill: C.ink2, anchor: 'middle' }));
   return { X: u => X0 + u * (X1 - X0), Y: v => Y0 - v * (Y0 - Y1), X0, X1, Y0, Y1 };
 }
-const marker = (svg, a, u, label) => { const x = a.X(u); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2, 'stroke-dasharray': '4 3' }, svg); if (label) tx(svg, label, Math.min(x + 4, 360), a.Y1 + 10, { mono: true, size: 9, fill: C.blood }); };
+const marker = (svg, a, u, label) => { const x = a.X(u); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2, 'stroke-dasharray': '4 3' }, svg); if (label) tx(svg, label, x > 330 ? x - 5 : x + 5, a.Y0 - 8, { it: true, size: 12, fill: C.blood, anchor: x > 330 ? 'end' : 'start' }); };
 function poly(svg, pts, a) { return pts.map(([u, v], i) => `${i ? 'L' : 'M'}${a.X(u).toFixed(1)},${a.Y(v).toFixed(1)}`).join(''); }
 
 function renderCharts() {
@@ -586,27 +600,26 @@ function renderCharts() {
   const N = 60, F = [], CO = [], LA = [];
   for (let i = 0; i <= N; i++) { const e = i / N, m = mixAt(e, cur.glyM), tot = m.f + m.cox + m.clac; F.push([e, m.f / tot]); CO.push([e, (m.f + m.cox) / tot]); LA.push([e, 1]); }
   const band = (top, bot, fill, stroke) => el('path', { d: poly(s, top, a) + poly(s, [...bot].reverse(), a).replace('M', 'L') + 'Z', fill, stroke: stroke || 'none', 'stroke-width': 1 }, s);
-  band(F, F.map(([u]) => [u, 0]), C.marker, C.ink);
+  band(F, F.map(([u]) => [u, 0]), C.marker);
   band(CO, F, C.ink);
-  band(LA, CO, 'url(#hatchL)', C.ink2);
-  marker(s, a, S.e, intLabel(S.e).toLowerCase());
-  tx(s, 'Shapes illustrative', 404, 30, { mono: true, size: 9, fill: C.paper, anchor: 'end' });
+  band(LA, CO, 'url(#hatchL)');
+  marker(s, a, S.e, intLabel(S.e));
   // B: przepływy vs intensywność
   s = $('chFlow'); a = axes(s, 'intensity →', 'blood flow (relative)', words);
   const mP = [], gP = [], cP = [];
   for (let i = 0; i <= N; i++) { const e = i / N; mP.push([e, musFlow(e) * 0.95]); gP.push([e, gutFlow(e) * 0.95]); cP.push([e, absCap(e) * 0.9]); }
   el('path', { d: poly(s, mP, a), fill: 'none', stroke: C.blood, 'stroke-width': 4 }, s);
   el('path', { d: poly(s, gP, a), fill: 'none', stroke: C.blood, 'stroke-width': 4, 'stroke-dasharray': '8 5' }, s);
-  el('path', { d: poly(s, cP, a), fill: 'none', stroke: C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '1 4', 'stroke-linecap': 'round' }, s);
+  el('path', { d: poly(s, cP, a), fill: 'none', stroke: C.ink, 'stroke-width': 2 }, s);
   el('line', { x1: a.X(0), y1: a.Y(S.intake * 0.9), x2: a.X(1), y2: a.Y(S.intake * 0.9), stroke: C.marker, 'stroke-width': 3 }, s);
-  if (S.intake > 0) tx(s, 'intake', a.X(0) + 4, a.Y(S.intake * 0.9) - 4, { mono: true, size: 9, fill: C.ink2 });
-  tx(s, 'gut flow ↓ ≥80%', a.X(1), a.Y(0.19 * 0.95) - 8, { mono: true, size: 10, fill: C.blood, anchor: 'end', w: 600 });
+  if (S.intake > 0) tx(s, 'intake', a.X(0) + 4, a.Y(S.intake * 0.9) - 5, { it: true, size: 12 });
+  tx(s, 'gut flow ↓ ≥80%', a.X(1) - 4, a.Y(0.19 * 0.95) - 10, { size: 12, fill: C.blood, anchor: 'end', w: 600 });
   marker(s, a, S.e);
   // C: glikogen w czasie
   s = $('chGly'); a = axes(s, 'time →', 'store (relative)', [[0, '0 h'], [0.25, '1 h'], [0.5, '2 h'], [0.75, '3 h'], [1, '4 h']]);
-  el('path', { d: poly(s, trace.map(r => [r.t / 240, r.glyM * 0.95]), a), fill: 'none', stroke: C.ink, 'stroke-width': 4 }, s);
-  el('path', { d: poly(s, trace.map(r => [r.t / 240, r.glyL * 0.95]), a), fill: 'none', stroke: C.ink2, 'stroke-width': 4, 'stroke-dasharray': '10 5' }, s);
-  el('path', { d: poly(s, trace.map(r => [r.t / 240, r.bg * 0.95]), a), fill: 'none', stroke: C.blood, 'stroke-width': 2.5, 'stroke-dasharray': '1 4', 'stroke-linecap': 'round' }, s);
+  el('path', { d: poly(s, trace.map(r => [r.t / 240, r.glyM * 0.95]), a), fill: 'none', stroke: C.ink, 'stroke-width': 3 }, s);
+  el('path', { d: poly(s, trace.map(r => [r.t / 240, r.glyL * 0.95]), a), fill: 'none', stroke: C.ink2, 'stroke-width': 3, 'stroke-dasharray': '7 3' }, s);
+  el('path', { d: poly(s, trace.map(r => [r.t / 240, r.bg * 0.95]), a), fill: 'none', stroke: C.blood, 'stroke-width': 2 }, s);
   marker(s, a, S.t / 240, fmtT(S.t));
 }
 
@@ -621,7 +634,7 @@ function render() { recompute(); renderControls(); renderMap(); renderPanel(); r
 
 /* ───────────── INTERAKCJA ───────────── */
 const tb = $('topics');
-tb.innerHTML = `<button class="btn nav" data-step="-1" type="button" aria-label="Previous topic">‹</button>` + TOPICS.map(t => `<button class="chip" type="button" data-topic="${t.id}">${t.name}</button>`).join('') + `<button class="btn nav" data-step="1" type="button" aria-label="Next topic">›</button>`;
+tb.innerHTML = `<button class="btn nav" data-step="-1" type="button" aria-label="Previous topic">‹</button>` + TOPICS.map((t, i) => `<button class="chip" type="button" data-topic="${t.id}"><b>${i + 1}</b>${t.name}</button>`).join('') + `<button class="btn nav" data-step="1" type="button" aria-label="Next topic">›</button>`;
 function setTopic(id) { const t = TOPICS.find(x => x.id === id); S.topic = id; S.organ = t.organ; render(); }
 function stepTopic(d) { const i = TOPICS.findIndex(x => x.id === S.topic); setTopic(TOPICS[(i + d + TOPICS.length) % TOPICS.length].id); }
 tb.addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; if (b.dataset.topic) setTopic(b.dataset.topic); else stepTopic(+b.dataset.step); });
@@ -634,8 +647,8 @@ map.addEventListener('keydown', ev => { if ((ev.key === 'Enter' || ev.key === ' 
 $('organs').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) pickOrgan(b.dataset.organ); });
 document.addEventListener('keydown', ev => { if (ev.target.tagName === 'INPUT') return; if (ev.key === 'ArrowRight' || ev.key === 'PageDown') stepTopic(1); if (ev.key === 'ArrowLeft' || ev.key === 'PageUp') stepTopic(-1); });
 let playT = null;
-function stopPlay() { S.playing = false; $('play').textContent = '▶ Play'; }
-$('play').addEventListener('click', () => { if (S.playing) return stopPlay(); if (S.t >= 240) S.t = 0; S.playing = true; $('play').textContent = '❚❚ Pause'; playT = performance.now(); });
+function stopPlay() { S.playing = false; $('play').textContent = 'Play'; }
+$('play').addEventListener('click', () => { if (S.playing) return stopPlay(); if (S.t >= 240) S.t = 0; S.playing = true; $('play').textContent = 'Pause'; playT = performance.now(); });
 
 /* Animacja cząstek + odtwarzanie czasu */
 let last = performance.now();
@@ -651,7 +664,7 @@ function frame(now) {
       if (!REDUCE) p.ph = (p.ph + dt * (0.08 + 0.35 * rate)) % 1;
       const q = fe.path.getPointAtLength(p.ph * fe.len);
       p.s.setAttribute('transform', `translate(${q.x.toFixed(1)},${q.y.toFixed(1)})`);
-      p.s.style.opacity = i < show ? (fe.on ? 1 : 0.12) : 0;
+      p.s.style.opacity = i < show && fe.on ? 1 : 0;
     });
   }
   requestAnimationFrame(frame);

@@ -81,7 +81,8 @@
   function panelC(ctx, b, d, col) {
     panelLabel(ctx, 'C', b);
     const T2 = tall(b), fs = T2 ? 24 : 22, fsm = T2 ? 22 : 20;
-    const cx0 = b.x + (T2 ? 20 : 110), cx1 = b.x + b.w - 10, yB = b.y + b.h - (T2 ? 70 : 46);
+    const narrow = b.w < 800;   // wąski prostokąt (telefon): opis „(multiple transportable)” w dwóch wierszach
+    const cx0 = b.x + (T2 ? 20 : 110), cx1 = b.x + b.w - 10, yB = b.y + b.h - (T2 || narrow ? 70 : 46);
     const hMax = T2 ? Math.min(200, yB - b.y - 200) : 44, cw = (cx1 - cx0) / 3 - (T2 ? 24 : 40), xOf = u => cx0 + (cx1 - cx0) * u;
     txt(ctx, T2 ? 'Carbohydrate during exercise' : 'Carbohydrate during exercise, by duration', T2 ? b.x + 50 : cx0 + 10, b.y + (T2 ? 36 : 32), { font: font('sans', 500, T2 ? 24 : 23), color: T.c.ink2 });
     // Próg Costa 2017 na osi czasu: ≥2 h (granica przedziałów ~1 h | 2–3 h)
@@ -107,7 +108,7 @@
       }
       txt(ctx, c.tick, x, yB + 28, { font: font('mono', 600, fs), color: T.c.ink2, align: 'center', claim: i === 0 ? 'cho-1h' : i === 1 ? 'cho-60' : null });
       if (c.note) {
-        if (T2) { txt(ctx, '(multiple', x, yB + 52, { font: font('mono', 400, 18), color: T.c.ink2, align: 'center' }); txt(ctx, 'transportable)', x, yB + 72, { font: font('mono', 400, 18), color: T.c.ink2, align: 'center' }); }
+        if (T2 || narrow) { txt(ctx, '(multiple', x, yB + 52, { font: font('mono', 400, 18), color: T.c.ink2, align: 'center' }); txt(ctx, 'transportable)', x, yB + 72, { font: font('mono', 400, 18), color: T.c.ink2, align: 'center' }); }
         else txt(ctx, c.note, x, yB + 51, { font: font('mono', 400, 19), color: T.c.ink2, align: 'center' });
       }
     });

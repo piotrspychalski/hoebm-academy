@@ -28,16 +28,30 @@ function frameHeader(ctx, { label, title, highlight = -1, revealK = 1, markerK =
 }
 
 // Legenda: linie od dołu strefy bezpiecznej w górę (ostatnia linia kończy się nad SAFE.y1 łącznie z wydłużeniami liter)
-// Legenda: od dołu w górę (ostatnia linia nad LY.legendBottom). W układzie poziomym w dwóch kolumnach.
-function frameLegend(ctx, lines, px = LY.legendPx) {
-  const f = font('mono', 400, px), lh = Math.round(px * 1.25), cols = LY.legendCols;
-  const per = Math.ceil(lines.length / cols), colW = (LY.R - LY.L) / cols;
-  lines.forEach((ln, i) => {
-    const c = Math.floor(i / per), k = i % per, nIn = Math.min(per, lines.length - c * per);
-    const y = LY.legendBottom - (nIn - 1 - k) * lh;
+// Legenda: od dołu w górę (ostatnia linia nad LY.legendBottom). Linie dłuższe niż szerokość układu zawijają się
+// między słowami; każde słowo zachowuje rolę i claim swojej części (cytowania, liczby).
+function legendRows(ctx, lines, px = LY.legendPx) {
+  ctx.font = font('mono', 400, px);
+  const maxW = LY.R - LY.L, rows = [];
+  for (const ln of lines) {
     const parts = Array.isArray(ln) ? ln : [{ s: ln }];
-    let x = LY.L + c * colW;
-    for (const p of parts) x += txt(ctx, p.s, x, y, { font: f, color: T.c.ink2, role: p.role || 'content', claim: p.claim });
+    const toks = parts.flatMap(p => p.s.split(/(?<= )/).filter(Boolean).map(s => ({ ...p, s })));
+    let row = [], w = 0;
+    for (let t of toks) {
+      const tw = ctx.measureText(t.s.trimEnd()).width;
+      if (row.length && w + tw > maxW) { rows.push(row); row = []; w = 0; }
+      row.push(t); w += ctx.measureText(t.s).width;
+    }
+    if (row.length) rows.push(row);
+  }
+  return rows;
+}
+function frameLegend(ctx, lines, px = LY.legendPx) {
+  const f = font('mono', 400, px), lh = Math.round(px * 1.25), rows = legendRows(ctx, lines, px);
+  rows.forEach((row, i) => {
+    const y = LY.legendBottom - (rows.length - 1 - i) * lh;
+    let x = LY.L;
+    row.forEach((p, k) => { const s = k === row.length - 1 ? p.s.trimEnd() : p.s; x += txt(ctx, s, x, y, { font: f, color: T.c.ink2, role: p.role || 'content', claim: p.claim }); });
   });
 }
 

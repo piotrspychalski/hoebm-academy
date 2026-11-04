@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0] — 2026-11-05 (czytelność na telefonie)
+
+### Dodane
+- Układ `phone` (720 × 1100) dla telefonu trzymanego pionowo: węższe płótno, więc te same czcionki są na ekranie ok. 1,5 raza większe (390 px: skala 0,35 → 0,53; legenda ok. 7 → 11 px). Studio / rolka bez zmian (1080 × 1920).
+- Legenda zawija się między słowami, gdy linia nie mieści się w szerokości układu (słowa zachowują rolę i claim — test liczb działa dalej).
+- Test liczb i strefy obejmuje trzy układy (432 klatki dla FIG. 1).
+
 ## [0.4.2] — 2026-11-05 (kontrola wszystkich widoków)
 
 ### Zmienione

@@ -9,8 +9,8 @@ const landMQ = matchMedia('(orientation: landscape)');
 function setView() {
   // telefon trzymany poziomo dostaje układ poziomy (jak komputer) — w pionowym kadrze rycina byłaby za mała
   const wide = !STUDIO && (!MOBILE || landMQ.matches);
-  LY = wide ? LAYOUTS.landscape : LAYOUTS.portrait;
-  VIEW = STUDIO ? { y0: 0, w: W, h: H } : !wide ? { y0: SAFE.y0 - 24, w: W, h: SAFE.y1 - SAFE.y0 + 51 } : { y0: 0, w: LY.W, h: LY.H };
+  LY = STUDIO ? LAYOUTS.portrait : wide ? LAYOUTS.landscape : LAYOUTS.phone;   // telefon pionowo: osobny, węższy układ
+  VIEW = STUDIO ? { y0: 0, w: W, h: H } : { y0: 0, w: LY.W, h: LY.H };
   const c = cv(); if (c.width !== VIEW.w) c.width = VIEW.w; if (c.height !== VIEW.h) c.height = VIEW.h;
   document.documentElement.classList.toggle('wide', LY.id === 'landscape');
 }

@@ -41,4 +41,16 @@ const LAYOUTS = {
     };
   })(),
 };
+// phone — 720 × 1100: telefon trzymany pionowo (strona publiczna). Węższe płótno niż rolka, więc te same rozmiary
+// czcionek są na ekranie telefonu ok. 1,5 raza większe (legenda ok. 11 px zamiast 7 px przy szerokości 390 px).
+LAYOUTS.phone = (() => {
+  const L3 = 24, R3 = 696, w = R3 - L3;
+  return {
+    id: 'phone', W: 720, H: 1100, L: L3, R: R3,
+    labelY: 44, logoY: 18, logoH: 34, ruleY: 60, titleY: 120, titleLh: 54, titlePx: 46, inline: false,
+    readY: 200, readH: 76, legendBottom: 1080, legendPx: 20, legendCols: 1,
+    boxes: { A: { x: L3, y: 300, w, h: 200 }, B: { x: L3, y: 516, w, h: 150 }, C: { x: L3, y: 682, w, h: 230 } },
+    bounds: { x0: 12, x1: 708, y0: 8, y1: 1094 },
+  };
+})();
 let LY = LAYOUTS.portrait;   // bieżący układ (ustawia scena)
