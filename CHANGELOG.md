@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1] — 2026-11-04 (czytelność)
+
+### Zmienione
+- Widoki publiczne pokazują tylko obszar treści ryciny (1080 × 1030 zamiast pełnego 9:16 z pasami pod interfejs Reels); na komputerze scena do 880 px szerokości (wcześniej ok. 360 px). Pełne 9:16 tylko w studiu.
+- FIG. 1: najmniejsze napisy powiększone (osie, podpisy, legenda 20 px, opisy panelu C); bez nakładania się tekstu i bez wyjścia poza strefę bezpieczną (sprawdzone na logu tekstu).
+- Telefon: zamknięty arkusz opisu ukryty niezależnie od animacji (wcześniej mógł zostać widoczny).
+
 ## [0.3.0] — 2026-11-04 (FIG. 1 opublikowana)
 
 ### Zmienione

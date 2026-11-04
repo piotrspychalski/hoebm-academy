@@ -74,13 +74,13 @@
       panelLabel(ctx, 'B', 866);
       ctx.strokeStyle = T.c.ink; ctx.lineWidth = T.line;
       ctx.beginPath(); ctx.moveTo(bx0, by1 - 8); ctx.lineTo(bx0, by0); ctx.lineTo(bx1, by0); ctx.stroke();
-      txt(ctx, '100%', bx0 - 12, yOf(1) + 7, { font: font('mono', 400, 19), color: T.c.ink2, align: 'right', role: 'axis' });
-      txt(ctx, '20%', bx0 - 12, yOf(0.2) + 7, { font: font('mono', 400, 19), color: T.c.ink2, align: 'right', claim: 'sbf-80' });
+      txt(ctx, '100%', bx0 - 12, yOf(1) + 7, { font: font('mono', 400, 22), color: T.c.ink2, align: 'right', role: 'axis' });
+      txt(ctx, '20%', bx0 - 12, yOf(0.2) + 7, { font: font('mono', 400, 22), color: T.c.ink2, align: 'right', claim: 'sbf-80' });
       ctx.save(); ctx.strokeStyle = T.c.hair; ctx.setLineDash([4, 6]);
       [1, 0.2].forEach(v => { ctx.beginPath(); ctx.moveTo(bx0, yOf(v)); ctx.lineTo(bx1, yOf(v)); ctx.stroke(); });
       ctx.restore();
-      txt(ctx, 'Gut blood flow, % of rest', bx0 + 10, by1 - 12, { font: font('sans', 500, 20), color: T.c.ink2 });
-      txt(ctx, 'rest → longer / harder', bx1, by0 + 24, { font: font('mono', 400, 18), color: T.c.ink2, align: 'right' });
+      txt(ctx, 'Gut blood flow, % of rest', bx0 + 10, by1 - 12, { font: font('sans', 500, 23), color: T.c.ink2 });
+      txt(ctx, 'rest → longer / harder', bx1, by0 + 26, { font: font('mono', 400, 21), color: T.c.ink2, align: 'right' });
       ctx.strokeStyle = T.c.blood; ctx.lineWidth = T.lineBold; ctx.lineCap = 'round'; ctx.beginPath();
       const n = Math.max(1, Math.round(60 * e));
       for (let i = 0; i <= n; i++) { const ee = i / 60, x = bx0 + (bx1 - bx0) * ee, y = yOf(gutFlow(ee)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
@@ -90,22 +90,22 @@
       // C: węglowodany w trakcie wysiłku wg czasu trwania (słupki w granacie — to nie dane o krwi)
       const cx0 = L + 110, cx1 = R - 10, yB = 1085, hMax = 44, cw = (cx1 - cx0) / 3 - 40, xOf = u => cx0 + (cx1 - cx0) * u;
       panelLabel(ctx, 'C', 990);
-      txt(ctx, 'Carbohydrate during exercise, by duration', cx0 + 10, 986, { font: font('sans', 500, 20), color: T.c.ink2 });
+      txt(ctx, 'Carbohydrate during exercise, by duration', cx0 + 10, 986, { font: font('sans', 500, 23), color: T.c.ink2 });
       // Próg Costa 2017 na osi czasu: ≥2 h (granica przedziałów 1 h | 2–3 h)
       const xT = xOf(1 / 3);
       ctx.save(); ctx.strokeStyle = T.c.ink2; ctx.lineWidth = 2; ctx.setLineDash([6, 6]);
       ctx.beginPath(); ctx.moveTo(xT, 998); ctx.lineTo(xT, yB); ctx.stroke(); ctx.restore();
       // opis progu po lewej stronie linii (nad słupkiem ~1 h), w dwóch wierszach
-      txt(ctx, 'GI threshold:', xT - 8, 1014, { font: font('mono', 600, 17), color: T.c.ink2, align: 'right' });
-      const w60 = txt(ctx, '60% VO2max', xT - 8, 1035, { font: font('mono', 400, 17), color: T.c.ink2, align: 'right', claim: 'gi-threshold' });
-      txt(ctx, '≥2 h at ', xT - 8 - w60, 1035, { font: font('mono', 400, 17), color: T.c.ink2, align: 'right', claim: 'gi-threshold' });
+      txt(ctx, 'GI threshold:', xT - 8, 1016, { font: font('mono', 600, 20), color: T.c.ink2, align: 'right' });
+      const w60 = txt(ctx, '60% VO2max', xT - 8, 1040, { font: font('mono', 400, 20), color: T.c.ink2, align: 'right', claim: 'gi-threshold' });
+      txt(ctx, '≥2 h at ', xT - 8 - w60, 1040, { font: font('mono', 400, 20), color: T.c.ink2, align: 'right', claim: 'gi-threshold' });
       COLS.forEach((c, i) => {
         const x = xOf(c.x), h = Math.max(6, hMax * c.bar), on = i === col, seen = col >= i;
         ctx.save(); ctx.lineWidth = 2; ctx.strokeStyle = seen ? T.c.ink : T.c.hair; ctx.fillStyle = on ? T.c.ink : T.c.paper;
         ctx.beginPath(); ctx.rect(x - cw / 2, yB - h, cw, h); ctx.fill(); ctx.stroke(); ctx.restore();
-        if (seen) txt(ctx, c.top, x, yB - h - 8, { font: font('mono', 600, 19), color: T.c.ink, align: 'center', claim: c.claim });
-        txt(ctx, c.tick, x, yB + 24, { font: font('mono', 600, 19), color: T.c.ink2, align: 'center', claim: i === 0 ? 'cho-1h' : i === 1 ? 'cho-60' : null });
-        if (c.note) txt(ctx, c.note, x, yB + 46, { font: font('mono', 400, 16), color: T.c.ink2, align: 'center' });
+        if (seen) txt(ctx, c.top, x, yB - h - 8, { font: font('mono', 600, 22), color: T.c.ink, align: 'center', claim: c.claim });
+        txt(ctx, c.tick, x, yB + 27, { font: font('mono', 600, 22), color: T.c.ink2, align: 'center', claim: i === 0 ? 'cho-1h' : i === 1 ? 'cho-60' : null });
+        if (c.note) txt(ctx, c.note, x, yB + 51, { font: font('mono', 400, 19), color: T.c.ink2, align: 'center' });
       });
       ctx.strokeStyle = T.c.ink; ctx.lineWidth = T.line; ctx.beginPath(); ctx.moveTo(cx0, yB); ctx.lineTo(cx1, yB); ctx.stroke();
       if (col >= 0) { const px = xOf(Math.min(1, d)); ctx.fillStyle = T.c.blood; ctx.beginPath(); ctx.moveTo(px, yB - 2); ctx.lineTo(px - 8, yB - 15); ctx.lineTo(px + 8, yB - 15); ctx.fill(); }   // wskaźnik czasu nad osią, nad podpisami
@@ -116,7 +116,7 @@
         [{ s: 'C: Jeukendrup ' }, { s: '2014', role: 'citation' }, { s: ' (GSSI), PMID ' }, { s: '24791914', role: 'citation' }, { s: '; Costa ' }, { s: '2017', role: 'citation' }, { s: ', PMID ' }, { s: '28589631', role: 'citation' }],
         'No data link g/h to heart-rate zones or gut blood flow.',
         'Education, not medical advice.',
-      ], 18);
+      ], 20);
     },
   };
 })();

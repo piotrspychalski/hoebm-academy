@@ -2,6 +2,8 @@
 // Tryb sekwencji: stan = keyAt(klatki, czas). Tryb ręczny (ruszony suwak): stan = wartości suwaków.
 const cv = () => $('stage');
 let ctx = null, lastNow = performance.now();
+// Kadr widoku: studio — pełne 9:16 (1080 × 1920, ze strefą Reels); widoki publiczne — sam obszar treści (y 245–1275)
+const VIEW = STUDIO ? { y0: 0, h: H } : { y0: SAFE.y0 - 24, h: SAFE.y1 - SAFE.y0 + 51 };
 const CLOCK = {
   start: performance.now(), paused: false, pausedAt: 0, hold: 0, stopAt: null,
   now() { return (this.paused ? this.pausedAt : performance.now()) - this.start - this.hold; },   // ms sekwencji (< 0 = czysta klatka)
@@ -105,6 +107,7 @@ let lastFrameIdx = -1;
 function loop(now) {
   const dt = Math.min(50, now - lastNow); lastNow = now;
   beginFrame();
+  ctx.setTransform(1, 0, 0, 1, 0, -VIEW.y0);   // współrzędne rycin zawsze w układzie 1080 × 1920
   let ms = CLOCK.now();
   if (CLOCK.stopAt != null && ms >= CLOCK.stopAt) { CLOCK.pause(CLOCK.stopAt); ms = CLOCK.stopAt; CLOCK.stopAt = null; }
   if (SCN.mod && !SCN.manual && ms > frameEnd() && !CLOCK.paused) { CLOCK.pause(frameEnd()); ms = frameEnd(); }
@@ -120,6 +123,7 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 function initStage() {
+  cv().height = VIEW.h;
   ctx = cv().getContext('2d');
   mountFigure();
   if (!STUDIO) addEventListener('keydown', e => {
