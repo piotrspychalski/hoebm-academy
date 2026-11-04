@@ -16,7 +16,8 @@ if (html.includes('noindex')) errors.push('dist: noindex w wersji publicznej');
 if (!studio_noindex()) errors.push('studio: brak noindex');
 
 if (!studio.includes('const STUDIO = true') || !studio.includes('function initStudio')) errors.push('studio: brak trybu studio');
-if (!fs.readFileSync(path.join(R, '.gitignore'), 'utf8').split('\n').includes('studio/')) errors.push('.gitignore: brak studio/');
+if (!fs.readFileSync(path.join(R, '.gitignore'), 'utf8').split('\n').includes('/studio/')) errors.push('.gitignore: brak /studio/ (tylko katalog główny, nie src/studio)');
+if (!require('child_process').execFileSync('git', ['ls-files', 'src/studio'], { cwd: R, encoding: 'utf8' }).trim()) errors.push('src/studio nie jest w repozytorium');
 for (const id of ['mDock', 'mMenu', 'mMenuBtn', 'mPrev', 'mNext', 'mInfo']) if (!html.includes(`id="${id}"`)) errors.push(`brak #${id} (widok telefonu)`);
 try { new Function(studio.match(/<script>([\s\S]*)<\/script>/)[1]); } catch (e) { errors.push('studio: błąd składni: ' + e.message); }
 try { new Function(html.match(/<script>([\s\S]*)<\/script>/)[1]); } catch (e) { errors.push('błąd składni skryptu: ' + e.message); }

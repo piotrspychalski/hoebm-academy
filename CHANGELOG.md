@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0] — 2026-11-04 (FIG. 1 opublikowana)
+
+### Zmienione
+- Costa 2017 (`gi-threshold`): cytat sprawdzony w pełnym tekście (PDF, abstrakt, s. 246) — brzmienie identyczne, zapis VO2max z indeksem dolnym. Claim `verified`, FIG. 1 · GUT `published`.
+- Sprawdzenie ręczne przed publikacją (log tekstu, cała sekwencja): każda liczba ma claim albo rolę strukturalną (FIG, oś, cytowanie); żaden tekst poza strefą bezpieczną. Automatyczny test tego samego — do zrobienia.
+
 ## [0.2.0] — 2026-11-04 (trzy widoki, FIG. 1 jako szkic)
 
 ### Dodane
