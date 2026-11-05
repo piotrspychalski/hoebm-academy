@@ -113,9 +113,16 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 #srcDlg .close { display: inline-block; border: 0; background: none; font: 400 24px var(--sans); color: var(--ink); cursor: pointer; line-height: 1; }
 #srcDlg li { margin: 4px 0; }
 #detail { display: block; width: 100%; height: auto; margin: 6px 0 8px; }
-.readouts { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; font-size: 13px; margin-bottom: 8px; }
-.readouts b { font: 400 12.5px var(--mono); color: var(--ink); text-align: right; }
+.figwrap { cursor: zoom-in; }
+.figwrap .zhint { display: none; }
+.figwrap.zoom { position: fixed; inset: 0; z-index: 60; background: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; cursor: zoom-out; }
+.figwrap.zoom #detail { width: min(94vw, calc(86vh * 1.3)); max-height: 86vh; margin: 0; }
+.figwrap.zoom .zhint { display: block; margin-top: 8px; font-size: 12px; color: var(--ink-2); font-style: italic; }
+.readouts { display: grid; grid-template-columns: minmax(0,1fr) 15ch; gap: 1px 10px; font-size: 13px; margin-bottom: 8px; }
+.readouts b { font: 400 12.5px var(--mono); color: var(--ink); text-align: right; white-space: nowrap; }
+.readouts span i { color: var(--ink-2); }
 .gauges { display: grid; gap: 6px; }
+.gh { margin: 10px 0 2px; font: 600 12px var(--sans, inherit); color: var(--ink-2); }
 .g { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; font-size: 13px; }
 .g .bar { height: 2px; background: var(--hair); position: relative; }
 .g .bar i { position: absolute; left: 0; top: -2px; height: 6px; background: var(--ink); transition: width .2s; }
@@ -207,7 +214,7 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
     <div class="crumb" id="oCrumb"></div>
     <h2 id="oTitle"></h2>
     <p id="oLead"></p>
-    <svg id="detail" viewBox="0 0 420 280"></svg>
+    <div class="figwrap" id="detWrap" title="Click to enlarge"><svg id="detail" viewBox="0 0 420 280"></svg><span class="zhint">click or Esc to close</span></div>
     <div class="readouts" id="readouts"></div>
     <div class="gauges" id="gauges"></div>
     <div class="alert" id="alert"></div>
@@ -274,6 +281,8 @@ const SRC = {
   vanwijck2011: 'van Wijck et al. 2011, PLoS One (PMID 21811592): 60 min at 70% Wmax; I-FABP 309 → 615 pg/mL; permeability up',
   costa2017gt: 'Costa et al. 2017, Appl Physiol Nutr Metab (PMID 28177715): 2-week gut training; symptoms −60%; distance +5.2%',
   miall2018: 'Miall et al. 2018, Scand J Med Sci Sports (PMID 28508559): 2-week gut training at 90 g/h; fewer symptoms, less malabsorption',
+  gollnick1974: 'Gollnick, Piehl & Saltin 1974, J Physiol (PMID 4278539): glycogen depletes first in the fibres recruited at a given intensity',
+  barclay2017: 'Barclay 2017, J Muscle Res Cell Motil (PMID 28286928): ATP use up to ≈400 mM/min in intense dynamic exercise; max oxidative supply ≈50 mM/min (untrained)',
   tersteege2012: 'ter Steege & Kolkman 2012, Aliment Pharmacol Ther (PMID 22229513): splanchnic blood flow may fall ≥80%',
   costa2017: 'Costa 2017, Aliment Pharmacol Ther (PMID 28589631): ≥2 h at 60% VO₂max: threshold for GI perturbations',
   gonzalez2015: 'Gonzalez 2015, Am J Physiol (PMID 26487008): ingested glucose/sucrose prevents liver, not muscle, glycogen depletion',
@@ -382,18 +391,18 @@ const T_LT1 = () => 94 + (240 - 94) * clamp((S.vo2max - 40) / 25);
 // Glikogen startowy i jedzenie skalują też krzywę: ×59/126 / ×189/126 [bergstrom1967], ×1,33 przy ≥60 g/h wchłoniętych [coyle1986];
 // wpływ wygasa między OBLA a CP (wyżej decyduje zmęczenie); niedobór glikogenu skraca TTE w całym zakresie (krzywa nie rośnie z intensywnością).
 const KGLY = { low: 59 / 126, normal: 1, loaded: 189 / 126 };
-const tteCP = p => {
+const tteCP = (p, feed = true) => {
   const lt = LT(), ob = OBLA(), cp = CPp();
-  const k = KGLY[S.status] * (1 + 0.33 * clamp((SIM ? SIM.tr[0].A.absorbed : 0) / 60));
+  const k = KGLY[S.status] * (feed ? 1 + 0.33 * clamp((SIM ? SIM.tr[0].A.absorbed : 0) / 60) : 1);
   const fade = p <= ob ? 1 : clamp((cp - p) / (cp - ob));
   const kk = k < 1 ? k : 1 + (k - 1) * fade;
   if (p > cp) return Math.min(T_CP * Math.min(1, k), TLIM100 * (100 - cp) / (p - cp));
   const base = p > ob ? lerpLog(p, ob, T_MLSS, cp, T_CP) : p <= lt - 15 ? Infinity : p <= lt ? lerpLog(p, lt - 15, T_LT1() * 4, lt, T_LT1()) : lerpLog(p, lt, T_LT1(), ob, T_MLSS);
   return base * kk;
 };
-const TTE = () => Math.min(tteCP(S.p), SIM.wall === null ? Infinity : SIM.wall);
+const TTE = () => S.p <= OBLA() ? (SIM.wall === null ? Math.max(TMAX + 1, Math.min(tteCP(S.p), TMAX + 1)) : SIM.wall) : Math.min(tteCP(S.p), SIM.wall === null ? Infinity : SIM.wall);   // do OBLA TTE = ściana glikogenowa (pula skalibrowana do krzywej)
 const fmtDur = m => m > TMAX ? '> 5 h' : m >= 60 ? '≈ ' + fmtT(m) : m >= 2 ? `≈ ${Math.round(m)} min` : `≈ ${Math.round(m * 60)} s`;
-const tteWhy = () => TTE() > TMAX ? '' : SIM.wall !== null && SIM.wall <= tteCP(S.p) ? 'carbohydrate runs out' : S.p > CPp() ? 'above critical power' : S.p > OBLA() ? 'above MLSS' : 'fatigue';
+const tteWhy = () => TTE() > TMAX ? '' : SIM.wall !== null && (S.p <= OBLA() || SIM.wall <= tteCP(S.p)) ? 'carbohydrate runs out' : S.p > CPp() ? 'above critical power' : S.p > OBLA() ? 'above MLSS' : 'fatigue';
 const tteText = () => fmtDur(TTE()) + (tteWhy() ? ` (${tteWhy()})` : '');                         // gdzie mleczan = 4 mmol/L [sjodin1981]
 const gutFlow = p => 1 - 0.8 * smooth((p - 10) / 90);               // −80% przy maks. [tersteege2012]
 const musFlow = p => 0.15 + 0.85 * smooth((p - 5) / 95);
@@ -427,11 +436,12 @@ function energy(p, dep) {
 }
 const HGO_MAX = 1.0;   // g/min: maks. oddawanie glukozy przez wątrobę w wysiłku (ilustracyjnie)
 const EXO_EFF = 0.75;   // część wchłoniętego CHO krążąca i utleniana (ilustracyjnie)
-function simulate(statusKey) {
+function simulate(statusKey, scale = 1, tmax = TMAX) {
   const st = STATUS[statusKey], A = absorb(S.p, S.gph, S.comp), e = (S.p - 5) / 95;
-  const w0 = st.m * WORK;
+  const w0 = st.m * WORK * scale;
   let gm = w0, gl = st.l, wall = null; const tr = [];
-  for (let t = 0; t <= TMAX; t++) {
+  for (let t = 0; t <= tmax; t++) {
+    if (wall !== null && t > TMAX) break;
     const dep = 1 - gm / w0;
     const E = energy(S.p, clamp(dep));
     const avail = Math.min(1, gm / (0.12 * w0));
@@ -457,13 +467,27 @@ let SIM, GHOST, cur, BR;
 function recompute() {
   S.p = Math.min(PMAX, Math.round(S.pace / VF(S.alt)));
   BR = breath(S.p);
-  SIM = simulate(S.status);
+  // Do OBLA wysiłek kończy się, gdy pracujące włókna wyczerpią glikogen [coyle1986, gollnick1974]: dobieramy pulę glikogenu
+  // w rekrutowanych włóknach tak, by ściana (bez jedzenia) wypadła w czasie krzywej TTE; powyżej OBLA pula jak przy OBLA.
+  const poolFor = st => {
+    const p0 = S.p, g0 = S.gph, s0 = S.status; S.status = st;
+    const pr = Math.min(S.p, OBLA()), target = tteCP(pr, false); S.status = s0;
+    if (!isFinite(target)) return 1;
+    S.p = pr; S.gph = 0;
+    const wallAt = sc => { const w = simulate(st, sc, 2000).wall; return w === null ? Infinity : w; };
+    let lo = 0.1, hi = 1;
+    if (wallAt(hi) <= target) lo = hi;
+    else for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (wallAt(m) < target) lo = m; else hi = m; }
+    S.p = p0; S.gph = g0; return lo;
+  };
+  const pool = poolFor(S.status);
+  SIM = simulate(S.status, pool);
   { // ściana: z symulacji bez węglowodanów (zgodna z proporcjami Bergström 1967), karmienie wydłuża ją ×(1 + 0,33·wchłonięte/60) [coyle1986: ≈3 → 4 h]
-    const g = S.gph; S.gph = 0; const w0 = simulate(S.status).wall; S.gph = g;
+    const g = S.gph; S.gph = 0; const w0 = simulate(S.status, pool).wall; S.gph = g;
     const f = 1 + 0.33 * clamp(SIM.tr[0].A.absorbed / 60);
     SIM.wall = w0 === null ? SIM.wall : (w0 * f <= TMAX ? Math.round(w0 * f) : null);
   }
-  GHOST = S.status !== 'normal' ? simulate('normal') : null;
+  GHOST = S.status !== 'normal' ? simulate('normal', poolFor('normal')) : null;
   cur = SIM.tr[Math.round(S.t)];
   const sh = cur.E.sh, k = cur.E.kcal;
   cur.flows = {
@@ -576,7 +600,10 @@ const TOPICS = [
         ["If the mitochondria cannot keep up, pyruvate becomes lactate; it leaves and is burned in other fibres and the heart, or made into glucose in the liver.", "brooks2018"]]],
       ["Mitochondrion and ATP yields", [
         ["Pyruvate (via PDH) and fatty acids (via β-oxidation) become acetyl-CoA, which the TCA cycle and the electron transport chain burn with O₂ to CO₂ and water.", ""],
-        ["Glucose fully oxidised ≈30–32 ATP; palmitate ≈106 ATP. ATP per oxygen atom ≈2.78 for carbohydrate, ≈2.45 for fat.", "rowland2026 mookerjee2017 schmidt2021"]]]] }
+        ["Glucose fully oxidised: ≈30–32 ATP per molecule, ≈0.17 mol ATP per gram.", "rowland2026 mookerjee2017"],
+        ["Palmitate (fat) fully oxidised: ≈106 ATP per molecule, ≈0.41 mol ATP per gram, about 2.4× glucose.", "rowland2026"],
+        ["Glucose to lactate: 2 ATP per molecule (3 from glycogen), ≈0.011 mol ATP per gram, about 1/15 of full oxidation.", "rowland2026 hargreaves2018"],
+        ["Per oxygen atom the order flips: ≈2.78 ATP for carbohydrate, ≈2.45 for fat, so fat needs more O₂ for the same ATP.", "schmidt2021"]]]] }
 ];
 // Grupy tematów (nawigacja dwupoziomowa); kolejność TOPICS = kolejność grup
 const GROUPS = [['fuel', 'Fuel & energy', ['vo2', 'fuel', 'energy', 'mito', 'pcr', 'bcaa']], ['stores', 'Gut, liver & glycogen', ['flow', 'gut', 'glycogen']],
@@ -584,6 +611,7 @@ const GROUPS = [['fuel', 'Fuel & energy', ['vo2', 'fuel', 'energy', 'mito', 'pcr
 { const order = GROUPS.flatMap(g => g[2]); TOPICS.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); }
 const groupOf = id => GROUPS.find(g => g[2].includes(id));
 const topicNum = id => { const g = groupOf(id); return `${GROUPS.indexOf(g) + 1}.${g[2].indexOf(id) + 1}`; };
+const PCR_VIEW = { name: 'Phosphocreatine in the muscle cell', lead: 'PCr hands its phosphate to ADP within seconds; the mitochondria refill it, and that needs oxygen.' };
 const ORGANS = {
   gut: { name: 'Gut', lead: 'Stomach and small intestine: where ingested carbohydrate enters the body.' },
   liver: { name: 'Liver', lead: 'The glucose buffer: glycogen store, new glucose (gluconeogenesis), fructose processing.' },
@@ -944,6 +972,33 @@ const DETAIL = {
     tx(p, `air pressure ${fmt(PB(S.alt))} mmHg`, 262, 172, { size: 11 });
     tx(p, 'filled = O₂-saturated Hb', 262, 250, { it: true, size: 10.5, fill: C.grey });
   },
+  pcr() {
+    // Fosfokreatyna: PCr + ADP → Cr + ATP (kinaza kreatynowa); mitochondrium odbudowuje PCr, co wymaga O₂
+    const p = det, pcr = pcrLevel(S.p), use = clamp((S.p - 40) / 90), ox = clamp(S.p / 100);
+    el('line', { x1: 8, y1: 284, x2: 412, y2: 284, stroke: C.blood, 'stroke-width': 3 + 7 * musFlow(S.p), 'stroke-linecap': 'round', opacity: 0.8 }, p);
+    tx(p, 'capillary', 410, 274, { it: true, size: 10, fill: C.blood, anchor: 'end' });
+    el('rect', { x: 4, y: 8, width: 412, height: 250, rx: 18, fill: 'none', stroke: C.ink, 'stroke-width': 2 }, p);
+    tx(p, 'muscle cell', 404, 250, { it: true, size: 11, anchor: 'end' });
+    // zbiornik PCr
+    el('rect', { x: 36, y: 40, width: 70, height: 150, rx: 8, fill: C.paper, stroke: C.ink, 'stroke-width': 2 }, p);
+    el('rect', { x: 38, y: 42 + 146 * (1 - pcr), width: 66, height: 146 * pcr, rx: 6, fill: C.ink, opacity: 0.55 }, p);
+    tx(p, 'PCr', 71, 32, { head: true, size: 14, fill: C.ink, anchor: 'middle' });
+    tx(p, `${Math.round(100 * pcr)}%`, 71, 210, { size: 12, w: 700, fill: C.ink, anchor: 'middle' });
+    tx(p, 'of resting store', 71, 224, { it: true, size: 10, anchor: 'middle' });
+    // reakcja kinazy kreatynowej
+    arrow(p, 110, 90, 250, 90, 1.5 + 6 * use, C.ink);
+    tx(p, 'PCr + ADP → Cr + ATP', 180, 78, { size: 11.5, w: 600, anchor: 'middle', fill: C.ink });
+    tx(p, 'creatine kinase · seconds', 180, 108, { it: true, size: 10, anchor: 'middle' });
+    // miofibryla
+    for (let i = 0; i < 6; i++) el('rect', { x: 262 + i * 22, y: 60, width: 14, height: 60, fill: i % 2 ? C.marker : C.paper, stroke: C.ink2, 'stroke-width': 1 }, p);
+    tx(p, 'contraction uses ATP', 326, 138, { it: true, size: 10, anchor: 'middle' });
+    // mitochondrium odbudowuje PCr
+    el('ellipse', { cx: 250, cy: 210, rx: 70, ry: 32, fill: C.marker, stroke: C.ink, 'stroke-width': 2 }, p);
+    tx(p, 'mitochondrion', 250, 214, { it: true, size: 11, anchor: 'middle' });
+    arrow(p, 250, 280, 250, 246, 1 + 4 * ox, C.ink2); tx(p, 'O₂', 258, 270, { size: 10 });
+    arrow(p, 182, 206, 110, 160, 1.5 + 3 * ox, C.ink);
+    tx(p, 'refills PCr: needs O₂, minutes', 120, 146, { it: true, size: 10, fill: C.blood });
+  },
   kidney() {
     const p = det, b = BR, az = S.acz;
     el('rect', { x: 6, y: 14, width: 408, height: 52, rx: 8, fill: C.paper, stroke: C.ink2, 'stroke-width': 1.2 }, p);
@@ -972,20 +1027,20 @@ const DETAIL = {
     const p = det, sh = cur.E.sh, k = clamp(cur.E.kcal / 15);
     const wGly = 1 + 5 * clamp(cur.E.cho / 3), wLac = 1 + 6 * sh.c * sh.l, wPdh = 1 + 6 * sh.c * (1 - sh.l), wFat = 1 + 7 * sh.f;
     el('line', { x1: 8, y1: 10, x2: 412, y2: 10, stroke: C.blood, 'stroke-width': 3 + 7 * musFlow(S.p), 'stroke-linecap': 'round', opacity: 0.8 }, p);
-    tx(p, 'capillary', 376, 30, { it: true, size: 10, fill: C.blood, anchor: 'end' });
+    tx(p, 'capillary', 352, 30, { it: true, size: 10, fill: C.blood, anchor: 'end' });
     el('rect', { x: 4, y: 36, width: 412, height: 340, rx: 18, fill: 'none', stroke: C.ink, 'stroke-width': 2 }, p);
     tx(p, 'muscle cell', 410, 370, { it: true, size: 11, anchor: 'end' });
     const node = (x, y, s, w = 46) => { el('rect', { x: x - w / 2, y: y - 10, width: w, height: 20, rx: 10, fill: C.paper, stroke: C.ink2, 'stroke-width': 1.4 }, p); tx(p, s, x, y + 4, { size: 10.5, w: 600, anchor: 'middle' }); };
     const note = (s, x, y, o = {}) => tx(p, s, x, y, Object.assign({ it: true, size: 10 }, o));
     const yieldTag = (s, x, y, a = 'start') => tx(p, s, x, y, { size: 11, w: 700, fill: C.blood, anchor: a });
     // wejście glukozy, glikogen → G6P
-    el('rect', { x: 30, y: 30, width: 20, height: 12, fill: C.paper, stroke: C.ink, 'stroke-width': 1.6 }, p);
-    arrow(p, 40, 16, 40, 98, 1 + 4 * clamp(cur.U / 1.5), C.ink); note('glucose (GLUT4)', 50, 60);
-    node(40, 110, 'G6P');
+    el('rect', { x: 36, y: 30, width: 20, height: 12, fill: C.paper, stroke: C.ink, 'stroke-width': 1.6 }, p);
+    arrow(p, 46, 16, 46, 98, 1 + 4 * clamp(cur.U / 1.5), C.ink); note('glucose (GLUT4)', 56, 60);
+    node(46, 110, 'G6P');
     for (let i = 0; i < 16; i++) el('circle', { cx: 112 + JIT[i] * 30, cy: 96 + JIT[i + 30] * 26, r: 3.8, fill: 'url(#hatchG)', stroke: C.ink, 'stroke-width': 0.6, opacity: 0.25 + 0.75 * clamp(cur.gm / SIM.w0) }, p);
-    note('glycogen', 108, 138); arrow(p, 108, 110, 66, 110, 1 + 4 * clamp(cur.glyUse / 2), C.ink);
+    note('glycogen', 108, 138); arrow(p, 104, 110, 71, 110, 1 + 4 * clamp(cur.glyUse / 2), C.ink);
     // G6P nie może wyjść: brak glukozo-6-fosfatazy w mięśniu
-    el('path', { d: 'M28,100 Q12,70 16,18', fill: 'none', stroke: C.blood, 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, p);
+    el('path', { d: 'M26,104 Q12,70 18,18', fill: 'none', stroke: C.blood, 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, p);
     el('path', { d: 'M8,54 l14,14 m0,-14 l-14,14', stroke: C.blood, 'stroke-width': 2.5 }, p);
     tx(p, 'G6P cannot leave:', 62, 150, { size: 10, w: 600, fill: C.blood });
     tx(p, 'no glucose-6-phosphatase', 62, 162, { size: 10, fill: C.blood });
@@ -998,28 +1053,28 @@ const DETAIL = {
     arrow(p, 192, 58, 214, 58, 1 + 4 * clamp((S.p - 60) / 60), C.ink); yieldTag('ATP', 216, 62);
     note('creatine kinase', 150, 86);
     // glikoliza
-    arrow(p, 52, 120, 52, 214, wGly, C.ink); note('glycolysis', 60, 204);
-    node(52, 226, '2 pyruvate', 68);
-    yieldTag(`+${ATP.glyc} ATP`, 92, 252); note(`(${ATP.glycogen} from glycogen)`, 92, 265);
-    arrow(p, 40, 238, 40, 322, wLac, C.ink2); note('when PDH cannot keep up', 48, 296);
+    arrow(p, 46, 120, 46, 214, wGly, C.ink); note('glycolysis', 54, 204);
+    node(46, 226, '2 pyruvate', 68);
+    yieldTag('+2–3 ATP', 92, 254);
+    arrow(p, 46, 236, 46, 324, wLac, C.ink2); note('when PDH cannot keep up', 54, 296);
     node(46, 336, '2 lactate', 64); note('→ blood, heart, liver', 14, 366);
     // mitochondrium
     el('ellipse', { cx: 296, cy: 196, rx: 112, ry: 116, fill: C.marker, stroke: C.ink, 'stroke-width': 2.4 }, p);
     el('path', { d: 'M200,140 q12,10 0,20 q-12,10 0,20 q12,10 0,20 q-12,10 0,20 q12,10 0,20 q-12,10 0,20', fill: 'none', stroke: C.ink2, 'stroke-width': 1.2, opacity: 0.5 }, p);
-    tx(p, 'mitochondrion', 336, 114, { it: true, size: 11, anchor: 'middle' });
-    arrow(p, 88, 222, 230, 186, wPdh, C.ink); note('PDH', 150, 194);
-    arrow(p, 270, 16, 270, 166, wFat, C.ink); note('fatty acids', 276, 52); note('β-oxidation', 276, 132, { fill: C.ink });
-    node(266, 182, 'acetyl-CoA', 66);
-    const tc = [278, 248];
+    tx(p, 'mitochondrion', 318, 104, { it: true, size: 11, anchor: 'middle' });
+    arrow(p, 80, 222, 233, 186, wPdh, C.ink); note('PDH', 150, 194);
+    arrow(p, 270, 16, 270, 170, wFat, C.ink); note('fatty acids', 276, 52); note('β-oxidation', 276, 132, { fill: C.ink });
+    node(270, 182, 'acetyl-CoA', 66);
+    const tc = [270, 248];
     el('circle', { cx: tc[0], cy: tc[1], r: 28, fill: C.paper, stroke: C.ink, 'stroke-width': 2 + 4 * k }, p);
     el('path', { d: `M${tc[0] + 24},${tc[1] - 14} l6,-6 l2,9 Z`, fill: C.ink }, p);
     tx(p, 'TCA', tc[0], tc[1] + 5, { head: true, size: 13, fill: C.ink, anchor: 'middle' });
-    arrow(p, 270, 192, 274, 218, 2 + 4 * k, C.ink); note('CO₂', 236, 284);
-    el('rect', { x: 336, y: 206, width: 44, height: 64, rx: 6, fill: C.paper, stroke: C.ink, 'stroke-width': 2 }, p);
-    tx(p, 'ETC', 358, 230, { head: true, size: 12, fill: C.ink, anchor: 'middle' }); tx(p, 'O₂→H₂O', 358, 246, { size: 9, anchor: 'middle' });
-    tx(p, 'ATP', 358, 262, { size: 11, w: 700, fill: C.blood, anchor: 'middle' });
-    arrow(p, 306, 248, 334, 240, 2 + 4 * k, C.ink);
-    arrow(p, 390, 16, 390, 202, 1 + 4 * k, C.ink2); note('O₂', 396, 60);
+    arrow(p, 270, 192, 270, 218, 2 + 4 * k, C.ink); note('CO₂', 228, 290);
+    el('rect', { x: 340, y: 216, width: 46, height: 64, rx: 6, fill: C.paper, stroke: C.ink, 'stroke-width': 2 }, p);
+    tx(p, 'ETC', 363, 240, { head: true, size: 12, fill: C.ink, anchor: 'middle' }); tx(p, 'O₂→H₂O', 363, 256, { size: 9, anchor: 'middle' });
+    tx(p, 'ATP', 363, 272, { size: 11, w: 700, fill: C.blood, anchor: 'middle' });
+    arrow(p, 300, 248, 338, 248, 2 + 4 * k, C.ink);
+    arrow(p, 363, 16, 363, 212, 1 + 4 * k, C.ink2); note('O₂', 369, 60);
     // bilans brutto
     tx(p, 'Gross yield, per molecule', 196, 330, { size: 10.5, w: 600, fill: C.ink });
     tx(p, 'glucose → CO₂:', 196, 344, { size: 10.5 }); yieldTag('≈30–32 ATP', 296, 344);
@@ -1209,35 +1264,41 @@ const ro = rows => rows.map(([a, b]) => `<span>${a}</span><b>${b}</b>`).join('')
 
 function renderOrgan() {
   if (renderOrgan.last !== S.organ) { $('paneOrgan').scrollTop = 0; renderOrgan.last = S.organ; }
-  const o = ORGANS[S.organ], T = TOPICS.find(x => x.id === S.topic), E = cur.E, sh = E.sh, A = cur.A;
+  const T = TOPICS.find(x => x.id === S.topic), E = cur.E, sh = E.sh, A = cur.A;
+  const view = S.organ === 'mito' && S.topic === 'pcr' ? 'pcr' : S.organ, o = view === 'pcr' ? PCR_VIEW : ORGANS[S.organ];
   $('oCrumb').textContent = S.organ === 'mito' ? 'Zoom into a working muscle cell' : `${T.name}, seen in this organ`;
   $('oTitle').textContent = o.name; $('oLead').textContent = o.lead;
-  clear(det); det.setAttribute('viewBox', S.organ === 'mito' ? '0 0 420 380' : S.organ === 'kidney' ? '0 0 420 300' : '0 0 420 280'); DETAIL[S.organ]();
+  clear(det); det.setAttribute('viewBox', view === 'mito' ? '0 0 420 380' : view === 'kidney' || view === 'pcr' ? '0 0 420 300' : '0 0 420 280'); DETAIL[view]();
   let R = [], G = [];
-  if (S.organ === 'gut') { R = [['Eaten', `${S.gph} g/h`], ['Absorbed', `${fmt(A.absorbed)} g/h`], ['Not absorbed', `${fmt(A.unabs)} g/h`]];
+  if (S.organ === 'gut') { R = [['Eaten', `${S.gph} g/h`], ['Absorbed', `${fmt(A.absorbed)} g/h`], ['Above transporter capacity', `${fmt(A.unabs)} g/h`]];
     G = [gauge('Gut blood flow', gutFlow(S.p), 'warn'), gauge('SGLT1 load (tick = capacity now)', A.glc / 90, A.glc > A.sglt ? 'warn' : '', A.sglt / 90), gauge('GLUT5 load (tick = capacity now)', A.fru / 45, A.fru > A.glut5 ? 'warn' : '', A.glut5 / 45), gauge('Brush-border enzymes', A.enzyme / 200, 'soft')]; }
-  if (S.organ === 'liver') { R = [['Liver glycogen', `${fmt(cur.gl)} g (${fmt(cur.gl * 4.2)} kcal)`], ['Glucose from liver glycogen', `${fmt(cur.hgo * 60)} g/h`], ['New glucose (gluconeogenesis)', `${fmt(cur.gng * 60)} g/h`]];
+  if (S.organ === 'liver') { R = [['Liver glycogen', `${fmt(cur.gl)} g`], ['Glucose from liver glycogen', `${fmt(cur.hgo * 60)} g/h`], ['New glucose (gluconeogenesis)', `${fmt(cur.gng * 60)} g/h`]];
     G = [gauge('Liver glycogen (max ≈160 g)', cur.gl / 160), gauge('Hepatic blood flow', 0.3 + 0.6 * gutFlow(S.p), 'warn')]; }
-  if (S.organ === 'blood') { R = [['VO₂', `${fmt(E.vo2, 2)} L/min (${S.p}% VO₂max)`], ['Energy use', `${fmt(E.kcal * 60)} kcal/h`], ['Blood lactate', `${fmt(lactate(S.p), 1)} mmol/L`]];
+  if (S.organ === 'blood') { R = [[`VO₂ (${S.p}% VO₂max)`, `${fmt(E.vo2, 2)} L/min`], ['Energy use', `${fmt(E.kcal * 60)} kcal/h`], ['Blood lactate', `${fmt(lactate(S.p), 1)} mmol/L`]];
     G = [gauge('VO₂ / VO₂max', S.p / 100), gauge('Cardiac output (relative)', 0.25 + 0.75 * S.p / 100, 'warn'), gauge('Blood glucose', cur.bg), gauge('Blood lactate (tick = 4 mmol/L)', lactate(S.p) / 12, 'warn', 4 / 12)]; }
-  if (S.organ === 'lungs') { R = [['Altitude', S.alt ? `${S.alt} m` : 'sea level'], ['Air pressure', `${fmt(PB(S.alt))} mmHg`], ['Inspired O₂ (PIO₂)', `${fmt(PIO2(S.alt))} mmHg`], ['SpO₂ at rest / now', `${fmt(BR.spo2Rest)} / ${fmt(BR.spo2)} %`], ['Ventilation', `${fmt(BR.VE)} L/min`], ['VO₂max here', `${fmt(100 * VF(S.alt))}% of sea level`]];
+  if (S.organ === 'lungs') { R = [['Altitude', S.alt ? `${S.alt} m` : 'sea level'], ['Air pressure', `${fmt(PB(S.alt))} mmHg`], ['Inspired O₂ (PIO₂)', `${fmt(PIO2(S.alt))} mmHg`], ['SpO₂ at rest / now', `${fmt(BR.spo2Rest)} / ${fmt(BR.spo2)} %`], ['Ventilation', `${fmt(BR.VE)} L/min`], ['VO₂max here (vs sea level)', `${fmt(100 * VF(S.alt))} %`]];
     G = [gauge('Drive to breathe (relative)', (BR.vd - 1) / 0.8, 'warn'), gauge('Ventilation', BR.VE / 200), gauge('SpO₂ (tick = 90%)', (BR.spo2 - 50) / 50, BR.spo2 < 90 ? 'warn' : '', 0.8)]; }
   if (S.organ === 'kidney') { R = [['Days at this altitude', String(S.days)], ['Acetazolamide', S.acz ? 'yes' : 'no'], ['Plasma bicarbonate', `≈${fmt(BR.hco3)} mmol/L`]];
     G = [gauge('Bicarbonate lost in urine', BR.urineHCO3, S.acz ? 'warn' : ''), gauge('Renal compensation of alkalosis', BR.comp, 'soft')]; }
-  if (S.organ === 'adipose') { R = [['Fat oxidised (adipose + muscle fat)', `${fmt(E.fat * 60)} g/h (${fmt(E.fat * 60 * 9.4)} kcal/h)`], ['Store', '≈12 kg fat ≈ 100,000 kcal']]; G = [gauge('Fatty-acid release', cur.flows.ffa, 'soft')]; }
-  if (S.organ === 'muscle') { R = [['Total muscle glycogen at start', `${SIM.st.m} g`], ['Left in working legs', `${fmt(cur.gm)} of ${fmt(SIM.w0)} g`], ['Carbohydrate burned', `${fmt(E.cho * 60)} g/h`], ['… from muscle glycogen', `${fmt(cur.glyUse * 60)} g/h`], ['… from blood glucose', `${fmt(cur.U * 60)} g/h`], ['Fat burned', `${fmt(E.fat * 60)} g/h`],
-      ['Glycogen runs out (the wall)', SIM.wall === null ? 'not within 5 h' : '≈ ' + fmtT(SIM.wall)], ['Time to exhaustion (TTE) at this pace', tteText()]];
+  if (S.organ === 'adipose') { R = [['Fat oxidised (adipose + muscle fat)', `${fmt(E.fat * 60)} g/h`], ['… as energy', `${fmt(E.fat * 60 * 9.4)} kcal/h`], ['Fat store (≈100,000 kcal)', '≈12 kg']]; G = [gauge('Fatty-acid release', cur.flows.ffa, 'soft')]; }
+  if (S.organ === 'muscle') { R = [['Total muscle glycogen at start', `${SIM.st.m} g`], ['Left in the working fibres', `${fmt(cur.gm)} of ${fmt(SIM.w0)} g`], ['Carbohydrate burned', `${fmt(E.cho * 60)} g/h`], ['… from muscle glycogen', `${fmt(cur.glyUse * 60)} g/h`], ['… from blood glucose', `${fmt(cur.U * 60)} g/h`], ['Fat burned', `${fmt(E.fat * 60)} g/h`],
+      ['Glycogen runs out (the wall)', SIM.wall === null ? 'not within 5 h' : '≈ ' + fmtT(SIM.wall)], [`Time to exhaustion (TTE)${tteWhy() ? `<i>: ${tteWhy()}</i>` : ''}`, fmtDur(TTE())]];
     G = [gauge('Fat → CO₂', sh.f, 'soft'), gauge('Glucose → CO₂', sh.c * (1 - sh.l)), gauge('Pyruvate → lactate (carbon flux)', sh.c * sh.l, 'warn'), gauge('Protein (incl. BCAA)', sh.b / 0.1, 'soft')]; }
-  if (S.organ === 'mito') { const glc = E.cho / 180, ox = glc * (1 - sh.l) * 31, gl = glc * sh.l * (2 + cur.glyUse / Math.max(1e-6, cur.glyUse + cur.U)), fa = E.fat / 256 * 106, tot = ox + gl + fa;
-    R = [['Glucose → 2 lactate', '2 ATP'], ['Glycogen unit → 2 lactate', '3 ATP'], ['Glucose → CO₂ + H₂O', '≈30–32 ATP'], ['Palmitate → CO₂ + H₂O', '≈106 ATP'], ['ATP per O atom: carbohydrate vs fat', '≈2.78 vs ≈2.45'],
-      ['ATP made now', `≈${fmt(tot * 1000)} mmol/min`], ['… from glycolysis to lactate', `${fmt(100 * gl / tot)} %`]];
-    G = [gauge('PDH (pyruvate)', sh.c * (1 - sh.l)), gauge('β-oxidation (fat)', sh.f, 'soft'), gauge('Pyruvate → lactate', sh.c * sh.l, 'warn')]; }
+  if (view === 'pcr') { R = [['PCr now', `${fmt(100 * pcrLevel(S.p))} % of rest`], ['Store at rest', '≈72–83 mmol/kg'], ['6-s sprint: PCr falls by', '57 %'], ['Refilling half-time (fast phase)', '≈21–22 s'], ['Circulation occluded', 'no refilling']];
+    G = [gauge('PCr store', pcrLevel(S.p)), gauge('Mitochondrial refilling (O₂ supply)', clamp(S.p / 100), 'soft')]; }
+  else if (S.organ === 'mito') { const glc = E.cho / 180, ox = glc * (1 - sh.l) * 31, gl = glc * sh.l * (2 + cur.glyUse / Math.max(1e-6, cur.glyUse + cur.U)), fa = E.fat / 256 * 106, tot = ox + gl + fa;
+    const cost = (ox + gl) > 0 ? glc / ((ox + gl) / 31) : 1;
+    R = [['Carbohydrate burned now', `${fmt(E.cho * 60)} g/h`], ['Fat burned now', `${fmt(E.fat * 60)} g/h`],
+      ['ATP from glycolysis to lactate', `${fmt(100 * gl / tot)} %`], ['Carbohydrate per ATP, vs all aerobic', `×${cost.toFixed(1)}`],
+      ['O₂ deficit (energy beyond VO₂max, repaid after)', `${fmt(100 * E.anaShare)} %`], ['Peak ATP use vs peak O₂-based supply', '≈8×']];
+    G = ['<p class="gh">ATP per gram of fuel (fat = 100%)</p>', gauge('Fat → CO₂', 1, 'soft'), gauge('Glucose → CO₂: ≈42%', 0.42), gauge('Glucose → lactate: ≈3%', 0.03, 'warn'),
+      '<p class="gh">Pathways working now</p>', gauge('β-oxidation (fat)', sh.f, 'soft'), gauge('PDH (pyruvate → mitochondrion)', sh.c * (1 - sh.l)), gauge('Pyruvate → lactate', sh.c * sh.l, 'warn')]; }
   $('readouts').innerHTML = ro(R); $('gauges').innerHTML = G.join('');
   const al = [];
   if (S.t >= TTE()) al.push('Exhausted: this intensity cannot be held any longer (TTE).');
   else if (SIM.wall !== null && S.t >= SIM.wall) al.push('The wall: carbohydrate is running out; this intensity can no longer be held.');
   else if (cur.bg < 0.97) al.push('Liver glycogen is exhausted: blood glucose is falling.');
-  if (A.unabs > 5) al.push(`About ${fmt(A.unabs)} g/h is more than the gut can absorb here and stays in the gut: GI symptoms more likely.`);
+  if (A.unabs > 5) al.push('Intake is above what the gut transporters can take up (≈60 g/h glucose, ≈90 g/h glucose + fructose): more carbohydrate stays in the gut, so GI symptoms are more likely.');
   $('alert').innerHTML = al.join('<br>'); $('alert').classList.toggle('on', al.length > 0);
   $('organs').innerHTML = 'Go to: ' + Object.keys(ORGANS).map(k => `<button type="button" data-organ="${k}" aria-pressed="${k === S.organ}">${ORGANS[k].name.toLowerCase()}</button>`).join('<span class="sep">/</span>');
 }
@@ -1325,7 +1386,8 @@ document.addEventListener('click', ev => {
   if (o) { const p = $(o.dataset.open), was = p.classList.contains('open'); closePanes(); if (!was) p.classList.add('open'); }
   if (ev.target.closest('[data-close]')) closePanes();
 });
-document.addEventListener('keydown', ev => { if (ev.target.tagName === 'INPUT') return; if (ev.key === 'ArrowRight' || ev.key === 'PageDown') stepTopic(1); if (ev.key === 'ArrowLeft' || ev.key === 'PageUp') stepTopic(-1); if (ev.key === 'Escape') closePanes(); });
+document.addEventListener('keydown', ev => { if (ev.target.tagName === 'INPUT') return; if (ev.key === 'ArrowRight' || ev.key === 'PageDown') stepTopic(1); if (ev.key === 'ArrowLeft' || ev.key === 'PageUp') stepTopic(-1); if (ev.key === 'Escape') { if ($('detWrap').classList.contains('zoom')) $('detWrap').classList.remove('zoom'); else closePanes(); } });
+$('detWrap').addEventListener('click', () => $('detWrap').classList.toggle('zoom'));
 // telefon: ustawienia pokarmu i zawodnika przenoszone do arkusza
 function placeMore() { const more = $('more'), slot = $('settingsSlot'); if (MOBILE()) { if (more.parentElement !== slot) slot.appendChild(more); } else if (more.parentElement !== $('controls')) $('controls').appendChild(more); }
 addEventListener('resize', () => { placeMore(); if (!MOBILE()) closePanes(); });
