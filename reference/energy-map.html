@@ -360,23 +360,28 @@ const AMS_PTS = [[2850, 9], [3050, 13], [3650, 34], [4559, 53]];
 const CPp = () => Math.min(85, OBLA() + 3);
 const pcrLevel = p => clamp(1 - 0.25 * p / OBLA() - 0.45 * smooth((p - OBLA()) / (100 - OBLA())) - 0.2 * clamp((p - 100) / 50));   // zapas PCr (względny): kierunek, wielkości ilustracyjne
 // Krzywa TTE przez punkty ze źródeł (interpolacja log-liniowa między nimi; wartości pośrednie ilustracyjne):
-//   LT1: ≈94 min u zdrowych mężczyzn [pires2011] … ≈4 h u wytrenowanych kolarzy [gallo2024] (skala wg VO₂max — ilustracyjnie)
+//   LT1: ≈94 min u zdrowych mężczyzn [pires2011] … ≈4 h u wytrenowanych kolarzy [gallo2024] — tylko w tekście; w modelu decyduje glikogen
 //   OBLA ≈ MLSS: ≈55 min (zakres 34–76) [baron2008, pallares2026]; nie zależy od VO₂max [pallares2026]
 //   CP: 20–41 min [brickley2002] → 30 min;  VO₂max: ≈4–6 min [pallares2026, billat1996] → 5 min;  powyżej CP: W′/(P − CP) [jones2010]
 const TLIM100 = 5, T_MLSS = 55, T_CP = 30;
-const T_LT1 = () => 94 + (240 - 94) * clamp((S.vo2max - 40) / 25);
 const lerpLog = (p, p0, t0, p1, t1) => Math.exp(Math.log(t0) + (Math.log(t1) - Math.log(t0)) * (p - p0) / (p1 - p0));
+// Krzywa: LT1 ≈94 min (niewytrenowani) … ≈4 h (wytrenowani) wg VO₂max [pires2011, gallo2024]; OBLA ≈ MLSS 55 min; CP 30 min; VO₂max 5 min.
+// Poniżej OBLA mnożniki ze źródeł: glikogen niski ×59/126, załadowany ×189/126 [bergstrom1967]; węglowodany ×1,33 przy 60 g/h [coyle1986];
+// wygaszane w pasie 6 punktów poniżej OBLA (od OBLA w górę decyduje zmęczenie).
+const T_LT1 = () => 94 + (240 - 94) * clamp((S.vo2max - 40) / 25);
+const KGLY = { low: 59 / 126, normal: 1, loaded: 189 / 126 };
 const tteCP = p => {
   const lt = LT(), ob = OBLA(), cp = CPp();
-  if (p < lt - 15) return Infinity;
-  if (p <= lt) return lerpLog(p, lt - 15, T_LT1() * 4, lt, T_LT1());
-  if (p <= ob) return lerpLog(p, lt, T_LT1(), ob, T_MLSS);
-  if (p <= cp) return lerpLog(p, ob, T_MLSS, cp, T_CP);
-  return Math.min(T_CP, TLIM100 * (100 - cp) / (p - cp));
+  const k = KGLY[S.status] * (1 + 0.33 * clamp(S.gph / 60));
+  const kUp = Math.min(1, k);   // niedobór glikogenu skraca TTE także powyżej OBLA (krzywa nie może rosnąć z intensywnością)
+  if (p > cp) return Math.min(T_CP * kUp, TLIM100 * (100 - cp) / (p - cp));
+  if (p > ob) return Math.min(T_MLSS * kUp, lerpLog(p, ob, T_MLSS, cp, T_CP));
+  const base = p <= lt - 15 ? Infinity : p <= lt ? lerpLog(p, lt - 15, T_LT1() * 4, lt, T_LT1()) : lerpLog(p, lt, T_LT1(), ob, T_MLSS);
+  return k < 1 ? base * k : base * (1 + (k - 1) * clamp((ob - p) / 6));
 };
-const TTE = () => Math.min(tteCP(S.p), SIM.wall === null ? Infinity : SIM.wall);
+const TTE = () => tteCP(S.p);
 const fmtDur = m => m > TMAX ? '> 5 h' : m >= 60 ? '≈ ' + fmtT(m) : m >= 2 ? `≈ ${Math.round(m)} min` : `≈ ${Math.round(m * 60)} s`;
-const tteWhy = () => tteCP(S.p) < (SIM.wall ?? Infinity) ? (S.p > CPp() ? 'above critical power' : 'fatigue') : SIM.wall !== null ? 'carbohydrate runs out (the wall)' : '';
+const tteWhy = () => S.p > CPp() ? 'above critical power' : S.p > OBLA() ? 'above MLSS' : TTE() > TMAX ? '' : 'glycogen and fatigue';
 const tteText = () => fmtDur(TTE()) + (tteWhy() ? ` (${tteWhy()})` : '');                         // gdzie mleczan = 4 mmol/L [sjodin1981]
 const gutFlow = p => 1 - 0.8 * smooth((p - 10) / 90);               // −80% przy maks. [tersteege2012]
 const musFlow = p => 0.15 + 0.85 * smooth((p - 5) / 95);
@@ -1078,8 +1083,8 @@ const CHARTS = {
     line(SIM.tr.map(r => [r.t / TMAX, (r.gm + rest) / top]), a, { c: C.ink, w: 3 });
     line(SIM.tr.map(r => [r.t / TMAX, r.gl / top]), a, { c: C.ink2, w: 3, d: '7 3' });
     line(SIM.tr.map(r => [r.t / TMAX, r.bg * 0.2]), a, { c: C.blood, w: 1.5 });
-    if (SIM.wall !== null) { const x = a.X(SIM.wall / TMAX); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2 }, ch); tx(ch, TTE() < SIM.wall ? 'the wall' : 'the wall = TTE', x > 240 ? x - 4 : x + 4, a.Y1 + 24, { size: 11, w: 600, fill: C.blood, anchor: x > 240 ? 'end' : 'start' }); }
-    if (tteCP(S.p) < (SIM.wall ?? Infinity) && tteCP(S.p) <= TMAX) { const x = a.X(tteCP(S.p) / TMAX); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2 }, ch); tx(ch, 'TTE', x + 4, a.Y1 + 24, { size: 11, w: 600, fill: C.blood }); }
+    if (SIM.wall !== null) { const x = a.X(SIM.wall / TMAX); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2 }, ch); tx(ch, 'the wall', x > 240 ? x - 4 : x + 4, a.Y1 + 24, { size: 11, w: 600, fill: C.blood, anchor: x > 240 ? 'end' : 'start' }); }
+    if (TTE() <= TMAX) { const x = a.X(tteCP(S.p) / TMAX); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2 }, ch); tx(ch, 'TTE', x + 4, a.Y1 + 24, { size: 11, w: 600, fill: C.blood }); }
     vmark(a, S.t / TMAX);
     return ['Glycogen over time', LEG([['muscle (total)', C.ink], ['liver', C.ink2, 1], ['blood glucose (relative)', C.blood]].concat(GHOST ? [['normal start', C.grey, 1]] : []))];
   },
@@ -1144,7 +1149,7 @@ const CHARTS = {
 
 /* ───────────── RENDER ───────────── */
 const zone = p => p < 15 ? 'rest' : p < 45 ? 'easy' : p < LT() ? 'moderate' : p < OBLA() ? 'between LT1 and OBLA' : p < 92 ? 'above OBLA' : p <= 100 ? 'near VO₂max' : 'above VO₂max (anaerobic)';
-const fmtT = t => `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, '0')} h`;
+const fmtT = t => { const m = Math.round(t); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} h`; };
 const srcHTML = keys => keys ? ' <span class="ref">(' + keys.split(' ').map(k => SRC[k].split(',')[0]).join('; ') + ')</span>' : '';
 
 function renderMap() {
@@ -1205,7 +1210,7 @@ function renderOrgan() {
     G = [gauge('PDH (pyruvate)', sh.c * (1 - sh.l)), gauge('β-oxidation (fat)', sh.f, 'soft'), gauge('Pyruvate → lactate', sh.c * sh.l, 'warn')]; }
   $('readouts').innerHTML = ro(R); $('gauges').innerHTML = G.join('');
   const al = [];
-  if (S.t >= TTE() && tteCP(S.p) <= TTE()) al.push('Exhausted: this intensity cannot be held any longer (TTE).');
+  if (S.t >= TTE()) al.push('Exhausted: this intensity cannot be held any longer (TTE).');
   else if (SIM.wall !== null && S.t >= SIM.wall) al.push('The wall: carbohydrate is running out; this intensity can no longer be held.');
   else if (cur.bg < 0.97) al.push('Liver glycogen is exhausted: blood glucose is falling.');
   if (A.unabs > 5) al.push(`About ${fmt(A.unabs)} g/h is more than the gut can absorb here and stays in the gut: GI symptoms more likely.`);
@@ -1248,7 +1253,7 @@ $('srcOpen').addEventListener('click', openSrc);
 document.querySelector('.dock [data-src]').addEventListener('click', openSrc);
 $('srcClose').addEventListener('click', () => srcDlg.close());
 srcDlg.addEventListener('click', ev => { if (ev.target === srcDlg) srcDlg.close(); });
-$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~60% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE between the sourced points (LT1, MLSS, CP, VO₂max) interpolated, and TTE at LT1 scaled with VO₂max between the untrained and trained values; VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity and the phase weights of PCr refilling; anaerobic carbohydrate use above VO₂max.</li>';
+$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~60% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE: a curve through the sourced points (LT1, MLSS, CP, VO₂max), interpolated between them, with TTE at LT1 scaled by VO₂max; below OBLA multiplied by the glycogen and carbohydrate ratios from Bergström 1967 and Coyle 1986; the glycogen ‘wall’ on the chart is a separate simulation; VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity and the phase weights of PCr refilling; anaerobic carbohydrate use above VO₂max.</li>';
 
 /* ───────────── INTERAKCJA ───────────── */
 function renderNav() {
