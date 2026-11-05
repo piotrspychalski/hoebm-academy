@@ -1,4 +1,4 @@
-// HoEBM Academy — sekwencje slajdów szkicu wzorcowego (reference/energy-map.html) dla studia nagrań.
+// Sports Academy — sekwencje slajdów szkicu wzorcowego (reference/energy-map.html) dla studia nagrań.
 // data/slides/<id>.json — jedna sekwencja na plik; slajd = stan szkicu (temat, narząd, suwaki, otwarte sekcje, pełny ekran, odtwarzanie).
 // Slajdy są narastające (jak w prezentacji): każdy dziedziczy wartości suwaków po poprzednim; narząd dziedziczy tylko przy tym samym temacie;
 // open / zoom / play / pane / sources dotyczą tylko swojego slajdu.
@@ -85,14 +85,15 @@ function compile(R) {
   return { html, V, seqs: out, errors };
 }
 
-function build(R) {
+function build(R, nav = '') {
   const { html, seqs, errors } = compile(R);
   if (errors.length) { console.error('Slajdy szkicu — błędy:\n- ' + errors.join('\n- ')); process.exit(1); }
   const dir = path.join(R, 'studio/sketch');
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'energy-map.html'), html);
+  const withNav = h => nav ? h.replace(/<\/body>(?![\s\S]*<\/body>)/, () => `<script>\n${nav}</script>\n</body>`) : h;
+  fs.writeFileSync(path.join(dir, 'energy-map.html'), withNav(html));
   const player = fs.readFileSync(path.join(R, 'src/studio-sketch.html'), 'utf8').replace('/*SEQS*/', () => 'const SEQS = ' + JSON.stringify(seqs) + ';');
-  fs.writeFileSync(path.join(dir, 'index.html'), player);
+  fs.writeFileSync(path.join(dir, 'index.html'), withNav(player));
   console.log(`studio/sketch/index.html (lokalnie) · sekwencji slajdów: ${seqs.length} (szkice: ?preview)`);
 }
 

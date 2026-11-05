@@ -22,6 +22,7 @@ const shell = fs.readFileSync(path.join(R, 'src/shell.html'), 'utf8');
 //  dist/<STUDIO_PATH>/index.html — to samo studio online pod adresem znanym tylko autorowi: ścieżka z sekretu GitHuba
 //    STUDIO_PATH (CI), nigdy w kodzie; strona z noindex, bez linków z wersji publicznej. Szkice i tak są widoczne tylko lokalnie.
 const studioJs = rd('src/studio');
+const studioNav = fs.readFileSync(path.join(R, 'src/studio-nav.js'), 'utf8');   // pasek widoków prywatnych (tylko studio)
 const make = studio => shell
   .replace('/*REG*/', () => 'const REG = ' + JSON.stringify(reg) + ';')
   .replace('/*CORE*/', () => core)
@@ -30,7 +31,8 @@ const make = studio => shell
   .replace('<!--ROBOTS-->', () => studio ? '<meta name="robots" content="noindex, nofollow">' : '')
   .replaceAll('%FAVICON%', () => favicon)
   .replaceAll('%LOGO%', () => logo)
-  .replaceAll('%VERSION%', () => version);
+  .replaceAll('%VERSION%', () => version)
+  .replace('</body>', () => studio ? `<script>\n${studioNav}</script>\n</body>` : '</body>');
 
 fs.mkdirSync(path.join(R, 'dist'), { recursive: true });
 fs.mkdirSync(path.join(R, 'studio'), { recursive: true });
@@ -49,4 +51,9 @@ if (SP) {
 const pub = reg.figures.filter(f => f.status === 'published').length;
 console.log(`dist/index.html ${Math.round(html.length / 1024)} KB · studio/index.html (lokalnie) · rycin: ${reg.figures.length} (opublikowanych: ${pub})`);
 // Slajdy szkicu wzorcowego: data/slides/*.json → studio/sketch/index.html (lokalnie; tylko do nagrań, nie do dist/)
-require('./tools/sketch-slides.js').build(R);
+require('./tools/sketch-slides.js').build(R, studioNav);
+// Studio slajdów online — obok studia rycin pod tą samą tajną ścieżką
+if (SP) {
+  fs.mkdirSync(path.join(R, 'dist', SP, 'sketch'), { recursive: true });
+  for (const f of fs.readdirSync(path.join(R, 'studio/sketch'))) fs.copyFileSync(path.join(R, 'studio/sketch', f), path.join(R, 'dist', SP, 'sketch', f));
+}

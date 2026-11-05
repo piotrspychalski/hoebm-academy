@@ -18,6 +18,8 @@ i wstawia je w `src/shell.html` (`/*REG*/`, `/*CORE*/`, `/*APP*/`, `%LOGO%`, `%V
 | Telefon | `dist/index.html` | publiczny | pionowo: układ `phone` 720 × 1100; poziomo: układ poziomy; `html.mobile` przy `(max-width: 760px), (pointer: coarse) and (max-height: 520px)` (jak SURGITOME): menu ☰, dok ‹ n / N kadr › z kropkami, przesunięcie palcem, opis w arkuszu „i” |
 | Studio | `studio/index.html` (lokalnie) i `dist/<STUDIO_PATH>/` (online) | tylko autor | telefon 9:16 na komputerze, czarne tło, bez interfejsu i kursora; R — restart (1,5 s czystej klatki, potem cała sekwencja), Space — pauza, S — strefa bezpieczna, F — pełny ekran, ← → — rycina, H — pomoc, N — nagraj rolkę |
 
+Widoki prywatne łączy pasek `src/studio-nav.js` (Akademia · Studio rycin · Slajdy szkicu · Szkic), wstawiany tylko do buildów studia. Studio slajdów szkicu (`studio/sketch/`, online `dist/<STUDIO_PATH>/sketch/`) buduje `tools/sketch-slides.js` z `data/slides/*.json` i `reference/energy-map.html`; instrukcja w `.claude/skills/sketch-slides/SKILL.md`.
+
 Studio budowane jest z tych samych plików + `src/studio/*` (`STUDIO = true`). Wersja publiczna nie zawiera kodu studia (test `budowa.js`).
 Studio online: CI dokłada je pod `dist/<STUDIO_PATH>/`, gdzie `STUDIO_PATH` to **sekret repozytorium** (min. 16 znaków), więc ścieżki nie ma w kodzie ani w logach; strona ma `noindex` i nie ma do niej linków. To ochrona przez nieznany adres, nie hasło. Szkice (`draft`) są widoczne tylko lokalnie z `?preview`, także w studiu, i mają znak wodny „DRAFT · NOT FOR PUBLICATION”.
 

@@ -188,13 +188,13 @@ function startRec() {
     ROLKA.chunks = []; ROLKA.rec = rec;
     rec.ondataavailable = e => { if (e.data.size) ROLKA.chunks.push(e.data); };
     rec.onstop = () => saveRec(rec);
-    rec.start(1000); enter('title');
+    rec.start(1000); document.documentElement.classList.add('recording'); enter('title');
   }, 1000);
   ROLKA.countdown = tick;
 }
 function stopRec(keep) {
   clearInterval(ROLKA.countdown); $('rkCount').hidden = true;
-  const rec = ROLKA.rec; ROLKA.rec = null;
+  const rec = ROLKA.rec; ROLKA.rec = null; document.documentElement.classList.remove('recording');
   if (rec) { rec.keep = keep; rec.state !== 'inactive' && rec.stop(); }
   ROLKA.seg = null; if (ROLKA.mediaKind === 'video') ROLKA.media.pause();
   $('rkPanel').hidden = false; rolkaHud();

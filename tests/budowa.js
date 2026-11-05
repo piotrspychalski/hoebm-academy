@@ -19,7 +19,8 @@ if (!studio.includes('const STUDIO = true') || !studio.includes('function initSt
 if (!fs.readFileSync(path.join(R, '.gitignore'), 'utf8').split('\n').includes('/studio/')) errors.push('.gitignore: brak /studio/ (tylko katalog główny, nie src/studio)');
 if (!require('child_process').execFileSync('git', ['ls-files', 'src/studio'], { cwd: R, encoding: 'utf8' }).trim()) errors.push('src/studio nie jest w repozytorium');
 for (const id of ['mDock', 'mMenu', 'mMenuBtn', 'mPrev', 'mNext', 'mInfo']) if (!html.includes(`id="${id}"`)) errors.push(`brak #${id} (widok telefonu)`);
-try { new Function(studio.match(/<script>([\s\S]*)<\/script>/)[1]); } catch (e) { errors.push('studio: błąd składni: ' + e.message); }
+for (const m of studio.matchAll(/<script>([\s\S]*?)<\/script>/g)) try { new Function(m[1]); } catch (e) { errors.push('studio: błąd składni: ' + e.message); }
+if (html.includes("className = 'vnav'")) errors.push('nawigacja prywatnych widoków w wersji publicznej');
 try { new Function(html.match(/<script>([\s\S]*)<\/script>/)[1]); } catch (e) { errors.push('błąd składni skryptu: ' + e.message); }
 console.log('errors', JSON.stringify(errors));
 process.exit(errors.length ? 1 : 0);

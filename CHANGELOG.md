@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0] — 2026-11-05 (jedno narzędzie: Akademia, studio, slajdy, szkic)
+
+### Dodane
+- Scalone trzy wątki pracy: szkic wzorcowy `reference/energy-map.html` (FIG. 2 „energy map”: tematy, narządy, wysokość, TTE, PCr, źródła), slajdy szkicu (`data/slides/*.json`, `tools/sketch-slides.js`, skill `.claude/skills/sketch-slides`, test `slajdy`) i studio z nagrywaniem rolki.
+- Nawigacja widoków prywatnych (`src/studio-nav.js`): **Akademia · Studio rycin · Slajdy szkicu · Szkic** — w studiu rycin, studiu slajdów i szkicu; chowa się po 2 s bez ruchu myszy, znika w trakcie nagrywania, nie ma jej w ramce szkicu ani na stronie publicznej (test `budowa`).
+- Studio slajdów online pod tą samą tajną ścieżką co studio rycin: `<STUDIO_PATH>/sketch/` (szkic: `<STUDIO_PATH>/sketch/energy-map.html`).
+
 ## [0.8.0] — 2026-11-05 (nowa nazwa: Sports Academy)
 
 ### Zmienione
