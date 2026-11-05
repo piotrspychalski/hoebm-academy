@@ -257,7 +257,7 @@ const SRC = {
   cramer2019: 'Cramer & Jay 2019, J Appl Physiol (PMID 30496710): 5.05 kcal per L O₂ (carbohydrate), 4.69 kcal per L O₂ (fat)',
   frayn1983: 'Frayn 1983, J Appl Physiol (PMID 6618956): CHO = 4.55·VCO₂ − 3.21·VO₂; fat = 1.67·VO₂ − 1.67·VCO₂ (g/min)',
   hearris2018: 'Hearris 2018, Nutrients (PMID 29498691): muscle ≈400 g, liver ≈100 g, blood ≈5 g glucose',
-  rapoport2010: 'Rapoport 2010, PLoS Comput Biol (PMID 20975938): liver ≈88 g, at most ≈160 g; “hitting the wall” = “bonking”',
+  rapoport2010: 'Rapoport 2010, PLoS Comput Biol (PMID 20975938): a 70-kg runner needs ≈2950 kcal for a marathon; liver ≈88 g, at most ≈160 g; “hitting the wall” = “bonking”',
   wasserman2009: 'Wasserman 2009, Am J Physiol (PMID 18840763): ≈4 g glucose in blood (70 kg)',
   lange2004: 'Lange 2004, Scand J Med Sci Sports (PMID 15043630): adipose triglyceride ≈12 kg ≈404 MJ; intramuscular TG ≈0.3 kg',
   goforth1997: 'Goforth 1997, J Appl Physiol (PMID 9029236): loading ×1.79; maintained ≥3 days at rest on moderate CHO',
@@ -537,6 +537,7 @@ const TOPICS = [
     lead: ['Muscle glycogen fuels only the muscle that holds it; liver glycogen keeps blood glucose up for the rest of the body. How full the stores are at the start decides how long a hard effort lasts: 59, 126 and 189 min at 75% VO₂max after a low-, mixed- and high-carbohydrate diet. When they run out you hit the wall.', 'bergstrom1967'],
     more: [["The wall and eating during exercise", [
         ["“Hitting the wall” (“bonking”) means running out of carbohydrate. In recreational marathons it hits about 28% of men and 17% of women, typically after about 32 km.", "rapoport2010 smyth2021"],
+        ["Why about 32 km: running costs about 1 kcal per kg per km, so a 70-kg runner needs ≈2950 kcal for the marathon, ≈70 kcal per km. Glycogen holds ≈2000 kcal; if it paid for everything it would last ≈29 km. Fat covers part of the cost, but only the glycogen in the running legs (plus the liver) can be used, so the stores run out at around 30–35 km.", "rapoport2010 hearris2018 hall2008"],
         ["Carbohydrate eaten during exercise spares the liver, not the muscle, yet still delays fatigue (about 3 → 4 h at 71% VO₂max).", "gonzalez2015 coyle1986"],
         ["For VO₂max 55, 75% VO₂max is already at OBLA, so the times here are shorter than Bergström’s (his subjects worked below their threshold); the ratios between low, mixed and high glycogen are the same.", "bergstrom1967"]]],
       ["Loading and why muscle cannot share", [
