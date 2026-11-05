@@ -1042,7 +1042,7 @@ const CHARTS = {
     const band = (top, bot, fill) => el('path', { d: top.map(([u, v], i) => `${i ? 'L' : 'M'}${a.X(u)},${a.Y(v)}`).join('') + [...bot].reverse().map(([u, v]) => `L${a.X(u)},${a.Y(v)}`).join('') + 'Z', fill }, ch);
     band(F, F.map(([u]) => [u, 0]), C.marker); band(CO, F, C.ink); band(LA, CO, 'url(#hatchL)');
     vmark(a, PU(S.p));
-    return ['Fuel mix and intensity', LEG([['fat → CO₂', 0, 0, C.marker], ['glucose → CO₂', 0, 0, C.ink], ['glucose → lactate (used later)', 0, 0, C.ink2]])];
+    return ['Fuel mix and intensity', LEG([['fat → CO₂', 0, 0, C.marker], ['glucose → CO₂', 0, 0, C.ink], ['glucose → lactate (used later)', 0, 0, 'repeating-linear-gradient(135deg,#38305F 0 1.7px,#F2F0F1 1.7px 4.2px)']])];
   },
   stores() {
     clear(ch);
