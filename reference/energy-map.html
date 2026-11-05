@@ -1228,13 +1228,18 @@ const CHARTS = {
     return ['Acute mountain sickness by altitude (Swiss Alps huts)', LEG([['% with AMS', 0, 0, C.ink]])];
   },
   acz() {
-    const h = Math.max(S.alt, 2000);
-    const a = axes('days at altitude', 'SpO₂ at rest (%)', [0, 2, 4, 6, 8, 10].map(d => [d / 10, String(d)]), [[0, '70'], [0.5, '85'], [1, '100']]);
-    const Y = v => (v - 70) / 30;
-    line(range(50, u => [u, Y(breath(0, { alt: h, days: 10 * u, acz: false }).spo2Rest)]), a, { c: C.ink, w: 3 });
-    line(range(50, u => [u, Y(breath(0, { alt: h, days: 10 * u, acz: true }).spo2Rest)]), a, { c: C.blood, w: 3, d: '6 3' });
-    vmark(a, S.days / 10);
-    return [`Acclimatisation at ${h} m`, LEG([['no drug', C.ink], ['acetazolamide', C.blood, 1]])];
+    const h = S.alt >= 3000 ? S.alt : 4000;   // poniżej ~3000 m różnice są małe; wtedy pokazujemy 4000 m
+    const a = axes('days at altitude', 'SpO₂ at rest (%)', [0, 2, 4, 6, 8, 10].map(d => [d / 10, String(d)]), [[0, '75'], [0.4, '85'], [0.8, '95'], [1, '100']]);
+    const Y = v => (v - 75) / 25;
+    const no = range(50, u => [u, Y(breath(0, { alt: h, days: 10 * u, acz: false }).spo2Rest)]), yes = range(50, u => [u, Y(breath(0, { alt: h, days: 10 * u, acz: true }).spo2Rest)]);
+    el('path', { d: 'M' + yes.map(([u, v]) => `${a.X(u).toFixed(1)},${a.Y(v).toFixed(1)}`).join('L') + 'L' + no.slice().reverse().map(([u, v]) => `${a.X(u).toFixed(1)},${a.Y(v).toFixed(1)}`).join('L') + 'Z', fill: C.blood, opacity: 0.15 }, ch);
+    line(no, a, { c: C.ink, w: 3 });
+    line(yes, a, { c: C.blood, w: 3, d: '6 3' });
+    if (S.days > 0) vmark(a, S.days / 10);
+    const d0 = breath(0, { alt: h, days: 0, acz: false }).spo2Rest, d7 = breath(0, { alt: h, days: 7, acz: false }).spo2Rest, z0 = breath(0, { alt: h, days: 0, acz: true }).spo2Rest;
+    tx(ch, `day 0 → 7: +${Math.round(d7 - d0)} points`, a.X(0.98), a.Y(Y(d7)) + 16, { size: 10, it: true, anchor: 'end' });
+    tx(ch, `drug: +${Math.round(z0 - d0)} on day 0`, a.X(0.02) + 4, a.Y(Y(d0)) + 14, { size: 10, it: true, fill: C.blood });
+    return [`Acclimatisation at ${h} m${S.alt < 3000 ? ' (below 3000 m the changes are small)' : ''}`, LEG([['no drug', C.ink], ['acetazolamide', C.blood, 1]])];
   },
   bcaa() {
     const a = axes('time (h)', 'share of energy', [0, 1, 2, 3, 4, 5].map(h => [h / 5, String(h)]), [[0.25, '3%'], [0.5, '6%']]);
