@@ -284,6 +284,12 @@ const SRC = {
   lundby2004: 'Lundby 2004, Am J Physiol (PMID 15191909): SaO₂ fell to 73% at maximal exercise in acute hypoxia (4100 m)',
   keir2024: 'Keir 2024, Sports Med (PMID 39110323): at the respiratory compensation point ventilation begins to exceed CO₂ clearance',
   mota1999: 'Mota 1999, J Appl Physiol (PMID 9931198): maximal ventilation 147 L/min (122–180) in competitive cyclists',
+  pires2011: 'Pires 2011, Br J Sports Med (PMID 21464149): TTE 93.8 min at LT1, 44.5 min at LT2 (healthy men)',
+  gallo2024: 'Gallo 2024, Eur J Appl Physiol (PMID 38483635): trained cyclists, 30-min bouts at 90% of VT1: time to task failure 234 ± 66 min',
+  baron2008: 'Baron 2008, Br J Sports Med (PMID 18070803): TTE at MLSS 55.0 (SD 8.5) min, trained men cycling',
+  fontana2009: 'Fontana 2009, Eur J Appl Physiol (PMID 19551404): TTE at MLSS 34–38 min, moderately trained men',
+  pallares2026: 'Pallarés 2026, Int J Sports Physiol Perform (PMID 41722553): TTE 3:38 at VO₂max, 10:58 at RCP, 56:42 at MLSS; not related to VO₂max',
+  brickley2002: 'Brickley 2002, Eur J Appl Physiol (PMID 12436283): time to failure at CP 20–41 min',
   jones2010: 'Jones 2010, Med Sci Sports Exerc (PMID 20195180): t = W′/(P − CP)',
   poole2016: 'Poole 2016, Med Sci Sports Exerc (PMID 27031742): CP = upper boundary of the heavy domain, close to MLSS, at 70–80% VO₂max',
   billat1996: 'Billat & Koralsztein 1996, Sports Med (PMID 8857705): time to exhaustion at vVO₂max averages about 6 min (CV ≈25%)',
@@ -353,11 +359,24 @@ const AMS_PTS = [[2850, 9], [3050, 13], [3650, 34], [4559, 53]];
 // skalibrowana tak, by TTE przy 100% VO₂max ≈ 6 min [billat1996]; kształt w skrajnych zakresach ilustracyjny
 const CPp = () => Math.min(85, OBLA() + 3);
 const pcrLevel = p => clamp(1 - 0.25 * p / OBLA() - 0.45 * smooth((p - OBLA()) / (100 - OBLA())) - 0.2 * clamp((p - 100) / 50));   // zapas PCr (względny): kierunek, wielkości ilustracyjne
-const TLIM100 = 6;   // [billat1996]; CP ≈ 70–80% VO₂max, blisko MLSS [poole2016]
-const tteCP = p => p <= CPp() ? Infinity : TLIM100 * (100 - CPp()) / (p - CPp());
+// Krzywa TTE przez punkty ze źródeł (interpolacja log-liniowa między nimi; wartości pośrednie ilustracyjne):
+//   LT1: ≈94 min u zdrowych mężczyzn [pires2011] … ≈4 h u wytrenowanych kolarzy [gallo2024] (skala wg VO₂max — ilustracyjnie)
+//   OBLA ≈ MLSS: ≈55 min (zakres 34–76) [baron2008, pallares2026]; nie zależy od VO₂max [pallares2026]
+//   CP: 20–41 min [brickley2002] → 30 min;  VO₂max: ≈4–6 min [pallares2026, billat1996] → 5 min;  powyżej CP: W′/(P − CP) [jones2010]
+const TLIM100 = 5, T_MLSS = 55, T_CP = 30;
+const T_LT1 = () => 94 + (240 - 94) * clamp((S.vo2max - 40) / 25);
+const lerpLog = (p, p0, t0, p1, t1) => Math.exp(Math.log(t0) + (Math.log(t1) - Math.log(t0)) * (p - p0) / (p1 - p0));
+const tteCP = p => {
+  const lt = LT(), ob = OBLA(), cp = CPp();
+  if (p < lt - 15) return Infinity;
+  if (p <= lt) return lerpLog(p, lt - 15, T_LT1() * 4, lt, T_LT1());
+  if (p <= ob) return lerpLog(p, lt, T_LT1(), ob, T_MLSS);
+  if (p <= cp) return lerpLog(p, ob, T_MLSS, cp, T_CP);
+  return Math.min(T_CP, TLIM100 * (100 - cp) / (p - cp));
+};
 const TTE = () => Math.min(tteCP(S.p), SIM.wall === null ? Infinity : SIM.wall);
-const fmtDur = m => m === Infinity ? '> 5 h' : m >= 60 ? '≈ ' + fmtT(m) : m >= 2 ? `≈ ${Math.round(m)} min` : `≈ ${Math.round(m * 60)} s`;
-const tteWhy = () => tteCP(S.p) < (SIM.wall ?? Infinity) ? 'above critical power: fatigue' : SIM.wall !== null ? 'carbohydrate runs out (the wall)' : '';
+const fmtDur = m => m > TMAX ? '> 5 h' : m >= 60 ? '≈ ' + fmtT(m) : m >= 2 ? `≈ ${Math.round(m)} min` : `≈ ${Math.round(m * 60)} s`;
+const tteWhy = () => tteCP(S.p) < (SIM.wall ?? Infinity) ? (S.p > CPp() ? 'above critical power' : 'fatigue') : SIM.wall !== null ? 'carbohydrate runs out (the wall)' : '';
 const tteText = () => fmtDur(TTE()) + (tteWhy() ? ` (${tteWhy()})` : '');                         // gdzie mleczan = 4 mmol/L [sjodin1981]
 const gutFlow = p => 1 - 0.8 * smooth((p - 10) / 90);               // −80% przy maks. [tersteege2012]
 const musFlow = p => 0.15 + 0.85 * smooth((p - 5) / 95);
@@ -484,11 +503,11 @@ const TOPICS = [
     b: [['Ventilation rises with VO₂; above the first ventilatory threshold (VT1) it rises faster than VO₂.', ''],
         ['At the respiratory compensation point (RCP) ventilation starts to rise faster than CO₂ output, so blood CO₂ falls (compensating for lactic acid).', 'keir2024'],
         ['In competitive cyclists maximal ventilation was about 147 L/min (range 122–180).', 'mota1999'],
-        ['Critical power (CP) is the top of the heavy domain, close to the maximal lactate steady state, at about 70–80% VO₂max in healthy young people (higher in trained athletes). Above it TTE = W′/(P − CP): at VO₂max about 6 min.', 'poole2016 jones2010 billat1996'],
+        ['Critical power (CP) is the top of the heavy domain, close to the maximal lactate steady state, at about 70–80% VO₂max in healthy young people (higher in trained athletes). Above it TTE = W′/(P − CP): at VO₂max about 4–6 min.', 'poole2016 jones2010 billat1996 pallares2026'],
         ['Above 100% VO₂max the extra energy comes without oxygen (PCr, glycolysis to lactate). In an all-out effort aerobic and anaerobic supply are equal at about 75 s.', 'gastin2001']],
     terms: [['VT1', 'First ventilatory threshold: ventilation starts to rise faster than VO₂.', ''],
             ['RCP (VT2)', 'Respiratory compensation point: ventilation rises faster than CO₂ output and blood CO₂ falls.', 'keir2024'],
-            ['TTE (time to exhaustion)', 'How long a fixed intensity can be held. Below CP: often limited by carbohydrate (the wall); heat, fluid loss and fatigue also matter. Above CP: W′/(P − CP), minutes or seconds.', 'jones2010 bergstrom1967']] },
+            ['TTE (time to exhaustion)', 'How long a fixed intensity can be held. At LT1 about 1.5 h in healthy men and up to about 4 h in trained cyclists; at MLSS (close to OBLA) typically 35–75 min, about 55; at critical power 20–40 min; at VO₂max 4–6 min. Above CP: W′/(P − CP). Carbohydrate (the wall), heat and fluid loss can cut it shorter.', 'pires2011 gallo2024 baron2008 fontana2009 brickley2002 pallares2026 jones2010']] },
   { id: 'alt', name: 'Altitude & hypoxia', organ: 'lungs', flows: ['rbcMus'], chart: 'alt',
     b: [['Air pressure falls with altitude (about 537 mmHg at 3000 m and 420 at 5000 m, from West’s model), so each breath carries less O₂.', 'west1996'],
         ['VO₂max falls by about 6.3% per 1000 m (4.6–7.5%), measured from 300 to 2800 m; higher up the line here is extended and probably underestimates the loss.', 'wehrlin2006'],
@@ -1160,6 +1179,7 @@ const gauge = (s, v, cls = '', tick) => `<div class="g ${cls}"><span>${s}</span>
 const ro = rows => rows.map(([a, b]) => `<span>${a}</span><b>${b}</b>`).join('');
 
 function renderOrgan() {
+  if (renderOrgan.last !== S.organ) { $('paneOrgan').scrollTop = 0; renderOrgan.last = S.organ; }
   const o = ORGANS[S.organ], T = TOPICS.find(x => x.id === S.topic), E = cur.E, sh = E.sh, A = cur.A;
   $('oCrumb').textContent = S.organ === 'mito' ? 'Zoom into a working muscle cell' : `${T.name}, seen in this organ`;
   $('oTitle').textContent = o.name; $('oLead').textContent = o.lead;
@@ -1185,7 +1205,7 @@ function renderOrgan() {
     G = [gauge('PDH (pyruvate)', sh.c * (1 - sh.l)), gauge('β-oxidation (fat)', sh.f, 'soft'), gauge('Pyruvate → lactate', sh.c * sh.l, 'warn')]; }
   $('readouts').innerHTML = ro(R); $('gauges').innerHTML = G.join('');
   const al = [];
-  if (S.t >= TTE() && tteCP(S.p) <= TTE()) al.push('Exhausted: above critical power this intensity cannot be held any longer (TTE).');
+  if (S.t >= TTE() && tteCP(S.p) <= TTE()) al.push('Exhausted: this intensity cannot be held any longer (TTE).');
   else if (SIM.wall !== null && S.t >= SIM.wall) al.push('The wall: carbohydrate is running out; this intensity can no longer be held.');
   else if (cur.bg < 0.97) al.push('Liver glycogen is exhausted: blood glucose is falling.');
   if (A.unabs > 5) al.push(`About ${fmt(A.unabs)} g/h is more than the gut can absorb here and stays in the gut: GI symptoms more likely.`);
@@ -1193,6 +1213,7 @@ function renderOrgan() {
   $('organs').innerHTML = 'Go to: ' + Object.keys(ORGANS).map(k => `<button type="button" data-organ="${k}" aria-pressed="${k === S.organ}">${ORGANS[k].name.toLowerCase()}</button>`).join('<span class="sep">/</span>');
 }
 function renderTopic() {
+  if (renderTopic.last !== S.topic) { $('paneTopic').scrollTop = 0; renderTopic.last = S.topic; }
   const i = TOPICS.findIndex(x => x.id === S.topic), T = TOPICS[i];
   $('tNum').textContent = `${groupOf(T.id)[1]} · topic ${topicNum(T.id)}`;
   $('tTitle').textContent = T.name;
@@ -1227,7 +1248,7 @@ $('srcOpen').addEventListener('click', openSrc);
 document.querySelector('.dock [data-src]').addEventListener('click', openSrc);
 $('srcClose').addEventListener('click', () => srcDlg.close());
 srcDlg.addEventListener('click', ev => { if (ev.target === srcDlg) srcDlg.close(); });
-$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~60% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; TTE above 100% VO₂max (CP curve extended); VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity and the phase weights of PCr refilling; anaerobic carbohydrate use above VO₂max.</li>';
+$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~60% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE between the sourced points (LT1, MLSS, CP, VO₂max) interpolated, and TTE at LT1 scaled with VO₂max between the untrained and trained values; VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity and the phase weights of PCr refilling; anaerobic carbohydrate use above VO₂max.</li>';
 
 /* ───────────── INTERAKCJA ───────────── */
 function renderNav() {
