@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0] — 2026-11-05 (czytelność rolki)
+
+### Zmienione
+- Rolka w studiu: nowy układ `reel` (logicznie 720 × 742) rysowany ze skalą ok. 1,32 dokładnie w strefie bezpiecznej Reels kadru 1080 × 1920. Wszystkie napisy w rolce są ok. 1,3 raza większe (legenda 20 → ok. 26 px w kadrze 1080).
+- Rolka pokazuje sceny: najpierw panele A + B (kadry Rest → Hard or long), potem sam panel C (kadry Carbs), z przenikaniem przy starcie kadru „Carbs: ~1 h”. Legenda każdej sceny podaje tylko jej źródła. Trzy panele naraz nie mieściły się w strefie z większymi napisami. Strona publiczna bez zmian (wszystkie panele naraz).
+- Papier i ziarno zawsze na całym płótnie, niezależnie od skali układu; `marker` i `hatchBox` mnożą przezroczystość (przenikanie scen).
+
+### Usunięte
+- Układ `portrait` (1080 × 1920 bez skalowania), zastąpiony przez `reel`.
+
+### Testy
+- `liczby_strefa`: prostokąty paneli ze wszystkich scen w granicach; granice rolki po skalowaniu muszą leżeć w strefie Reels.
+
 ## [0.5.0] — 2026-11-05 (czytelność na telefonie)
 
 ### Dodane

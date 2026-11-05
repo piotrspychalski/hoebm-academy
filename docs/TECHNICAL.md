@@ -22,7 +22,7 @@ Studio budowane jest z tych samych plików + `src/studio/*` (`STUDIO = true`). W
 Studio online: CI dokłada je pod `dist/<STUDIO_PATH>/`, gdzie `STUDIO_PATH` to **sekret repozytorium** (min. 16 znaków), więc ścieżki nie ma w kodzie ani w logach; strona ma `noindex` i nie ma do niej linków. To ochrona przez nieznany adres, nie hasło. Szkice (`draft`) są widoczne tylko lokalnie z `?preview`, także w studiu, i mają znak wodny „DRAFT · NOT FOR PUBLICATION”.
 
 ## Układy ryciny
-`src/core/01-tokeny.js`: `LAYOUTS.portrait` (1080 × 1920; studio / rolka), `LAYOUTS.phone` (720 × 1100; telefon pionowo) i `LAYOUTS.landscape` (1440 × 810; komputer i telefon poziomo). Bieżący układ to `LY` (ustawia `setView()` w scenie przy starcie i przy zmianie komputer ↔ telefon).
+`src/core/01-tokeny.js`: `LAYOUTS.reel` (logicznie 720 × 742, `place` = skala ok. 1,32 do strefy Reels kadru 1080 × 1920; studio / rolka; panele w scenach `scenes.AB` i `scenes.C` zamiast `boxes`), `LAYOUTS.phone` (720 × 1100; telefon pionowo) i `LAYOUTS.landscape` (1440 × 810; komputer i telefon poziomo). Bieżący układ to `LY` (ustawia `setView()` w scenie przy starcie i przy zmianie komputer ↔ telefon).
 Układ ma: marginesy `L`/`R`, położenie nagłówka i tytułu (`inline` — tytuł w jednej linii), odczyty (`readY`, `readH`), legendę (`legendBottom`, `legendPx`, `legendCols`), prostokąty paneli `boxes.A/B/C` i granice treści `bounds`.
 Moduł ryciny rysuje panele w `LY.boxes`; wysoki prostokąt (`h > 300`) = wariant poziomy (większe elementy, opisy nad wykresem).
 
@@ -32,7 +32,7 @@ Kolory, kroje, grubości linii i czasy animacji są **tylko** w `:root` w `src/s
 
 ## Moduły
 **src/core — rdzeń rysowania**
-- `01-tokeny.js`: `T`, `font()`, scena `W×H` = 1080×1920, strefa bezpieczna `SAFE` (x 65–1015, y 269–1248), marginesy `L`/`R`, `REDUCE` (prefers-reduced-motion), `smooth()`
+- `01-tokeny.js`: `T`, `font()`, scena `W×H` = 1080×1920, strefa bezpieczna `SAFE` (x 65–1015, y 269–1248), `REDUCE` (prefers-reduced-motion), `smooth()`
 - `02-rng-ziarno.js`: `rng(seed)` (mulberry32), `grain()` (ziarno papieru, liczone raz)
 - `03-tekst.js`: `txt(ctx, s, x, y, {font, color, align, role, claim})` to jedyna droga rysowania tekstu; log klatki `window.__hoebmText()` (tekst, bbox, rola, claim) dla testów; `beginFrame()`
 - `04-prymitywy.js`: `marker()` (zakreślacz), `bezAt`/`vessel` (naczynia), `particles` (faza = f(czas sekwencji) → determinizm), `hatchBox` (kreskowanie do poziomu), `panelLabel`, `readouts` (pasek odczytów), `keyAt` (klatki kluczowe, smoothstep), rejestr modułów `FIGMOD`
@@ -65,6 +65,6 @@ Kolory, kroje, grubości linii i czasy animacji są **tylko** w `:root` w `src/s
 - `rejestr.js`: schemat, PMID/DOI, cytaty w claims, brak `to_verify` w rycinach opublikowanych
 - `zakazane.js` + `zakazane.json`: dawki i nazwy handlowe w treści rycin
 - `kontrast.js`: tokeny wobec tła, WCAG AA
-- `liczby_strefa.js`: rdzeń (`dist/core.js`) w Node na atrapie canvasu; każda rycina × oba układy × cała sekwencja co 250 ms, każdy kadr i siatka suwaków (7 wartości na parametr). Sprawdza: (1) każda liczba w tekście o roli `content` ma claim tej ryciny i występuje w jego `display`/`derived`; `citation` = rok lub PMID źródła ryciny; `fig` = numer ryciny; (2) każdy tekst w `LY.bounds` (pion = strefa Reels); (3) brak nakładania się tekstów (2 px); (4) prostokąty paneli w granicach. Szerokości tekstu z `tests/szerokosci.json` (zmierzone w Chrome; odtworzenie: `tools/szerokosci.js`).
+- `liczby_strefa.js`: rdzeń (`dist/core.js`) w Node na atrapie canvasu; każda rycina × wszystkie układy × cała sekwencja co 250 ms, każdy kadr i siatka suwaków (7 wartości na parametr). Sprawdza: (1) każda liczba w tekście o roli `content` ma claim tej ryciny i występuje w jego `display`/`derived`; `citation` = rok lub PMID źródła ryciny; `fig` = numer ryciny; (2) każdy tekst w `LY.bounds`, a granice rolki po skalowaniu `place` w strefie Reels; (3) brak nakładania się tekstów (2 px); (4) prostokąty paneli (także ze scen rolki) w granicach. Szerokości tekstu z `tests/szerokosci.json` (zmierzone w Chrome; odtworzenie: `tools/szerokosci.js`).
 
 Zrzuty w przeglądarce (1080×1920 i telefon), determinizm sekwencji i reduced motion są w prywatnym `lab-tools/hoebm-academy`.
