@@ -5,7 +5,7 @@
 // Reguły:
 //  - tekst z cyfrą i rolą 'content' musi mieć claim tej ryciny, a każda liczba w tekście musi występować w display/derived tego claimu
 //  - rola 'citation': liczba = rok albo PMID źródła tej ryciny · 'fig': numer tej ryciny · 'axis': podziałka osi (dozwolona)
-//  - każdy tekst w granicach układu (LY.bounds; w pionie = strefa bezpieczna Reels x 65–1015, y 269–1248)
+//  - każdy tekst w granicach układu (LY.bounds; rolka: granice po skalowaniu = strefa bezpieczna Reels x 65–1015, y 269–1248)
 //  - teksty nie nachodzą na siebie (tolerancja 2 px)
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const R = path.join(__dirname, '..');
@@ -68,7 +68,13 @@ for (const f of reg.figures) {
   for (const layout of Object.values(api.LAYOUTS)) {
     api.setLY(layout);
     const B = layout.bounds;
-    for (const box of Object.values(layout.boxes)) if (box.x < B.x0 || box.x + box.w > B.x1 || box.y < B.y0 || box.y + box.h > B.y1) err(`${layout.id}: prostokąt panelu poza granicami ${JSON.stringify(box)}`);
+    // rolka: układ logiczny przeskalowany (place) musi leżeć w strefie bezpiecznej Reels płótna 1080 × 1920
+    if (layout.place) {
+      const { x, y, k } = layout.place, SZ = { x0: 65, x1: 1015, y0: 269, y1: 1248 };
+      if (x + B.x0 * k < SZ.x0 - 0.5 || x + B.x1 * k > SZ.x1 + 0.5 || y + B.y0 * k < SZ.y0 - 0.5 || y + B.y1 * k > SZ.y1 + 0.5) err(`${layout.id}: granice po skalowaniu poza strefą bezpieczną Reels`);
+    }
+    const boxes = layout.scenes ? Object.values(layout.scenes).flatMap(sc => Object.values(sc)) : Object.values(layout.boxes);
+    for (const box of boxes) if (box.x < B.x0 || box.x + box.w > B.x1 || box.y < B.y0 || box.y + box.h > B.y1) err(`${layout.id}: prostokąt panelu poza granicami ${JSON.stringify(box)}`);
     for (const s of states) {
       api.beginFrame(); frames++;
       const ctx = fakeCtx();

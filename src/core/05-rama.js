@@ -55,9 +55,12 @@ function frameLegend(ctx, lines, px = LY.legendPx) {
   });
 }
 
+// Papier na całym płótnie, niezależnie od skali układu (rolka rysuje treść przeskalowaną, tło zostaje w pikselach płótna)
 function framePaper(ctx) {
-  ctx.fillStyle = T.c.paper; ctx.fillRect(0, 0, LY.W, LY.H);
-  for (let x = 0; x < LY.W; x += W) ctx.drawImage(grain(), x, 0);   // ziarno 1080 × 1920, kafelkowane w poziomie
+  const c = ctx.canvas; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = T.c.paper; ctx.fillRect(0, 0, c.width, c.height);
+  for (let x = 0; x < c.width; x += W) ctx.drawImage(grain(), x, 0);   // ziarno 1080 × 1920, kafelkowane w poziomie
+  ctx.restore();
 }
 
 function frameSafeZone(ctx) {

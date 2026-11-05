@@ -2,15 +2,15 @@
 // Tryb sekwencji: stan = keyAt(klatki, czas). Tryb ręczny (ruszony suwak): stan = wartości suwaków.
 const cv = () => $('stage');
 let ctx = null, lastNow = performance.now();
-// Kadr widoku: studio — pełne 9:16 (1080 × 1920, ze strefą Reels); telefon — pionowy obszar treści (y 245–1275);
-// komputer — układ poziomy 1440 × 810 (panele obok siebie). setView() przy starcie i przy zmianie komputer ↔ telefon.
+// Kadr widoku: studio — płótno 9:16 (1080 × 1920) z układem rolki skalowanym do strefy Reels; telefon pionowo — 720 × 1100;
+// komputer i telefon poziomo — 1440 × 810 (panele obok siebie). setView() przy starcie i przy zmianie orientacji.
 let VIEW = null;
 const landMQ = matchMedia('(orientation: landscape)');
 function setView() {
   // telefon trzymany poziomo dostaje układ poziomy (jak komputer) — w pionowym kadrze rycina byłaby za mała
   const wide = !STUDIO && (!MOBILE || landMQ.matches);
-  LY = STUDIO ? LAYOUTS.portrait : wide ? LAYOUTS.landscape : LAYOUTS.phone;   // telefon pionowo: osobny, węższy układ
-  VIEW = STUDIO ? { y0: 0, w: W, h: H } : { y0: 0, w: LY.W, h: LY.H };
+  LY = STUDIO ? LAYOUTS.reel : wide ? LAYOUTS.landscape : LAYOUTS.phone;   // telefon pionowo: osobny, węższy układ
+  VIEW = STUDIO ? { w: W, h: H } : { w: LY.W, h: LY.H };   // studio: płótno 9:16, treść rolki skalowana do strefy Reels
   const c = cv(); if (c.width !== VIEW.w) c.width = VIEW.w; if (c.height !== VIEW.h) c.height = VIEW.h;
   document.documentElement.classList.toggle('wide', LY.id === 'landscape');
 }
@@ -118,7 +118,8 @@ let lastFrameIdx = -1;
 function loop(now) {
   const dt = Math.min(50, now - lastNow); lastNow = now;
   beginFrame();
-  ctx.setTransform(1, 0, 0, 1, 0, -VIEW.y0);   // współrzędne rycin zawsze w układzie 1080 × 1920
+  const P = LY.place;   // rolka: układ logiczny skalowany do strefy bezpiecznej; pozostałe układy 1 : 1
+  ctx.setTransform(P ? P.k : 1, 0, 0, P ? P.k : 1, P ? P.x : 0, P ? P.y : 0);
   let ms = CLOCK.now();
   if (CLOCK.stopAt != null && ms >= CLOCK.stopAt) { CLOCK.pause(CLOCK.stopAt); ms = CLOCK.stopAt; CLOCK.stopAt = null; }
   if (SCN.mod && !SCN.manual && ms > frameEnd() && !CLOCK.paused) { CLOCK.pause(frameEnd()); ms = frameEnd(); }
@@ -130,7 +131,8 @@ function loop(now) {
     lastFrameIdx = fi;
   } else drawEmpty(ms);
   if (f && f.status !== 'published') drawDraftMark();
-  if (STATE.safe) frameSafeZone(ctx);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (STATE.safe) frameSafeZone(ctx);   // nakładka w pikselach płótna 1080 × 1920
   requestAnimationFrame(loop);
 }
 function initStage() {

@@ -5,7 +5,7 @@ const _mj = (() => { const r = rng(11); return Array.from({ length: 32 }, r); })
 function marker(ctx, x, y, w, h, k = 1) {
   if (k <= 0) return;
   w *= Math.min(1, k);
-  ctx.save(); ctx.globalAlpha = 0.9; ctx.fillStyle = T.c.marker; ctx.beginPath();
+  ctx.save(); ctx.globalAlpha *= 0.9; ctx.fillStyle = T.c.marker; ctx.beginPath();
   const n = 12, j = _mj;
   ctx.moveTo(x + j[0] * 10, y + (j[1] - 0.5) * 6);
   for (let i = 1; i <= n; i++) ctx.lineTo(x + w * i / n, y + (j[i + 1] - 0.5) * 6);
@@ -41,7 +41,7 @@ function hatchBox(ctx, x, y, w, h, level, color = T.c.blood) {
   ctx.save(); ctx.fillStyle = T.c.paper; ctx.strokeStyle = T.c.ink; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke(); ctx.clip();
   level = Math.max(0, Math.min(1, level));
-  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.globalAlpha = 0.25 + 0.75 * level;
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.globalAlpha *= 0.25 + 0.75 * level;   // mnożymy: scena rolki może być w trakcie przenikania
   const top = y + h - h * level;
   for (let xx = x - h - 10; xx < x + w; xx += 14) { ctx.beginPath(); ctx.moveTo(xx, y + h); ctx.lineTo(xx + h, top); ctx.stroke(); }
   ctx.restore();

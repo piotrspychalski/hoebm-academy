@@ -116,6 +116,11 @@
     if (col >= 0) { const px = xOf(Math.min(1, d)); ctx.fillStyle = T.c.blood; ctx.beginPath(); ctx.moveTo(px, yB - 2); ctx.lineTo(px - 8, yB - 15); ctx.lineTo(px + 8, yB - 15); ctx.fill(); }   // wskaźnik czasu nad osią
   }
 
+  // Legenda (źródła; rola 'citation' zwalnia rok/PMID z claimów)
+  const LEG_AB = [{ s: 'Schematic, not to scale. A–B: ter Steege & Kolkman ' }, { s: '2012', role: 'citation' }, { s: ', PMID ' }, { s: '22229513', role: 'citation' }];
+  const LEG_C = [{ s: 'C: Jeukendrup ' }, { s: '2014', role: 'citation' }, { s: ' (GSSI), PMID ' }, { s: '24791914', role: 'citation' }, { s: '; Costa ' }, { s: '2017', role: 'citation' }, { s: ', PMID ' }, { s: '28589631', role: 'citation' }];
+  const LEG_LINK = 'No data link g/h to heart-rate zones or gut blood flow.', LEG_EDU = 'Education, not medical advice.';
+
   FIGMOD['gut-blood-flow'] = {
     params: [
       { id: 'effort', label: 'Effort', fmt: phase },
@@ -136,16 +141,25 @@
         { label: 'GUT BLOOD FLOW', value: e >= 0.85 ? '↓ ≥80%' : e >= 0.15 ? '↓' : '—', color: e >= 0.85 ? T.c.blood : T.c.ink, claim: e >= 0.85 ? 'sbf-80' : null },
         { label: 'CARBS', value: col < 0 ? '—' : COLS[col].read, claim: col < 0 ? null : COLS[col].claim },
       ]);
-      panelA(ctx, LY.boxes.A, g, m);
-      panelB(ctx, LY.boxes.B, e, g);
-      panelC(ctx, LY.boxes.C, d, col);
-      // Legenda (źródła; rola 'citation' zwalnia rok/PMID z claimów)
-      frameLegend(ctx, [
-        [{ s: 'Schematic, not to scale. A–B: ter Steege & Kolkman ' }, { s: '2012', role: 'citation' }, { s: ', PMID ' }, { s: '22229513', role: 'citation' }],
-        [{ s: 'C: Jeukendrup ' }, { s: '2014', role: 'citation' }, { s: ' (GSSI), PMID ' }, { s: '24791914', role: 'citation' }, { s: '; Costa ' }, { s: '2017', role: 'citation' }, { s: ', PMID ' }, { s: '28589631', role: 'citation' }],
-        'No data link g/h to heart-rate zones or gut blood flow.',
-        'Education, not medical advice.',
-      ]);
+      if (!LY.scenes) {
+        panelA(ctx, LY.boxes.A, g, m); panelB(ctx, LY.boxes.B, e, g); panelC(ctx, LY.boxes.C, d, col);
+        frameLegend(ctx, [LEG_AB, LEG_C, LEG_LINK, LEG_EDU]);
+        return;
+      }
+      // Rolka: scena A + B, potem sam C. Przejście, gdy zaczyna rosnąć czas wysiłku (d 0 → 1/6, kadr „Carbs: ~1 h”):
+      // A + B gaśnie w pierwszej połowie, C pojawia się w drugiej — nigdy obie naraz (testy sprawdzają nachodzenie napisów)
+      const k = Math.min(1, d * 6), S2 = LY.scenes;
+      ctx.save();
+      if (k < 0.5) {
+        ctx.globalAlpha = 1 - smooth(2 * k);
+        panelA(ctx, S2.AB.A, g, m); panelB(ctx, S2.AB.B, e, g);
+        frameLegend(ctx, [LEG_AB, LEG_EDU]);
+      } else {
+        ctx.globalAlpha = smooth(2 * k - 1);
+        panelC(ctx, S2.C.C, d, col);
+        frameLegend(ctx, [[{ s: 'Schematic, not to scale. ' }, ...LEG_C], LEG_LINK, LEG_EDU]);
+      }
+      ctx.restore();
     },
   };
 })();
