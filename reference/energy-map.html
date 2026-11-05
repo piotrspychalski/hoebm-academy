@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Energy Map Sketch</title>
+<title>Master sketch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
 <style>
@@ -21,7 +21,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { background: var(--paper); color: var(--ink-2); font: 400 14px/1.5 var(--sans); overflow: hidden;
-  display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); height: 100vh; height: 100dvh; }
+  display: grid; grid-template-rows: auto auto minmax(0, 1fr); height: 100vh; height: 100dvh; }
 button, input { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--blood); outline-offset: 2px; }
 
@@ -40,7 +40,9 @@ header .draft { margin-left: auto; font: italic 400 12px var(--sans); color: var
 .slider { position: relative; width: 210px; padding-bottom: 12px; }
 .slider.short { width: 150px; }
 .slider input { width: 100%; margin: 0; accent-color: var(--ink); }
-.tte { font: 600 12.5px var(--sans); color: var(--blood); white-space: nowrap; }
+.tte { font: 600 12.5px var(--sans); color: var(--blood); white-space: nowrap; min-width: 12ch; }
+#intOut { min-width: 15ch; } #timeOut { min-width: 7ch; } #gphOut { min-width: 7ch; } #altOut { min-width: 9ch; }
+.draft { font: italic 400 12px var(--sans); color: var(--blood); }
 .ticks { position: absolute; left: 8px; right: 8px; bottom: -2px; height: 12px; font: italic 400 10px var(--sans); }
 .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; color: var(--blood); }
 .ticks span::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 5px; background: var(--blood); }
@@ -58,6 +60,10 @@ header .draft { margin-left: auto; font: italic 400 12px var(--sans); color: var
 .topics .chip { flex: none; border: 0; background: none; padding: 1px 0; cursor: pointer; font: 400 14px var(--sans); color: var(--ink-2); border-bottom: 2px solid transparent; }
 .topics .chip b { font: 700 11px var(--display); color: var(--ink); margin-right: 5px; }
 .topics .chip[aria-pressed=true] { color: var(--ink); font-weight: 600; border-bottom-color: var(--blood); }
+.topics .groups, .topics .chips { display: flex; gap: 16px; align-items: baseline; flex: none; }
+.topics .groups { padding-right: 16px; border-right: 1px solid var(--hair); }
+.topics .grp { border: 0; background: none; padding: 1px 0; cursor: pointer; font: 600 12px var(--display); color: var(--ink-2); opacity: .55; white-space: nowrap; border-bottom: 2px solid transparent; }
+.topics .grp[aria-pressed=true] { opacity: 1; color: var(--ink); border-bottom-color: var(--ink); }
 .topics .nav { flex: none; border: 0; background: none; cursor: pointer; font: 400 18px var(--sans); color: var(--ink); padding: 0 2px; }
 
 /* Główna siatka: temat | mapa | narząd */
@@ -122,9 +128,6 @@ details li { margin: 3px 0; }
 
 /* ───── Telefon: mapa na cały ekran, panele jako arkusze ───── */
 @media (max-width: 899px), (pointer: coarse) and (max-height: 520px) {
-  header { padding: 8px 14px 6px; }
-  header h1 { font-size: 16px; }
-  header .draft { display: none; }
   .controls { padding: 6px 14px; gap: 2px 14px; }
   .slider { width: auto; flex: 1; }
   .ctl.core { flex: 1 1 100%; }
@@ -132,7 +135,9 @@ details li { margin: 3px 0; }
   .ctl.core .slider { min-width: 120px; }
   .ctl.core output { font-size: 11px; }
   .tte { font-size: 11px; }
-  .topics { padding: 5px 14px; gap: 14px; }
+  .topics { padding: 5px 14px; gap: 4px; flex-direction: column; align-items: stretch; }
+  .topics .groups, .topics .chips { overflow-x: auto; scrollbar-width: none; }
+  .topics .groups { border-right: 0; padding-right: 0; gap: 12px; }
   .main { grid-template-columns: minmax(0, 1fr); padding-bottom: 46px; }
   .mapwrap { grid-column: 1; }
   .pane, .pane.settings { display: block; position: fixed; left: 0; right: 0; bottom: 0; max-height: 64dvh; background: var(--paper); border: 0; border-top: 2px solid var(--ink);
@@ -151,11 +156,6 @@ details li { margin: 3px 0; }
 </style>
 </head>
 <body>
-<header>
-  <span class="fig">Fig. 2 <em>Energy · sketch</em></span>
-  <h1>Where does the fuel come from, and where does it go?</h1>
-  <span class="draft">Draft. Curve shapes illustrative; numbers checked against sources (see Sources).</span>
-</header>
 
 <div class="controls" id="controls">
   <div class="ctl core"><label for="int">Intensity</label><div class="slider"><input id="int" type="range" min="5" max="150" value="65"><div class="ticks" id="ticks"></div></div><output id="intOut"></output><span class="tte" id="tteOut"></span></div>
@@ -180,7 +180,7 @@ details li { margin: 3px 0; }
     <ul id="tBullets"></ul>
     <div id="tTerms"></div>
     <div class="chart"><h4 id="chTitle"></h4><svg id="chart" viewBox="0 0 330 190"></svg><div class="legend" id="chLegend"></div></div>
-    <details><summary>Sources, and what is illustrative</summary><ul id="srcList"></ul><p>Schematic, not to scale. Curve shapes are illustrative, not data; the model uses the sourced values listed here, and values marked “illustrative” have no source yet. Education, not medical advice.</p></details>
+    <details><summary>Sources, and what is illustrative</summary><p class="draft">Draft master sketch: curve shapes illustrative; numbers checked against the sources below.</p><ul id="srcList"></ul><p>Schematic, not to scale. Curve shapes are illustrative, not data; the model uses the sourced values listed here, and values marked “illustrative” have no source yet. Education, not medical advice.</p></details>
   </section>
   <div class="mapwrap"><svg id="map" viewBox="0 0 700 840" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Schematic body: heart and lungs in the chest, liver and gut in the abdomen, fat under the skin, working muscles in the legs and arms. Click an organ."></svg></div>
   <section class="pane right" id="paneOrgan" aria-live="polite">
@@ -516,6 +516,12 @@ const TOPICS = [
         ['Gross yield: glucose fully oxidised ≈30–32 ATP; palmitate ≈106 ATP.', 'rowland2026 mookerjee2017'],
         ['Per oxygen, fat gives less ATP than carbohydrate (ATP/O ≈2.45 vs ≈2.78). When O₂ delivery limits at high intensity, carbohydrate is the more oxygen-efficient fuel.', 'schmidt2021']] }
 ];
+// Grupy tematów (nawigacja dwupoziomowa); kolejność TOPICS = kolejność grup
+const GROUPS = [['fuel', 'Fuel & energy', ['vo2', 'fuel', 'energy', 'mito', 'pcr', 'bcaa']], ['stores', 'Gut, liver & glycogen', ['flow', 'gut', 'glycogen']],
+  ['limits', 'Thresholds & limits', ['lactate', 'vent']], ['alt', 'Altitude', ['alt', 'ams', 'acz']]];
+{ const order = GROUPS.flatMap(g => g[2]); TOPICS.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)); }
+const groupOf = id => GROUPS.find(g => g[2].includes(id));
+const topicNum = id => { const g = groupOf(id); return `${GROUPS.indexOf(g) + 1}.${g[2].indexOf(id) + 1}`; };
 const ORGANS = {
   gut: { name: 'Gut', lead: 'Stomach and small intestine: where ingested carbohydrate enters the body.' },
   liver: { name: 'Liver', lead: 'The glucose buffer: glycogen store, new glucose (gluconeogenesis), fructose processing.' },
@@ -667,6 +673,10 @@ const foodFill = el('rect', { x: 432, y: 60, width: 26, height: 30, fill: C.mark
 const foodLab = tx(gFood, '', 470, 54, { size: 15, w: 600, fill: C.ink });
 const foodLab2 = tx(gFood, '', 470, 72, { it: true, size: 13 });
 
+// Plakietka wysokości na mapie (widać od razu, że suwak działa)
+const gAlt = el('g', {}, gOrg);
+el('path', { d: 'M84,70 L106,36 L118,52 L126,42 L146,70 Z', fill: C.marker, stroke: C.ink, 'stroke-width': 1.5 }, gAlt);
+const altLab = tx(gAlt, '', 154, 50, { size: 15, w: 600, fill: C.ink }), altLab2 = tx(gAlt, '', 154, 68, { it: true, size: 12.5, fill: C.blood });
 // Etykiety z odnośnikami (styl ryciny)
 const lead = (s, x, y, tx2, ty2, anchor) => { el('path', { d: `M${x + (anchor === 'end' ? 4 : -4)},${y - 4} L${tx2},${ty2}`, stroke: C.grey, 'stroke-width': 0.8, fill: 'none' }, gLab); tx(gLab, s, x, y, { head: true, size: 14, fill: C.ink, anchor }); };
 lead('Lungs', 160, 190, 292, 196, 'end');
@@ -1125,6 +1135,9 @@ function renderMap() {
   [...gutResidue.children].forEach((q, i) => { const pt = siPath.getPointAtLength(q._u * L); q.setAttribute('transform', `translate(${pt.x},${pt.y})`); q.setAttribute('opacity', i < Math.round(12 * un / 60) ? 0.9 : 0); });
   stomachPool.setAttribute('rx', 12 * clamp(un / 60)); stomachPool.setAttribute('ry', 8 * clamp(un / 60));
   foodFill.setAttribute('y', 90 - 30 * S.gph / 120); foodFill.setAttribute('height', 30 * S.gph / 120);
+  gAlt.style.opacity = S.alt ? 1 : 0.35;
+  altLab.textContent = S.alt ? `${S.alt} m · VO₂max −${fmt(100 - 100 * VF(S.alt))}%` : 'sea level';
+  altLab2.textContent = S.alt ? `SpO₂ ≈ ${fmt(BR.spo2Rest)}% at rest` : '';
   foodLab.textContent = S.gph ? `${S.gph} g/h` : 'no carbohydrate'; foodLab2.textContent = S.gph ? COMPNAME[S.comp] : '';
   document.querySelectorAll('.organ').forEach(g => g.classList.toggle('sel', g.dataset.organ === S.organ));
 }
@@ -1166,16 +1179,17 @@ function renderOrgan() {
 }
 function renderTopic() {
   const i = TOPICS.findIndex(x => x.id === S.topic), T = TOPICS[i];
-  $('tNum').textContent = `Topic ${i + 1} of ${TOPICS.length}`;
+  $('tNum').textContent = `${groupOf(T.id)[1]} · topic ${topicNum(T.id)}`;
   $('tTitle').textContent = T.name;
   $('tBullets').innerHTML = T.b.map(([s, k]) => `<li>${s}${srcHTML(k)}</li>`).join('');
   $('tTerms').innerHTML = T.terms ? '<h3>Key terms</h3><dl class="terms">' + T.terms.map(([a, b, k]) => `<dt>${a}</dt><dd>${b}${srcHTML(k)}</dd>`).join('') + '</dl>' : '';
   const [title, legend] = CHARTS[T.chart]();
-  $('chTitle').innerHTML = `<b>${String.fromCharCode(65 + i)}</b>${title}`; $('chLegend').innerHTML = legend;
+  $('chTitle').innerHTML = `<b>${topicNum(T.id)}</b>${title}`; $('chLegend').innerHTML = legend;
 }
 function renderControls() {
   const hi = S.alt > 300 && S.p !== S.pace;
-  $('intOut').textContent = MOBILE() ? `${S.p}%` + (hi ? ' here' : '') : hi ? `${S.pace}% → ${S.p}% VO₂max here` + (MOBILE() ? '' : ` · ${zone(S.p)}`) : MOBILE() ? `${S.p}% VO₂max` : `${S.p}% VO₂max · ${zone(S.p)}`;
+  $('intOut').textContent = hi ? `${S.pace}% → ${S.p}% here` : `${S.p}% VO₂max`;
+  $('intOut').title = zone(S.p);
   $('tteOut').textContent = 'TTE ' + fmtDur(TTE());
   $('altOut').textContent = S.alt ? `${S.alt} m` : 'sea level';
   $('alt').value = S.alt;
@@ -1186,7 +1200,7 @@ function renderControls() {
   $('int').value = S.pace; $('time').value = Math.round(S.t); $('gph').value = S.gph;
   document.querySelectorAll('#comp button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.comp)));
   document.querySelectorAll('#status button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.status)));
-  document.querySelectorAll('#topics .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.topic === S.topic)));
+  renderNav();
   const pos = p => `${((p - 5) / (PMAX - 5) * 100).toFixed(1)}%`;
   $('ticks').innerHTML = `<span class="l" style="left:${pos(LT() * VF(S.alt))}">LT1</span><span class="r" style="left:${pos(OBLA() * VF(S.alt))}">OBLA</span>`;
   $('gphTicks').innerHTML = `<span style="left:50%">60</span><span style="left:75%">90</span>`;
@@ -1195,12 +1209,22 @@ function render() { recompute(); renderControls(); renderMap(); renderOrgan(); r
 $('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~60% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; TTE above 100% VO₂max (CP curve extended); VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity and the phase weights of PCr refilling; anaerobic carbohydrate use above VO₂max.</li>';
 
 /* ───────────── INTERAKCJA ───────────── */
-$('topics').innerHTML = `<button class="nav" data-step="-1" type="button" aria-label="Previous topic">‹</button>` + TOPICS.map((t, i) => `<button class="chip" type="button" data-topic="${t.id}"><b>${i + 1}</b>${t.name}</button>`).join('') + `<button class="nav" data-step="1" type="button" aria-label="Next topic">›</button>`;
+function renderNav() {
+  const g = groupOf(S.topic);
+  if ($('topics').dataset.g !== g[0]) {
+    $('topics').dataset.g = g[0];
+    $('topics').innerHTML = `<span class="groups">${GROUPS.map((x, k) => `<button class="grp" type="button" data-group="${x[0]}" aria-pressed="${x === g}">${k + 1} ${x[1]}</button>`).join('')}</span>`
+      + `<span class="chips"><button class="nav" data-step="-1" type="button" aria-label="Previous topic">‹</button>`
+      + g[2].map(id => `<button class="chip" type="button" data-topic="${id}"><b>${topicNum(id)}</b>${TOPICS.find(t => t.id === id).name}</button>`).join('')
+      + `<button class="nav" data-step="1" type="button" aria-label="Next topic">›</button></span>`;
+  }
+  document.querySelectorAll('#topics .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.topic === S.topic)));
+}
 const closePanes = () => document.querySelectorAll('.pane').forEach(p => p.classList.remove('open'));
 const openPane = id => { if (!MOBILE()) return; closePanes(); $(id).classList.add('open'); };
 function setTopic(id) { const t = TOPICS.find(x => x.id === id); S.topic = id; S.organ = t.organ; render(); const b = document.querySelector(`[data-topic="${id}"]`); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center' }); }
 function stepTopic(d) { const i = TOPICS.findIndex(x => x.id === S.topic); setTopic(TOPICS[(i + d + TOPICS.length) % TOPICS.length].id); }
-$('topics').addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; if (b.dataset.topic) { setTopic(b.dataset.topic); openPane('paneTopic'); } else stepTopic(+b.dataset.step); });
+$('topics').addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; if (b.dataset.group) { setTopic(GROUPS.find(g => g[0] === b.dataset.group)[2][0]); return; } if (b.dataset.topic) { setTopic(b.dataset.topic); openPane('paneTopic'); } else stepTopic(+b.dataset.step); });
 $('int').addEventListener('input', ev => { S.pace = +ev.target.value; render(); });
 $('alt').addEventListener('input', ev => { S.alt = +ev.target.value; render(); });
 $('days').addEventListener('change', ev => { S.days = clamp(+ev.target.value || 0, 0, 14); ev.target.value = S.days; render(); });
