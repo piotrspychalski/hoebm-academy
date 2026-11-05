@@ -1,4 +1,4 @@
-// HoEBM Academy — rejestr rycin: wczytanie i walidacja (bez zależności; używane przez build.js i tests/)
+// Sports Academy — rejestr rycin: wczytanie i walidacja (bez zależności; używane przez build.js i tests/)
 // data/sources.json — wspólne źródła (klucz → opis); data/figures/<id>.json — jedna rycina na plik (bez konfliktów przy pracy równoległej)
 const fs = require('fs'), path = require('path');
 

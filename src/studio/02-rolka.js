@@ -204,7 +204,7 @@ function saveRec(rec) {
   if (!rec.keep || !ROLKA.chunks.length) return;
   const type = rec.mimeType || 'video/webm', ext = type.includes('mp4') ? 'mp4' : 'webm';
   const f = curFig(), d = new Date(), p = n => String(n).padStart(2, '0');
-  const name = `hoebm-fig${f.fig}-${f.id}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.${ext}`;
+  const name = `sports-academy-fig${f.fig}-${f.id}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.${ext}`;
   if (ROLKA.saved) URL.revokeObjectURL(ROLKA.saved.url);
   ROLKA.saved = { url: URL.createObjectURL(new Blob(ROLKA.chunks, { type })), name };
   const a = el('a', { href: ROLKA.saved.url, download: name }); document.body.append(a); a.click(); a.remove();

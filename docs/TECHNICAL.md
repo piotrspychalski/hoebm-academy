@@ -1,7 +1,7 @@
-# HoEBM Academy — kod źródłowy
+# Sports Academy — kod źródłowy
 
 Interaktywne, schematyczne ryciny o fizjologii sportów wytrzymałościowych (House of EBM).
-Autor: Piotr Spychalski, MD, PhD · wersja online: https://piotrspychalski.github.io/hoebm-academy/
+Autor: Piotr Spychalski, MD, PhD · wersja online: https://piotrspychalski.github.io/sports-academy/
 
 ## Budowa
 Wynikiem jest **jeden samodzielny plik HTML** (Canvas 2D, bez bibliotek; fonty z Google Fonts, fallback systemowy).

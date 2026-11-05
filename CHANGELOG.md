@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0] — 2026-11-05 (nowa nazwa: Sports Academy)
+
+### Zmienione
+- Nazwa narzędzia: HoEBM Academy → **Sports Academy** (House of EBM) — nagłówek, tytuł strony, opis, „How to cite”, licencja treści, karta pustej ryciny („SPORTS ACADEMY”), nazwy plików nagrań (`sports-academy-fig…`).
+- Repozytorium `piotrspychalski/sports-academy`, strona https://piotrspychalski.github.io/sports-academy/ (stary adres `…/hoebm-academy/` przestaje działać; GitHub przekierowuje tylko git i API, nie Pages).
+- Klucze pamięci przeglądarki (`hoebm-*`) bez zmian, żeby nie zgubić ulubionych i ustawień.
+
 ## [0.7.0] — 2026-11-05 (nagrywanie rolki w studiu)
 
 ### Dodane

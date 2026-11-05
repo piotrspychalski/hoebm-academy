@@ -57,7 +57,7 @@ function canStepAny(d) {
 function mountFigure() {
   const f = curFig();
   SCN.mod = f ? FIGMOD[f.id] || null : null; SCN.manual = false; SCN.p = {};
-  cv().setAttribute('aria-label', f ? `FIG. ${f.fig}: ${f.title.join(' ')}. ${f.aim}` : 'HoEBM Academy');
+  cv().setAttribute('aria-label', f ? `FIG. ${f.fig}: ${f.title.join(' ')}. ${f.aim}` : 'Sports Academy');
   buildControls();
   if (STUDIO || !SCN.mod) CLOCK.restart(STUDIO ? T.cleanMs : 0);
   else playFrame(0);

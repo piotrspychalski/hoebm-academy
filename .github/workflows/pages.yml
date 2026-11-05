@@ -1,5 +1,5 @@
-# Składanie, testy i publikacja HoEBM Academy na GitHub Pages przy każdej zmianie w gałęzi main (jak w SURGITOME)
-name: HoEBM Academy — build, testy, publikacja
+# Składanie, testy i publikacja Sports Academy na GitHub Pages przy każdej zmianie w gałęzi main (jak w SURGITOME)
+name: Sports Academy — build, testy, publikacja
 on:
   push: { branches: [main] }
   workflow_dispatch:

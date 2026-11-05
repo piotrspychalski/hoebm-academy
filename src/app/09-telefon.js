@@ -3,7 +3,7 @@
 function updateMobile() {
   if (!MOBILE) return;
   const f = figById(STATE.figure), list = filtered();
-  $('mFig').textContent = f ? `FIG. ${f.fig} · ${SERIES_LABEL[f.series].toUpperCase()}` : 'HoEBM · ACADEMY';
+  $('mFig').textContent = f ? `FIG. ${f.fig} · ${SERIES_LABEL[f.series].toUpperCase()}` : 'SPORTS ACADEMY';
   const F = frames(), fi = frameIndex(Math.max(0, CLOCK.now()));
   $('mStep').textContent = f ? (F.length ? `${fi + 1} / ${F.length}  ${F[fi].label}` : f.title.join(' ')) : (list.length ? 'Choose a figure ›' : S.noFigures);
   // kropki = kadry ryciny (jak w SURGITOME); bez ryciny — ryciny z listy

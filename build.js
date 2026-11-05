@@ -1,4 +1,4 @@
-// HoEBM Academy — (c) 2026 Piotr Spychalski, MD, PhD · MIT License (code)
+// Sports Academy — (c) 2026 Piotr Spychalski, MD, PhD · MIT License (code)
 // Składanie: data/ → rejestr, src/core/* + src/app/* (+ src/studio/* w studiu) → src/shell.html → dist/index.html i studio/index.html
 // Użycie: node build.js   (bez zależności; wynik to jeden samodzielny plik HTML, działa też z file://)
 const fs = require('fs'), path = require('path');

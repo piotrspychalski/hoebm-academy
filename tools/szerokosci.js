@@ -1,4 +1,4 @@
-// Odtworzenie tests/szerokosci.json: wklej w konsoli strony HoEBM Academy (po załadowaniu krojów) i zapisz wynik.
+// Odtworzenie tests/szerokosci.json: wklej w konsoli strony Sports Academy (po załadowaniu krojów) i zapisz wynik.
 (async () => {
   const fam = { display: '"Montserrat", "Helvetica Neue", Arial, sans-serif', sans: '"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif', mono: '"IBM Plex Mono", ui-monospace, Menlo, monospace' };
   const specs = [['display', 800], ['sans', 400], ['sans', 500], ['sans', 600], ['mono', 400], ['mono', 600]];

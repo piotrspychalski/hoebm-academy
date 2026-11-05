@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>HoEBM Academy</title>
+<title>Sports Academy</title>
 <meta name="description" content="Interactive schematic figures on endurance-sport physiology, with every number tied to its source. House of EBM, by Piotr Spychalski, MD, PhD.">
 <meta name="author" content="Piotr Spychalski, MD, PhD">
 <!--ROBOTS-->
@@ -43,7 +43,7 @@ button, input { font: inherit; color: inherit; }
 /* Motyw marki „Science made clear”: logo w nagłówku wyostrza się z rozmycia przy wejściu na stronę */
 @keyframes hoebm-clear { from { filter: blur(8px); opacity: .35; } to { filter: blur(0); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .brand img { animation: none; } }
-.brand span { font: 600 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); border-left: var(--line) solid var(--ink); padding-left: 10px; }
+.brand span { white-space: nowrap; font: 600 13px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); border-left: var(--line) solid var(--ink); padding-left: 10px; }
 .search { flex: 0 1 260px; min-width: 0; border: 1.5px solid var(--ink); border-radius: 2px; background: var(--paper); padding: 7px 10px; }
 .btn { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 2px; padding: 7px 12px; font-weight: 600; cursor: pointer; color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .btn:hover, .btn[aria-pressed="true"] { background: var(--marker); }
@@ -168,12 +168,12 @@ html.studio.hidecursor, html.studio.hidecursor * { cursor: none !important; }
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="./" aria-label="HoEBM Academy home"><img src="%LOGO%" alt="House of EBM"><span>Academy</span></a>
+  <a class="brand" href="./" aria-label="Sports Academy home"><img src="%LOGO%" alt="House of EBM"><span>Sports Academy</span></a>
   <input class="search donly" id="search" type="search" placeholder="Search figures" aria-label="Search figures" autocomplete="off">
   <button class="btn donly" id="favBtn" type="button" aria-pressed="false" title="Favourites">★ <span>Favourites</span></button>
   <button class="btn ghost donly" id="srcBtn" type="button">Sources</button>
   <button class="btn ghost donly" id="citeBtn" type="button">How to cite</button>
-  <button class="btn ghost donly" id="infoBtn" type="button" aria-label="About HoEBM Academy">?</button>
+  <button class="btn ghost donly" id="infoBtn" type="button" aria-label="About Sports Academy">?</button>
   <button class="btn monly" id="mMenuBtn" type="button" aria-expanded="false" aria-controls="mMenu">☰ Menu</button>
 </header>
 <nav class="series donly" id="series" aria-label="Series"></nav>

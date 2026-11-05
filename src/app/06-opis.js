@@ -19,7 +19,7 @@ function renderPanel() {
   const p = $('panel'); p.replaceChildren();
   const f = figById(STATE.figure);
   if (!f) {
-    p.append(el('h2', { text: 'HoEBM Academy' }), el('p', { text: S.startBody[0] }), el('p', { text: S.startBody[1] }));
+    p.append(el('h2', { text: 'Sports Academy' }), el('p', { text: S.startBody[0] }), el('p', { text: S.startBody[1] }));
     return;
   }
   const star = el('button', { class: 'btn', type: 'button', 'aria-pressed': String(STATE.favs.has(f.id)), text: STATE.favs.has(f.id) ? '★ Saved' : '☆ Save' });
