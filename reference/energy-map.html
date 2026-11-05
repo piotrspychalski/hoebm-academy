@@ -288,6 +288,7 @@ const SRC = {
   gore2013: 'Gore et al. 2013, Br J Sports Med (PMID 24282204): Hbmass +1.1% per 100 h at altitude; 95% prediction interval after 300 h 1.1–6%',
   vanloon2001: 'van Loon et al. 2001, J Physiol (PMID 11579177): trained cyclists; fat 56% of energy at rest, 55% at 44% VO₂max, unchanged up to 57% VO₂max, lower at 72%',
   hargreaves2000: 'Hargreaves 2000, Clin Exp Pharmacol Physiol (PMID 10744352): oxygen deficit at exercise onset covered by CP and glycolysis, proportional to intensity; CP can be fully depleted, ATP falls 30–50% after maximal exercise',
+  hargreaves2020: 'Hargreaves & Spriet 2020, Nat Metab (PMID 32747792): ATP use 3.7 mmol/kg/s at ~300% VO₂max vs 0.4 at ~75%; PCr ≈75 mmol/kg dm used in 10–15 s; glycolytic capacity ≈225 over 30–90 s, limited by acidity; 70–100% VO₂max reached in a 30-s sprint; anaerobic = high power, low capacity; CHO oxidation faster, fat larger capacity',
   tersteege2012: 'ter Steege & Kolkman 2012, Aliment Pharmacol Ther (PMID 22229513): splanchnic blood flow may fall ≥80%',
   costa2017: 'Costa 2017, Aliment Pharmacol Ther (PMID 28589631): ≥2 h at 60% VO₂max: threshold for GI perturbations',
   gonzalez2015: 'Gonzalez 2015, Am J Physiol (PMID 26487008): ingested glucose/sucrose prevents liver, not muscle, glycogen depletion',
@@ -575,8 +576,11 @@ const TOPICS = [
         ["Every start is partly oxygen-free: until oxygen uptake catches up, phosphocreatine and glycolysis to lactate fill the gap (the oxygen deficit), and the harder the effort, the bigger the gap.", "hargreaves2000"],
         ["After maximal exercise phosphocreatine can be completely used up, while ATP itself falls by only 30–50%.", "hargreaves2000"],
         ["The energy above VO₂max comes without oxygen, from phosphocreatine and glycolysis to lactate. It is fast but small, and glycolysis gives only about 1/15 of the ATP per gram of glucose that full oxidation gives.", "baker2010 rowland2026"],
+        ["Speed: sprinting at about 300% of VO₂max uses about 3.7 mmol ATP per kg of muscle per second, about 9× the rate at 75% VO₂max (0.4). The muscle's own ATP would last under 2 s.", "hargreaves2020"],
+        ["Size: phosphocreatine (≈75 mmol per kg dry muscle) is mostly used up in 10–15 s of all-out work. Glycolysis to lactate can supply about three times as much (≈225) over 30–90 s, limited by rising acidity, not by running out of glycogen.", "hargreaves2020"],
         ["10-s sprint: about 53% of the energy from phosphocreatine, 44% from glycolysis, 3% from the mitochondria.", "baker2010"],
         ["30-s sprint: about 23% phosphocreatine, 49% glycolysis, 28% mitochondria.", "baker2010"],
+        ["Even a 30-s all-out sprint drives oxygen uptake to 70–100% of VO₂max.", "hargreaves2020"],
         ["In an all-out effort of about 75 s, oxygen-based and oxygen-free supply are equal; in longer efforts oxygen dominates.", "gastin2001 baker2010"],
         ["Working above VO₂max uses up the oxygen-free capacity in about 2–3 min in trained athletes.", "baker2010"]]]] },
   { id: 'alt', name: 'Altitude & hypoxia', organ: 'lungs', flows: ['rbcMus'], chart: 'alt',
@@ -628,6 +632,7 @@ const TOPICS = [
         ["Glucose fully oxidised: ≈30–32 ATP per molecule, ≈0.17 mol ATP per gram.", "rowland2026 mookerjee2017"],
         ["Palmitate (fat) fully oxidised: ≈106 ATP per molecule, ≈0.41 mol ATP per gram, about 2.4× glucose.", "rowland2026"],
         ["Glucose to lactate: 2–3 ATP per molecule, ≈0.011 mol ATP per gram, about 1/15 of full oxidation.", "rowland2026 hargreaves2018"],
+        ["Oxygen-free pathways are fast but small; of the oxygen-based ones, carbohydrate gives ATP faster, fat lasts far longer.", "hargreaves2020"],
         ["Per oxygen atom the order flips: ≈2.78 ATP for carbohydrate, ≈2.45 for fat, so fat needs more O₂ for the same ATP.", "schmidt2021"]]]] }
 ];
 // Grupy tematów (nawigacja dwupoziomowa); kolejność TOPICS = kolejność grup
