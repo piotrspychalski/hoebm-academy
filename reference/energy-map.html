@@ -29,7 +29,6 @@ header { display: flex; align-items: baseline; gap: 6px 18px; flex-wrap: wrap; p
 header .fig { font: 700 13px var(--display); color: var(--ink); }
 header .fig em { font: italic 400 13px var(--sans); color: var(--ink-2); margin-left: 4px; }
 header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; letter-spacing: -.01em; }
-header .draft { margin-left: auto; font: italic 400 12px var(--sans); color: var(--blood); }
 
 /* Sterowanie */
 .controls { display: flex; flex-wrap: wrap; gap: 6px 26px; align-items: center; padding: 8px 18px; }
@@ -40,9 +39,11 @@ header .draft { margin-left: auto; font: italic 400 12px var(--sans); color: var
 .slider { position: relative; width: 210px; padding-bottom: 12px; }
 .slider.short { width: 150px; }
 .slider input { width: 100%; margin: 0; accent-color: var(--ink); }
-.tte { font: 600 12.5px var(--sans); color: var(--blood); white-space: nowrap; min-width: 12ch; }
-#intOut { min-width: 15ch; } #timeOut { min-width: 7ch; } #gphOut { min-width: 7ch; } #altOut { min-width: 9ch; }
-.draft { font: italic 400 12px var(--sans); color: var(--blood); }
+/* Stałe szerokości: zmiana wartości nigdy nie zmienia szerokości kontrolki, więc pasek się nie przelewa */
+.ctl { flex: none; }
+.ctl output, .tte { display: inline-block; overflow: hidden; text-overflow: ellipsis; }
+.tte { font: 600 12px var(--mono); color: var(--blood); white-space: nowrap; }
+#intOut { width: 16ch; } .tte { width: 12ch; } #timeOut { width: 7ch; } #gphOut { width: 7ch; } #altOut { width: 9ch; }
 .ticks { position: absolute; left: 8px; right: 8px; bottom: -2px; height: 12px; font: italic 400 10px var(--sans); }
 .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; color: var(--blood); }
 .ticks span::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 5px; background: var(--blood); }
@@ -50,7 +51,7 @@ header .draft { margin-left: auto; font: italic 400 12px var(--sans); color: var
 .ticks span.r { transform: none; padding-left: 2px; } .ticks span.r::before { left: 0; }
 .seg { display: inline-flex; gap: 0 2px; flex-wrap: wrap; }
 .seg button { border: 0; background: none; padding: 1px 6px; cursor: pointer; font: 400 13px var(--sans); color: var(--ink-2); border-bottom: 2px solid transparent; white-space: nowrap; }
-.seg button[aria-pressed=true] { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+.seg button[aria-pressed=true] { color: var(--ink); border-bottom-color: var(--ink); text-shadow: 0 0 .6px currentColor; }
 .num { width: 46px; border: 0; border-bottom: 1.5px solid var(--ink); background: none; font: 400 13px var(--mono); padding: 0 2px; }
 .linkbtn { border: 0; background: none; padding: 0; cursor: pointer; font: 600 13px var(--sans); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
@@ -59,7 +60,7 @@ header .draft { margin-left: auto; font: italic 400 12px var(--sans); color: var
 .topics::-webkit-scrollbar { display: none; }
 .topics .chip { flex: none; border: 0; background: none; padding: 1px 0; cursor: pointer; font: 400 14px var(--sans); color: var(--ink-2); border-bottom: 2px solid transparent; }
 .topics .chip b { font: 700 11px var(--display); color: var(--ink); margin-right: 5px; }
-.topics .chip[aria-pressed=true] { color: var(--ink); font-weight: 600; border-bottom-color: var(--blood); }
+.topics .chip[aria-pressed=true] { color: var(--ink); border-bottom-color: var(--blood); text-shadow: 0 0 .6px currentColor; }
 .topics .groups, .topics .chips { display: flex; gap: 16px; align-items: baseline; flex: none; }
 .topics .groups { padding-right: 16px; border-right: 1px solid var(--hair); }
 .topics .grp { border: 0; background: none; padding: 1px 0; cursor: pointer; font: 600 12px var(--display); color: var(--ink-2); opacity: .55; white-space: nowrap; border-bottom: 2px solid transparent; }
@@ -131,10 +132,9 @@ details li { margin: 3px 0; }
   .controls { padding: 6px 14px; gap: 2px 14px; }
   .slider { width: auto; flex: 1; }
   .ctl.core { flex: 1 1 100%; }
-  .ctl.core label { min-width: 62px; }
-  .ctl.core .slider { min-width: 120px; }
-  .ctl.core output { font-size: 11px; }
-  .tte { font-size: 11px; }
+  .ctl.core label { width: 54px; flex: none; }
+  .ctl.core .slider { min-width: 70px; }
+  .ctl.core output, .tte { font-size: 11px; }
   .topics { padding: 5px 14px; gap: 4px; flex-direction: column; align-items: stretch; }
   .topics .groups, .topics .chips { overflow-x: auto; scrollbar-width: none; }
   .topics .groups { border-right: 0; padding-right: 0; gap: 12px; }
@@ -180,7 +180,7 @@ details li { margin: 3px 0; }
     <ul id="tBullets"></ul>
     <div id="tTerms"></div>
     <div class="chart"><h4 id="chTitle"></h4><svg id="chart" viewBox="0 0 330 190"></svg><div class="legend" id="chLegend"></div></div>
-    <details><summary>Sources, and what is illustrative</summary><p class="draft">Draft master sketch: curve shapes illustrative; numbers checked against the sources below.</p><ul id="srcList"></ul><p>Schematic, not to scale. Curve shapes are illustrative, not data; the model uses the sourced values listed here, and values marked “illustrative” have no source yet. Education, not medical advice.</p></details>
+    <details><summary>Sources, and what is illustrative</summary><ul id="srcList"></ul><p>Schematic, not to scale. Curve shapes are illustrative; the model uses the sourced values listed here. The last item lists what has no source yet. VT1 and RCP are placed at LT1 and OBLA. Education, not medical advice.</p></details>
   </section>
   <div class="mapwrap"><svg id="map" viewBox="0 0 700 840" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Schematic body: heart and lungs in the chest, liver and gut in the abdomen, fat under the skin, working muscles in the legs and arms. Click an organ."></svg></div>
   <section class="pane right" id="paneOrgan" aria-live="polite">
@@ -422,7 +422,7 @@ const TOPICS = [
         ['Each litre of oxygen releases about 5.05 kcal when carbohydrate is burned and 4.69 kcal when fat is burned.', 'cramer2019'],
         ['VO₂max rises with training mainly through a larger maximal cardiac output.', 'bassett2000'],
         ['Maximal cardiac output is about 15–25 L/min in untrained people and 30–40 L/min in elite endurance athletes.', 'heinonen2025'],
-        ['The same pace is a lower % of VO₂max for a fitter athlete: a different fuel mix and more blood left for the gut. Try changing VO₂max under Athlete.', '']] },
+        ['The same pace is a lower % of VO₂max for a fitter athlete: a different fuel mix and more blood left for the gut.', '']] },
   { id: 'fuel', name: 'Fuel mix', organ: 'muscle', flows: ['glcMus', 'ffa', 'lacOut', 'glcHep', 'food'], chart: 'mix',
     b: [['As intensity rises, the share of carbohydrate rises and the share of fat falls (the “crossover”).', 'brooks1994'],
         ['Fat oxidation peaks at moderate intensity: about 48% of VO₂max in the general population and about 63% in trained men (about 0.5 g/min). Change VO₂max to see it move.', 'venables2005 achten2003'],
@@ -469,18 +469,16 @@ const TOPICS = [
         ['At the respiratory compensation point (RCP) ventilation starts to rise faster than CO₂ output, so blood CO₂ falls (compensating for lactic acid).', 'keir2024'],
         ['In competitive cyclists maximal ventilation was about 147 L/min (range 122–180).', 'mota1999'],
         ['Critical power (CP) is the top of the heavy domain, close to the maximal lactate steady state, at about 70–80% VO₂max in healthy young people (higher in trained athletes). Above it TTE = W′/(P − CP): at VO₂max about 6 min.', 'poole2016 jones2010 billat1996'],
-        ['Above 100% VO₂max the extra energy comes without oxygen (PCr, glycolysis to lactate). In an all-out effort aerobic and anaerobic supply are equal at about 75 s.', 'gastin2001'],
-        ['Here VT1 and RCP are drawn at LT1 and OBLA: a simplification, and the ventilation curve is illustrative.', '']],
+        ['Above 100% VO₂max the extra energy comes without oxygen (PCr, glycolysis to lactate). In an all-out effort aerobic and anaerobic supply are equal at about 75 s.', 'gastin2001']],
     terms: [['VT1', 'First ventilatory threshold: ventilation starts to rise faster than VO₂.', ''],
             ['RCP (VT2)', 'Respiratory compensation point: ventilation rises faster than CO₂ output and blood CO₂ falls.', 'keir2024'],
             ['TTE (time to exhaustion)', 'How long a fixed intensity can be held. Below CP: often limited by carbohydrate (the wall); heat, fluid loss and fatigue also matter. Above CP: W′/(P − CP), minutes or seconds.', 'jones2010 bergstrom1967']] },
   { id: 'alt', name: 'Altitude & hypoxia', organ: 'lungs', flows: ['rbcMus'], chart: 'alt',
     b: [['Air pressure falls with altitude (about 537 mmHg at 3000 m and 420 at 5000 m, from West’s model), so each breath carries less O₂.', 'west1996'],
         ['VO₂max falls by about 6.3% per 1000 m (4.6–7.5%), measured from 300 to 2800 m; higher up the line here is extended and probably underestimates the loss.', 'wehrlin2006'],
-        ['So the same pace is a higher % of VO₂max: more carbohydrate, more lactate, shorter TTE. Try the altitude slider.', ''],
+        ['So the same pace is a higher % of VO₂max: more carbohydrate, more lactate, shorter TTE.', ''],
         ['SpO₂ falls further during hard exercise: in elite athletes at VO₂max from 89% at 300 m to 76.5% at 2800 m; in another study, on acute exposure to 4100 m, to about 73%. The model shows a typical person: trained athletes desaturate more.', 'wehrlin2006 lundby2004'],
-        ['Breathing more (ventilatory acclimatisation) improves oxygenation but lowers CO₂ (respiratory alkalosis); the kidneys excrete bicarbonate and pH moves back towards normal (largely within a day at 3800 m in one study).', 'bird2021'],
-        ['SpO₂ in this figure is a model (alveolar gas equation and the O₂–haemoglobin curve), not measured data.', '']] },
+        ['Breathing more (ventilatory acclimatisation) improves oxygenation but lowers CO₂ (respiratory alkalosis); the kidneys excrete bicarbonate and pH moves back towards normal (largely within a day at 3800 m in one study).', 'bird2021']] },
   { id: 'ams', name: 'Acute mountain sickness', organ: 'lungs', flows: [], chart: 'ams',
     b: [['AMS: headache plus other symptoms after a recent ascent (Lake Louise score of 3 or more, including headache).', 'roach2018'],
         ['It usually starts 4–12 h after arriving at a new altitude.', 'luks2017'],
@@ -496,7 +494,7 @@ const TOPICS = [
         ['The acidosis offsets the respiratory alkalosis of altitude and lets the chemoreceptors respond more fully to hypoxia: more breathing, better arterial oxygenation.', 'leaf2007 swenson2016'],
         ['In effect it does early what the kidneys and breathing do during acclimatisation.', ''],
         ['Side effects: tingling (paraesthesia), altered taste, more urine, fatigue.', 'schmickl2020'],
-        ['No doses here: whether and how to take a medicine is a decision for a clinician.', '']] },
+        ['Whether to take it is a decision for a clinician.', '']] },
   { id: 'pcr', name: 'Phosphocreatine & creatine', organ: 'mito', flows: ['rbcMus', 'glcMus'], chart: 'pcr',
     b: [['Phosphocreatine (PCr) gives its phosphate to ADP (creatine kinase): an instant ATP buffer, most important in maximal sprints.', 'kreider2017'],
         ['The store is small: PCr ≈72–83 mmol/kg dry muscle, ATP ≈24–25. About two thirds of muscle creatine is PCr.', 'soderlund1991 kreider2017'],
@@ -826,7 +824,7 @@ const DETAIL = {
     const conc = [['glc', cur.bg], ['lac', clamp(lactate(S.p) / 8)], ['ffa', clamp(0.25 + cur.t / 400 + cur.E.fat / 2)], ['bcaa', 0.4]];
     let i = 0; for (const [k, v] of conc) for (let j = 0; j < Math.round(9 * v); j++) { place(p, k, 222 + JIT[i] * 170, 46 + JIT[i + 99] * 88); i++; }
     [['glc', 'glucose'], ['lac', 'lactate'], ['ffa', 'fatty acids'], ['bcaa', 'BCAA']].forEach(([k, s], j) => { place(p, k, 210 + (j % 2) * 100, 176 + Math.floor(j / 2) * 20); tx(p, s, 220 + (j % 2) * 100, 180 + Math.floor(j / 2) * 20, { size: 11 }); });
-    tx(p, 'Number of particles = schematic concentration.', 200, 236, { it: true, size: 11, fill: C.grey });
+    tx(p, '', 200, 236, { it: true, size: 11, fill: C.grey });
   },
   adipose() {
     const p = det;
@@ -1001,7 +999,7 @@ const CHARTS = {
     const band = (top, bot, fill) => el('path', { d: top.map(([u, v], i) => `${i ? 'L' : 'M'}${a.X(u)},${a.Y(v)}`).join('') + [...bot].reverse().map(([u, v]) => `L${a.X(u)},${a.Y(v)}`).join('') + 'Z', fill }, ch);
     band(F, F.map(([u]) => [u, 0]), C.marker); band(CO, F, C.ink); band(LA, CO, 'url(#hatchL)');
     vmark(a, PU(S.p));
-    return ['Fuel mix and intensity (shape illustrative)', LEG([['fat → CO₂', 0, 0, C.marker], ['glucose → CO₂', 0, 0, C.ink], ['glucose → lactate (used later)', 0, 0, C.ink2]])];
+    return ['Fuel mix and intensity', LEG([['fat → CO₂', 0, 0, C.marker], ['glucose → CO₂', 0, 0, C.ink], ['glucose → lactate (used later)', 0, 0, C.ink2]])];
   },
   stores() {
     clear(ch);
@@ -1025,7 +1023,7 @@ const CHARTS = {
     line(range(40, u => [u, gutFlow(5 + (PMAX - 5) * u)]), a, { c: C.blood, w: 3, d: '6 4' });
     tx(ch, 'gut ↓ ≥80%', a.X1 - 2, a.Y(0.2) - 8, { size: 11, w: 600, fill: C.blood, anchor: 'end' });
     vmark(a, PU(S.p));
-    return ['Blood flow and intensity (shape illustrative)', LEG([['working muscle', C.blood], ['gut and liver', C.blood, 1]])];
+    return ['Blood flow and intensity', LEG([['working muscle', C.blood], ['gut and liver', C.blood, 1]])];
   },
   absorb() {
     const a = axes('% VO₂max', 'g/h', PT, [[30 / 120, '30'], [60 / 120, '60'], [90 / 120, '90'], [1, '120']]);
@@ -1055,7 +1053,7 @@ const CHARTS = {
     line(range(60, u => [u, lactate(5 + (PMAX - 5) * u) / 12]), a, { c: C.ink2, w: 3 });
     [[LT(), 'LT1'], [OBLA(), 'OBLA']].forEach(([q, s]) => { const x = a.X(PU(q)); el('line', { x1: x, y1: a.Y0, x2: x, y2: a.Y(lactate(q) / 12), stroke: C.ink2 }, ch); tx(ch, s, x - 4, a.Y(lactate(q) / 12) - 6, { size: 11, w: 600, anchor: 'end', fill: C.ink }); });
     vmark(a, PU(S.p));
-    return ['Blood lactate and intensity (shape illustrative)', LEG([['blood lactate', C.ink2], ['4 mmol/L = OBLA', C.grey, 1]])];
+    return ['Blood lactate and intensity', LEG([['blood lactate', C.ink2], ['4 mmol/L = OBLA', C.grey, 1]])];
   },
   pcr() {
     const a = axes('recovery (s)', 'PCr (% of rest)', [0, 60, 120, 180, 240].map(t => [t / 240, String(t)]), [[0.25, '25'], [0.5, '50'], [0.75, '75'], [1, '100']]);
@@ -1064,7 +1062,7 @@ const CHARTS = {
     line([[0, P0 / 100], [1, P0 / 100]], a, { c: C.blood, w: 2, d: '5 3' });
     tx(ch, 'after a 6-s sprint (−57%)', a.X(0) + 4, a.Y(P0 / 100) + 14, { size: 10, it: true });
     tx(ch, 'fast phase t½ ≈ 21 s', a.X(21.5 / 240) + 6, a.Y(f(21.5) / 100) + 4, { size: 11, w: 600, fill: C.ink });
-    return ['PCr refilling after a sprint (half-times sourced; phase weights illustrative)', LEG([['blood flow intact', C.ink], ['circulation occluded: no refilling', C.blood, 1]])];
+    return ['PCr refilling after a sprint', LEG([['blood flow intact', C.ink], ['circulation occluded: no refilling', C.blood, 1]])];
   },
   vent() {
     const a = axes('% VO₂max', 'ventilation (L/min)', PT, [[0.25, '50'], [0.5, '100'], [0.75, '150'], [1, '200']]);
@@ -1073,7 +1071,7 @@ const CHARTS = {
     [[LT(), 'VT1'], [OBLA(), 'RCP']].forEach(([q, s]) => { const x = a.X(PU(q)), y = a.Y(breath(q).VE / 200); el('line', { x1: x, y1: a.Y0, x2: x, y2: y, stroke: C.ink2 }, ch); tx(ch, s, x - 4, y - 6, { size: 11, w: 600, anchor: 'end', fill: C.ink }); });
     el('line', { x1: a.X(PU(100)), y1: a.Y0, x2: a.X(PU(100)), y2: a.Y1, stroke: C.grey, 'stroke-dasharray': '2 3' }, ch); tx(ch, 'VO₂max', a.X(PU(100)) + 3, a.Y1 + 10, { size: 10, it: true });
     vmark(a, PU(S.p));
-    return ['Ventilation and intensity (shape illustrative)', LEG([['ventilation now', C.ink]].concat(S.alt || S.acz ? [['sea level, no drug', C.grey, 1]] : []))];
+    return ['Ventilation and intensity', LEG([['ventilation now', C.ink]].concat(S.alt || S.acz ? [['sea level, no drug', C.grey, 1]] : []))];
   },
   alt() {
     const a = axes('altitude (m)', '% of sea level / SpO₂ %', [0, 1000, 2000, 3000, 4000, 5000].map(h => [h / 5000, String(h)]), [[0, '50'], [0.4, '70'], [0.8, '90'], [1, '100']]);
@@ -1082,7 +1080,7 @@ const CHARTS = {
     line(range(50, u => [u, Y(breath(0, { alt: 5000 * u }).spo2Rest)]), a, { c: C.blood, w: 3 });
     line(range(50, u => [u, Y(breath(0, { alt: 5000 * u, days: 0, acz: false }).spo2Rest)]), a, { c: C.blood, w: 1.2, d: '3 3' });
     vmark(a, S.alt / 5000, S.alt ? `${S.alt} m` : '');
-    return ['VO₂max and resting SpO₂ with altitude (SpO₂ = model)', LEG([['VO₂max (% of sea level)', C.ink], [`SpO₂, day ${S.days}${S.acz ? ', acetazolamide' : ''}`, C.blood], ['SpO₂ on arrival', C.blood, 1]])];
+    return ['VO₂max and resting SpO₂ with altitude', LEG([['VO₂max (% of sea level)', C.ink], [`SpO₂, day ${S.days}${S.acz ? ', acetazolamide' : ''}`, C.blood], ['SpO₂ on arrival', C.blood, 1]])];
   },
   ams() {
     const a = axes('altitude (m)', 'AMS (% of climbers)', [0, 1000, 2000, 3000, 4000, 5000].map(h => [h / 5000, String(h)]), [[0.25, '15'], [0.5, '30'], [0.75, '45'], [1, '60']]);
@@ -1098,13 +1096,13 @@ const CHARTS = {
     line(range(50, u => [u, Y(breath(0, { alt: h, days: 10 * u, acz: false }).spo2Rest)]), a, { c: C.ink, w: 3 });
     line(range(50, u => [u, Y(breath(0, { alt: h, days: 10 * u, acz: true }).spo2Rest)]), a, { c: C.blood, w: 3, d: '6 3' });
     vmark(a, S.days / 10);
-    return [`Acclimatisation at ${h} m (model, shape illustrative)`, LEG([['no drug', C.ink], ['acetazolamide', C.blood, 1]])];
+    return [`Acclimatisation at ${h} m`, LEG([['no drug', C.ink], ['acetazolamide', C.blood, 1]])];
   },
   bcaa() {
     const a = axes('time (h)', 'share of energy', [0, 1, 2, 3, 4, 5].map(h => [h / 5, String(h)]), [[0.25, '3%'], [0.5, '6%']]);
     line(SIM.tr.map(r => [r.t / TMAX, r.E.sh.b / 0.12]), a, { c: C.ink, w: 3 });
     vmark(a, S.t / TMAX);
-    return ['Protein (BCAA) share as glycogen runs down (direction only)', LEG([['protein share', C.ink]])];
+    return ['Protein (BCAA) share as glycogen runs down', LEG([['protein share', C.ink]])];
   }
 };
 
@@ -1152,13 +1150,13 @@ function renderOrgan() {
   let R = [], G = [];
   if (S.organ === 'gut') { R = [['Eaten', `${S.gph} g/h`], ['Absorbed', `${fmt(A.absorbed)} g/h`], ['Not absorbed', `${fmt(A.unabs)} g/h`]];
     G = [gauge('Gut blood flow', gutFlow(S.p), 'warn'), gauge('SGLT1 load (tick = capacity now)', A.glc / 90, A.glc > A.sglt ? 'warn' : '', A.sglt / 90), gauge('GLUT5 load (tick = capacity now)', A.fru / 45, A.fru > A.glut5 ? 'warn' : '', A.glut5 / 45), gauge('Brush-border enzymes', A.enzyme / 200, 'soft')]; }
-  if (S.organ === 'liver') { R = [['Liver glycogen', `${fmt(cur.gl)} g (${fmt(cur.gl * 4.2)} kcal)`], ['Glucose from liver glycogen', `${fmt(cur.hgo * 60)} g/h`], ['… of which new glucose', `${fmt(cur.gng * 60)} g/h (illustrative)`]];
+  if (S.organ === 'liver') { R = [['Liver glycogen', `${fmt(cur.gl)} g (${fmt(cur.gl * 4.2)} kcal)`], ['Glucose from liver glycogen', `${fmt(cur.hgo * 60)} g/h`], ['… of which new glucose', `${fmt(cur.gng * 60)} g/h`]];
     G = [gauge('Liver glycogen (max ≈160 g)', cur.gl / 160), gauge('Hepatic blood flow', 0.3 + 0.7 * gutFlow(S.p), 'warn')]; }
-  if (S.organ === 'blood') { R = [['VO₂', `${fmt(E.vo2, 2)} L/min (${S.p}% VO₂max)`], ['Energy use', `${fmt(E.kcal * 60)} kcal/h`], ['Blood lactate', `${fmt(lactate(S.p), 1)} mmol/L (illustrative)`]];
+  if (S.organ === 'blood') { R = [['VO₂', `${fmt(E.vo2, 2)} L/min (${S.p}% VO₂max)`], ['Energy use', `${fmt(E.kcal * 60)} kcal/h`], ['Blood lactate', `${fmt(lactate(S.p), 1)} mmol/L`]];
     G = [gauge('VO₂ / VO₂max', S.p / 100), gauge('Cardiac output (relative)', 0.25 + 0.75 * S.p / 100, 'warn'), gauge('Blood glucose', cur.bg), gauge('Blood lactate (tick = 4 mmol/L)', lactate(S.p) / 12, 'warn', 4 / 12)]; }
-  if (S.organ === 'lungs') { R = [['Altitude', S.alt ? `${S.alt} m` : 'sea level'], ['Air pressure', `${fmt(PB(S.alt))} mmHg`], ['Inspired O₂ (PIO₂)', `${fmt(PIO2(S.alt))} mmHg`], ['SpO₂ at rest / now', `${fmt(BR.spo2Rest)} / ${fmt(BR.spo2)} % (model)`], ['Ventilation', `${fmt(BR.VE)} L/min (shape illustrative)`], ['VO₂max here', `${fmt(100 * VF(S.alt))}% of sea level`]];
+  if (S.organ === 'lungs') { R = [['Altitude', S.alt ? `${S.alt} m` : 'sea level'], ['Air pressure', `${fmt(PB(S.alt))} mmHg`], ['Inspired O₂ (PIO₂)', `${fmt(PIO2(S.alt))} mmHg`], ['SpO₂ at rest / now', `${fmt(BR.spo2Rest)} / ${fmt(BR.spo2)} %`], ['Ventilation', `${fmt(BR.VE)} L/min`], ['VO₂max here', `${fmt(100 * VF(S.alt))}% of sea level`]];
     G = [gauge('Drive to breathe (relative)', (BR.vd - 1) / 0.8, 'warn'), gauge('Ventilation', BR.VE / 200), gauge('SpO₂ (tick = 90%)', (BR.spo2 - 50) / 50, BR.spo2 < 90 ? 'warn' : '', 0.8)]; }
-  if (S.organ === 'kidney') { R = [['Days at this altitude', String(S.days)], ['Acetazolamide', S.acz ? 'yes' : 'no'], ['Plasma bicarbonate', `≈${fmt(BR.hco3)} mmol/L (direction only)`]];
+  if (S.organ === 'kidney') { R = [['Days at this altitude', String(S.days)], ['Acetazolamide', S.acz ? 'yes' : 'no'], ['Plasma bicarbonate', `≈${fmt(BR.hco3)} mmol/L`]];
     G = [gauge('Bicarbonate lost in urine', BR.urineHCO3, S.acz ? 'warn' : ''), gauge('Renal compensation of alkalosis', BR.comp, 'soft')]; }
   if (S.organ === 'adipose') { R = [['Fat oxidised (adipose + muscle fat)', `${fmt(E.fat * 60)} g/h (${fmt(E.fat * 60 * 9.4)} kcal/h)`], ['Store', '≈12 kg fat ≈ 95,000 kcal']]; G = [gauge('Fatty-acid release', cur.flows.ffa, 'soft')]; }
   if (S.organ === 'muscle') { R = [['Total muscle glycogen at start', `${SIM.st.m} g`], ['Left in working legs', `${fmt(cur.gm)} of ${fmt(SIM.w0)} g`], ['Carbohydrate burned', `${fmt(E.cho * 60)} g/h`], ['… from muscle glycogen', `${fmt(cur.glyUse * 60)} g/h`], ['… from blood glucose', `${fmt(cur.U * 60)} g/h`], ['Fat burned', `${fmt(E.fat * 60)} g/h`],
@@ -1166,7 +1164,7 @@ function renderOrgan() {
     G = [gauge('Fat → CO₂', sh.f, 'soft'), gauge('Glucose → CO₂', sh.c * (1 - sh.l)), gauge('Pyruvate → lactate (carbon flux)', sh.c * sh.l, 'warn'), gauge('Protein (incl. BCAA)', sh.b / 0.1, 'soft')]; }
   if (S.organ === 'mito') { const glc = E.cho / 180, ox = glc * (1 - sh.l) * 31, gl = glc * sh.l * (2 + cur.glyUse / Math.max(1e-6, cur.glyUse + cur.U)), fa = E.fat / 256 * 106, tot = ox + gl + fa;
     R = [['Glucose → 2 lactate', '2 ATP'], ['Glycogen unit → 2 lactate', '3 ATP'], ['Glucose → CO₂ + H₂O', '≈30–32 ATP'], ['Palmitate → CO₂ + H₂O', '≈106 ATP'], ['ATP per O atom: carbohydrate vs fat', '≈2.78 vs ≈2.45'],
-      ['ATP made now (model estimate)', `≈${fmt(tot * 1000)} mmol/min`], ['… from glycolysis to lactate', `${fmt(100 * gl / tot)} %`]];
+      ['ATP made now', `≈${fmt(tot * 1000)} mmol/min`], ['… from glycolysis to lactate', `${fmt(100 * gl / tot)} %`]];
     G = [gauge('PDH (pyruvate)', sh.c * (1 - sh.l)), gauge('β-oxidation (fat)', sh.f, 'soft'), gauge('Pyruvate → lactate', sh.c * sh.l, 'warn')]; }
   $('readouts').innerHTML = ro(R); $('gauges').innerHTML = G.join('');
   const al = [];
