@@ -285,6 +285,7 @@ const SRC = {
   barclay2017: 'Barclay 2017, J Muscle Res Cell Motil (PMID 28286928): ATP use up to ≈400 mM/min in intense dynamic exercise; max oxidative supply ≈50 mM/min (untrained)',
   jamnick2020: 'Jamnick et al. 2020, Sports Med (PMID 32729096): LT1, GET and VT delineate the moderate and heavy domains; CP the heavy and severe',
   baker2010: 'Baker, McCormick & Robergs 2010, J Nutr Metab (PMID 21188163): 10-s sprint 53% PCr / 44% glycolysis / 3% mitochondria; 30-s 23/49/28; equal aerobic and anaerobic at ≈75 s; anaerobic capacity used in 2–3 min above VO₂max',
+  gore2013: 'Gore et al. 2013, Br J Sports Med (PMID 24282204): Hbmass +1.1% per 100 h at altitude; 95% prediction interval after 300 h 1.1–6%',
   tersteege2012: 'ter Steege & Kolkman 2012, Aliment Pharmacol Ther (PMID 22229513): splanchnic blood flow may fall ≥80%',
   costa2017: 'Costa 2017, Aliment Pharmacol Ther (PMID 28589631): ≥2 h at 60% VO₂max: threshold for GI perturbations',
   gonzalez2015: 'Gonzalez 2015, Am J Physiol (PMID 26487008): ingested glucose/sucrose prevents liver, not muscle, glycogen depletion',
@@ -294,7 +295,7 @@ const SRC = {
   schmidt2021: 'Schmidt 2021, J Biol Chem (PMID 34461088): ATP/O ≈2.78 for carbohydrate vs ≈2.45 for β-oxidation',
   west1996: 'West 1996, J Appl Physiol (PMID 8904608): PB (Torr) = exp(6.63268 − 0.1112 h − 0.00149 h²), h in km (≈537 at 3000 m, ≈420 at 5000 m, calculated)',
   wehrlin2006: 'Wehrlin & Hallén 2006, Eur J Appl Physiol (PMID 16311764): VO₂max −6.3% per 1000 m (range 4.6–7.5%) from 300 to 2800 m; SpO₂ at VO₂max 89% → 76.5%',
-  maggiorini1990: 'Maggiorini 1990, BMJ (PMID 2282425): AMS in 9% at 2850 m, 13% at 3050 m, 34% at 3650 m, 53% at 4559 m',
+  maggiorini1990: 'Maggiorini 1990, BMJ (PMID 2282425): 466 climbers; AMS (>2 symptoms/signs) in 9% at 2850 m, 13% at 3050 m, 34% at 3650 m, 53% at 4559 m; 11 HAPE/HACE at 4559 m; severe signs → descend',
   roach2018: 'Roach 2018, High Alt Med Biol (PMID 29583031): AMS = Lake Louise score ≥3 from four symptoms, including headache, after a recent ascent',
   luks2017: 'Luks, Swenson & Bärtsch 2017, Eur Respir Rev (PMID 28143879): onset 4–12 h; above 2500–3000 m ≤300–600 m/night more sleeping altitude, rest day every 3–4 days; prophylaxis for moderate–high risk; acetazolamide the mainstay',
   leaf2007: 'Leaf & Goldfarb 2007, J Appl Physiol (PMID 17023566): renal CA inhibition → bicarbonaturia, metabolic acidosis → offsets respiratory alkalosis, fuller hypoxic response',
@@ -575,17 +576,22 @@ const TOPICS = [
         ["Working above VO₂max uses up the oxygen-free capacity in about 2–3 min in trained athletes.", "baker2010"]]]] },
   { id: 'alt', name: 'Altitude & hypoxia', organ: 'lungs', flows: ['rbcMus'], chart: 'alt',
     lead: ['Higher up, air pressure falls and each breath carries less oxygen. VO₂max drops by about 6% per 1000 m, but a given pace still needs the same litres of oxygen. That pace is therefore a larger share of the smaller VO₂max: 70% of sea-level VO₂max becomes about 81% at 2500 m. A higher share means a harder effort: more of the energy comes from carbohydrate, more lactate is made and time to exhaustion is shorter. Breathing more helps at once; over the following days the kidneys excrete bicarbonate and breathing can rise further.', 'west1996 wehrlin2006 bird2021'],
-    more: [["Numbers and acclimatisation", [
+    more: [["Numbers", [
         ["Air still holds 20.9% oxygen at any altitude, but the air pressure falls: 760 mmHg at sea level, about 537 at 3000 m and 420 at 5000 m. The oxygen pressure of the inhaled, humidified air (PIO₂) falls with it, from about 149 mmHg to about 103 at 3000 m (≈69%) and 78 at 5000 m (≈52%).", "west1996"],
         ["VO₂max −6.3% per 1000 m (4.6–7.5%), measured from 300 to 2800 m; higher up the line is extended.", "wehrlin2006"],
-        ["SpO₂ falls further: in elite athletes at VO₂max from 89% at 300 m to 76.5% at 2800 m; on acute exposure to 4100 m to about 73%.", "wehrlin2006 lundby2004"],
-        ["Breathing more improves oxygenation but lowers CO₂ (respiratory alkalosis); the kidneys excrete bicarbonate and pH moves back towards normal, largely within a day at 3800 m in one study.", "bird2021"]]]] },
+        ["SpO₂ falls further: in elite athletes at VO₂max from 89% at 300 m to 76.5% at 2800 m; on acute exposure to 4100 m to about 73%.", "wehrlin2006 lundby2004"]]],
+      ["Acclimatisation: hours, days, weeks", [
+        ["First hours: low oxygen drives breathing up. More air raises the oxygen in the lungs but also blows off CO₂, so the blood turns alkaline (respiratory alkalosis), and that alkalosis itself holds breathing back.", "bird2021"],
+        ["First day: the kidneys excrete bicarbonate, cancelling the alkalosis. In 16 lowlanders taken quickly to 3800 m, arterial pH was back to normal within 24 h; how fast and how fully this happens varies a lot between people.", "bird2021"],
+        ["Following days: with that brake on breathing released, ventilation rises further and oxygenation improves (ventilatory acclimatisation). Acetazolamide starts the kidney step in advance.", "bird2021 leaf2007"],
+        ["Weeks: the body makes more red cells. Haemoglobin mass rises about 1.1% per 100 h at altitude; after about 300 h (2–3 weeks) the expected gain in an athlete is about 1–6%.", "gore2013"]]]] },
   { id: 'ams', name: 'Acute mountain sickness', organ: 'lungs', flows: [], chart: 'ams',
     lead: ['Acute mountain sickness is headache with other symptoms after a recent ascent, usually starting 4–12 h after arrival. It becomes more common the higher you sleep, and the main protection is a slow ascent.', 'roach2018 luks2017 maggiorini1990'],
     more: [["Risk, prevention and warning signs", [
-        ["9% of climbers at 2850 m, 13% at 3050 m, 34% at 3650 m and 53% at 4559 m (Swiss Alps huts).", "maggiorini1990"],
+        ["In four Swiss Alps huts, 466 mostly recreational climbers were interviewed and examined; AMS meant more than two symptoms or signs. It affected 9% at 2850 m, 13% at 3050 m, 34% at 3650 m and 53% at 4559 m, men and women equally. At 4559 m, 11 climbers had high-altitude pulmonary or cerebral oedema.", "maggiorini1990"],
         ["Above 2500–3000 m raise your sleeping altitude by no more than 300–600 m a night, with a rest day every 3–4 days.", "luks2017"],
         ["Drug prophylaxis should be strongly considered for moderate- to high-risk ascents, not for low-risk ones; acetazolamide is the mainstay. Discuss it with a doctor before the trip.", "luks2017"],
+        ["Severe headache, vomiting, dizziness, fast breathing and marked crackles in the lungs mean severe AMS: descend at once.", "maggiorini1990"],
         ["With symptoms, do not go higher. If they get worse, or with confusion, unsteady walking or breathlessness at rest (possible HACE or HAPE), descend and get medical help.", ""]]]] },
   { id: 'acz', name: 'Acetazolamide & the kidney', organ: 'kidney', flows: [], chart: 'acz',
     lead: ['Acetazolamide blocks carbonic anhydrase in the kidney, so bicarbonate is lost in urine and the blood turns slightly acidic. That offsets the alkalosis caused by breathing harder at altitude and lets breathing respond more fully to low oxygen, improving arterial oxygenation.', 'leaf2007 swenson2016'],
@@ -1214,10 +1220,11 @@ const CHARTS = {
     return ['VO₂max and resting SpO₂ with altitude', LEG([['VO₂max (% of sea level)', C.ink], [`SpO₂, day ${S.days}${S.acz ? ', acetazolamide' : ''}`, C.blood]].concat(changed ? [['SpO₂ on arrival, no drug', C.blood, 1]] : []))];
   },
   ams() {
-    const a = axes('altitude (m)', 'AMS (% of climbers)', [0, 1000, 2000, 3000, 4000, 5000].map(h => [h / 5000, String(h)]), [[0.25, '15'], [0.5, '30'], [0.75, '45'], [1, '60']]);
-    AMS_PTS.forEach(([h, v]) => { const x = a.X(h / 5000); el('rect', { x: x - 7, y: a.Y(v / 60), width: 14, height: a.Y0 - a.Y(v / 60), fill: C.ink }, ch); tx(ch, `${v}%`, x, a.Y(v / 60) - 4, { size: 10, anchor: 'middle', w: 600 }); });
-    el('line', { x1: a.X(2500 / 5000), y1: a.Y0, x2: a.X(2500 / 5000), y2: a.Y1, stroke: C.grey, 'stroke-dasharray': '3 3' }, ch); tx(ch, '2500 m', a.X(0.5) - 4, a.Y1 + 10, { size: 10, it: true, anchor: 'end' });
-    vmark(a, S.alt / 5000);
+    const U = h => (h - 2000) / 3000;   // oś 2–5 km, żeby słupki 2850 i 3050 m się nie nakładały
+    const a = axes('altitude (km)', 'AMS (% of climbers)', [2, 2.5, 3, 3.5, 4, 4.5, 5].map(k => [U(k * 1000), String(k)]), [[0.25, '15'], [0.5, '30'], [0.75, '45'], [1, '60']]);
+    AMS_PTS.forEach(([h, v]) => { const x = a.X(U(h)); el('rect', { x: x - 6, y: a.Y(v / 60), width: 12, height: a.Y0 - a.Y(v / 60), fill: C.ink }, ch); tx(ch, `${v}%`, x, a.Y(v / 60) - 4, { size: 9.5, anchor: 'middle', w: 600 }); });
+    el('line', { x1: a.X(U(2500)), y1: a.Y0, x2: a.X(U(2500)), y2: a.Y1, stroke: C.grey, 'stroke-dasharray': '3 3' }, ch); tx(ch, '2500 m', a.X(U(2500)) - 4, a.Y1 + 10, { size: 10, it: true, anchor: 'end' });
+    if (S.alt >= 2000) vmark(a, U(S.alt));
     return ['Acute mountain sickness by altitude (Swiss Alps huts)', LEG([['% with AMS', 0, 0, C.ink]])];
   },
   acz() {
