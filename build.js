@@ -13,6 +13,7 @@ if (errors.length) { console.error('Rejestr — błędy:\n- ' + errors.join('\n-
 
 const core = rd('src/core'), app = rd('src/app');
 const logo = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(R, 'assets/logo.svg')).toString('base64');
+const favicon = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(R, 'assets/favicon.svg')).toString('base64');   // sam sygnet, kwadrat
 const version = require('./package.json').version;
 const shell = fs.readFileSync(path.join(R, 'src/shell.html'), 'utf8');
 // Dwa wyniki z jednego źródła:
@@ -27,6 +28,7 @@ const make = studio => shell
   .replace('/*APP*/', () => app + (studio ? '\n' + studioJs : ''))
   .replaceAll('%STUDIO%', () => String(studio))
   .replace('<!--ROBOTS-->', () => studio ? '<meta name="robots" content="noindex, nofollow">' : '')
+  .replaceAll('%FAVICON%', () => favicon)
   .replaceAll('%LOGO%', () => logo)
   .replaceAll('%VERSION%', () => version);
 
