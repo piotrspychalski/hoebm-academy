@@ -244,6 +244,7 @@ function initRolka() {
     <p id="rkMsg" role="status"></p></div>`;
   document.body.append(panel, el('div', { id: 'rkCount', class: 'rk-count', hidden: '' }), el('div', { id: 'rkSeg', class: 'rk-seg' }));
   $('rkHide').onclick = () => panel.classList.toggle('min');
+  if (innerWidth < 900) panel.classList.add('min');   // telefon / wąskie okno: panel zwinięty, nie zasłania ryciny
   $('rkCamBtn').onclick = () => ROLKA.stream ? (stopCam(), rolkaHud()) : startCam().then(rolkaHud);
   $('rkCam').onchange = $('rkMic').onchange = () => startCam().then(rolkaHud);
   $('rkFile').onchange = e => setMedia(e.target.files[0]);
