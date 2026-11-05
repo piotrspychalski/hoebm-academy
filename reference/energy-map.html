@@ -606,6 +606,7 @@ el('ellipse', { cx: 350, cy: 446, rx: 10, ry: 7, fill: C.paper, stroke: C.ink2, 
 art('M356,334 L320,338 M356,330 L382,330', 2.5);
 // GI: przełyk (za sercem) → żołądek → dwunastnica → pętle jelita cienkiego → rama okrężnicy
 const gGut = organG('gut', 'Gut');
+el('rect', { x: 302, y: 248, width: 112, height: 196, rx: 16, fill: 'transparent' }, gGut);   // cały brzuch jelitowy klikalny (także między pętlami)
 const tubeOn = (g, d, w, cls, edge = C.ink, fill = C.paper) => { el('path', { d, fill: 'none', stroke: edge, 'stroke-width': w + 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', class: cls || '' }, g); el('path', { d, fill: 'none', stroke: fill, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g); };
 tubeOn(gGut, 'M350,92 L350,242 Q352,262 374,270', 5);
 // okrężnica: kątnica (prawy dół brzucha = lewo rysunku) → wstępnica → poprzecznica → zstępnica → esica
@@ -1255,10 +1256,17 @@ $('comp').addEventListener('click', ev => { const b = ev.target.closest('button'
 $('status').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) { S.status = b.dataset.v; render(); } });
 $('vo2max').addEventListener('change', ev => { S.vo2max = clamp(+ev.target.value || 55, 25, 90); ev.target.value = S.vo2max; render(); });
 $('mass').addEventListener('change', ev => { S.mass = clamp(+ev.target.value || 70, 40, 130); ev.target.value = S.mass; render(); });
-const pickOrgan = k => { S.organ = k; render(); openPane('paneOrgan'); };
+// Klik w narząd przenosi nawigację: zostaje bieżący temat, jeśli dotyczy tego narządu; inaczej temat główny narządu
+const ORG_TOPIC = { gut: 'gut', liver: 'glycogen', blood: 'vo2', lungs: 'vent', kidney: 'acz', adipose: 'fuel', muscle: 'fuel', mito: 'mito' };
+const pickOrgan = (k, open = true) => {
+  const T = TOPICS.find(x => x.id === S.topic);
+  if (T.organ !== k && !(k === 'liver' && T.id === 'glycogen') && !(k === 'adipose' && T.id === 'fuel')) S.topic = ORG_TOPIC[k];
+  S.organ = k; render(); if (open) openPane('paneOrgan');
+  const b = document.querySelector(`#topics [data-topic="${S.topic}"]`); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center' });
+};
 map.addEventListener('click', ev => { const g = ev.target.closest('.organ'); if (g) pickOrgan(g.dataset.organ); });
 map.addEventListener('keydown', ev => { const g = ev.target.closest('.organ'); if (g && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); pickOrgan(g.dataset.organ); } });
-$('organs').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) { S.organ = b.dataset.organ; render(); } });
+$('organs').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) pickOrgan(b.dataset.organ, false); });
 document.addEventListener('click', ev => {
   const o = ev.target.closest('[data-open]');
   if (o) { const p = $(o.dataset.open), was = p.classList.contains('open'); closePanes(); if (!was) p.classList.add('open'); }
