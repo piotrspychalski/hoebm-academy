@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Studio · slajdy szkicu</title>
+<style>
+/* STUDIO SLAJDÓW (tylko lokalnie, studio/sketch/index.html): szkic wzorcowy w ramce o stałym rozmiarze, przeskalowanej do okna.
+   Sekwencje z data/slides/*.json (tools/sketch-slides.js). Skróty jak w studiu rycin; ramka bez myszy (pointer-events: none). */
+:root { --paper: #F2F0F1; --ink: #1B5996; --ink-2: #38305F; --marker: #D9C0CF; --blood: #C2185B;
+  --display: "Montserrat", "Helvetica Neue", Arial, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace; color-scheme: light; }
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+#stage { position: absolute; left: 50%; top: 50%; transform-origin: 0 0; background: var(--paper); overflow: hidden; }
+#stage iframe { display: block; width: 100%; height: 100%; border: 0; pointer-events: none; }
+#cover { position: absolute; inset: 0; background: var(--paper); opacity: 0; pointer-events: none; transition: opacity .5s ease; }
+#cover.on { opacity: 1; transition: none; }
+[hidden] { display: none !important; }
+#draft, #safe { position: absolute; inset: 0; pointer-events: none; }
+#draft { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--blood); opacity: .14; transform: rotate(-20deg); }
+#draft b { font: 800 150px/1 var(--display); } #draft span { font: 600 34px var(--mono); }
+#safe div { position: absolute; background: rgba(217, 192, 207, .55); }
+.hud { position: fixed; left: 12px; top: 12px; z-index: 50; max-width: 340px; background: rgba(242, 240, 241, .94); color: var(--ink);
+  border: 1.5px solid var(--ink); padding: 10px 12px; font: 400 12px/1.6 var(--mono); }
+.hud b { font-weight: 600; } .hud a { color: var(--ink); } .hud .warn { color: var(--blood); } .hud .note { color: var(--ink-2); font-style: italic; }
+html.hidecursor, html.hidecursor * { cursor: none !important; }
+</style>
+</head>
+<body>
+<div id="stage"><iframe id="sk" title="Master sketch" src="energy-map.html"></iframe><div id="draft" hidden><b>DRAFT</b><span>NOT FOR PUBLICATION</span></div><div id="safe" hidden></div><div id="cover"></div></div>
+<div class="hud" id="hud" role="note"></div>
+<script>
+(() => {
+'use strict';
+/*SEQS*/
+const params = new URLSearchParams(location.search);
+const LOCAL = ['localhost', '127.0.0.1', '[::1]', ''].includes(location.hostname);
+const PREVIEW = LOCAL && params.has('preview');
+const visible = SEQS.filter(q => q.status === 'published' || PREVIEW);
+const CLEAN_MS = 1500;   // jak --clean-ms w studiu rycin: czysta klatka przed sekwencją
+const $ = id => document.getElementById(id), root = document.documentElement;
+const seq = visible.find(q => q.id === params.get('seq')) || (visible.length === 1 ? visible[0] : null);
+let idx = 0, ready = false, held = false, warnings = [], hudOn = true;
+const sk = $('sk'), stage = $('stage'), hud = $('hud');
+
+const [FW, FH] = seq ? seq.frame : [1440, 810];
+stage.style.width = FW + 'px'; stage.style.height = FH + 'px';
+function fit() { const k = Math.min(innerWidth / FW, innerHeight / FH); stage.style.transform = `scale(${k}) translate(-50%, -50%)`; }
+addEventListener('resize', fit); fit();
+
+// Strefa bezpieczna: 16:9 — 5% marginesu (title safe); 9:16 — ta sama strefa co rolka w studiu rycin (SAFE w 01-tokeny.js, płótno 1080 × 1920)
+function buildSafe() {
+  const z = FW > FH ? { x0: .05, x1: .95, y0: .05, y1: .95 } : { x0: 65 / 1080, x1: 1015 / 1080, y0: 269 / 1920, y1: 1248 / 1920 };
+  const P = v => (v * 100).toFixed(2) + '%';
+  $('safe').innerHTML = [[0, 0, 1, z.y0], [0, z.y1, 1, 1], [0, z.y0, z.x0, z.y1], [z.x1, z.y0, 1, z.y1]]
+    .map(([a, b, c, d]) => `<div style="left:${P(a)};top:${P(b)};width:${P(c - a)};height:${P(d - b)}"></div>`).join('');
+}
+buildSafe();
+$('draft').hidden = !seq || seq.status === 'published';
+
+function renderHud() {
+  if (!seq) {
+    const list = visible.map(q => `<a href="?seq=${q.id}${PREVIEW ? '&preview' : ''}">${q.id}</a> · ${q.title}${q.status !== 'published' ? ' · DRAFT' : ''}`).join('<br>');
+    hud.innerHTML = `<b>STUDIO · SLAJDY SZKICU</b> · nie linkować<br>${list || (SEQS.length ? 'Tylko szkice — dodaj ?preview (lokalnie).' : 'Brak sekwencji w data/slides/.')}`;
+    return;
+  }
+  const s = seq.slides[idx];
+  hud.innerHTML = `<b>STUDIO · SLAJDY</b> · nie linkować<br><b>${seq.title}</b>${seq.status !== 'published' ? ' · DRAFT' : ''}<br>`
+    + `slajd ${idx + 1} / ${seq.slides.length}: ${s.label}${held ? ' · pauza' : ''}<br>`
+    + (s.note ? `<span class="note">${s.note}</span><br>` : '')
+    + (warnings.length ? `<span class="warn">${warnings.join('<br>')}</span><br>` : '')
+    + 'R lub klik: restart (czysta klatka 1,5 s) · Space pauza<br>S strefa bezpieczna · F pełny ekran<br>← → slajd · H pomoc';
+  hud.hidden = !hudOn;
+}
+
+function show(i, tween) {
+  if (!seq || !ready) return;
+  idx = Math.max(0, Math.min(seq.slides.length - 1, i)); held = false;
+  const s = seq.slides[idx];
+  sk.contentWindow.postMessage({ hoebm: 'slide', id: idx, state: s.state, tween: tween ? (s.tween ?? seq.tween) : 0 }, '*');
+  renderHud();
+}
+function restart() {
+  hudOn = false; hud.hidden = true;
+  const c = $('cover'); c.classList.add('on');
+  show(0, false);
+  if (seq) sk.contentWindow.postMessage({ hoebm: 'hold', on: true }, '*');   // odtwarzanie czasu czeka na koniec czystej klatki
+  setTimeout(() => { c.classList.remove('on'); if (seq) sk.contentWindow.postMessage({ hoebm: 'hold', on: false }, '*'); }, CLEAN_MS);
+}
+
+addEventListener('message', ev => {
+  if (ev.source !== sk.contentWindow || !ev.data?.hoebm) return;
+  if (ev.data.hoebm === 'ready') { ready = true; show(0, false); }
+  else if (ev.data.hoebm === 'applied' && ev.data.id === idx) { warnings = ev.data.warnings || []; renderHud(); }
+});
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); held = !held; sk.contentWindow.postMessage({ hoebm: 'hold', on: held }, '*'); renderHud(); }
+  else if (k === 'r') restart();
+  else if (k === 's') $('safe').hidden = !$('safe').hidden;
+  else if (k === 'f') { document.fullscreenElement ? document.exitFullscreen?.() : root.requestFullscreen?.().catch(() => {}); }
+  else if (k === 'h') { hudOn = !hudOn; renderHud(); hud.hidden = !hudOn; }
+  else if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); show(idx + 1, true); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(idx - 1, true); }
+});
+stage.addEventListener('click', restart);
+let idle = null;
+addEventListener('mousemove', () => { root.classList.remove('hidecursor'); clearTimeout(idle); idle = setTimeout(() => root.classList.add('hidecursor'), 1500); });
+renderHud();
+})();
+</script>
+</body>
+</html>

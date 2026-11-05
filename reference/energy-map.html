@@ -1616,10 +1616,98 @@ addEventListener('resize', () => { placeMore(); if (!MOBILE()) closePanes(); });
 function stopPlay() { S.playing = false; $('play').textContent = 'Play'; }
 $('play').addEventListener('click', () => { if (S.playing) return stopPlay(); if (S.t >= TMAX) S.t = 0; S.playing = true; $('play').textContent = 'Pause'; });
 
+/* ───────────── SLAJDY (studio nagrań): stan szkicu ustawiany z zewnątrz ─────────────
+   Jeden slajd = temat + narząd + wartości suwaków (+ otwarte sekcje, rycina na pełnym ekranie, odtwarzanie czasu).
+   Wejścia: window.HoEBMSketch.set(slajd, tweenMs) · postMessage({ hoebm: 'slide', state, tween }) z ramki rodzica
+   · adres #s=<JSON slajdu>. Klawisz C kopiuje bieżący stan jako JSON slajdu (do pliku sekwencji w data/slides/).
+   Pola: README w .claude/skills/sketch-slides/SKILL.md; walidacja przy budowie: tools/sketch-slides.js. */
+const SLIDE_NUM = { intensity: ['pace', 5, PMAX], time: ['t', 0, TMAX], gph: ['gph', 0, 120], altitude: ['alt', 0, 5000] };
+const SLIDE_INT = { days: ['days', 0, 14], vo2max: ['vo2max', 25, 90], mass: ['mass', 40, 130] };
+let TW = null, HOLD = false, PLAY_TO = null, PLAY_REQ = null, WARN = [];
+function topicId(v) {
+  const s = String(v).trim(), lc = s.toLowerCase();
+  const t = TOPICS.find(x => topicNum(x.id) === s) || TOPICS.find(x => x.id === lc) || TOPICS.find(x => x.name.toLowerCase() === lc);
+  return t ? t.id : null;
+}
+function tweenStep(now) {
+  const k = smooth((now - TW.t0) / TW.ms);
+  for (const key in TW.to) S[key] = TW.from[key] + (TW.to[key] - TW.from[key]) * k;
+  S.pace = Math.round(S.pace); S.gph = Math.round(S.gph); S.alt = Math.round(S.alt / 10) * 10;
+  if (k >= 1) { Object.assign(S, TW.to); TW = null; }
+  render();
+  if (!TW && PLAY_REQ != null) startPlay();
+}
+// play: true (do końca osi), liczba minut albo "wall" (do ściany glikogenowej) — liczone po dojściu suwaków do celu
+function startPlay() {
+  const p = PLAY_REQ; PLAY_REQ = null;
+  const end = p === 'wall' ? SIM.wall : p === true ? TMAX : +p;
+  if (p === 'wall' && SIM.wall === null) WARN.push('no glycogen wall within 5 h at these settings');
+  PLAY_TO = end == null ? TMAX : clamp(end, 0, TMAX);
+  if (PLAY_TO > S.t) { S.playing = true; $('play').textContent = 'Pause'; }
+}
+function applySlide(st = {}, tween = 0) {
+  const warn = WARN = [];
+  TW = null; HOLD = false; PLAY_TO = null; PLAY_REQ = st.play || null; stopPlay();
+  if (st.topic != null) {
+    const id = topicId(st.topic);
+    if (id) { S.topic = id; S.organ = TOPICS.find(x => x.id === id).organ; } else warn.push(`unknown topic "${st.topic}"`);
+  }
+  if (st.organ != null) {
+    if (!ORGANS[st.organ]) warn.push(`unknown organ "${st.organ}"`);
+    else if (st.topic != null) S.organ = st.organ;      // temat i narząd podane razem: oba dosłownie
+    else pickOrgan(st.organ, false);                     // sam narząd: jak klik w mapę
+  }
+  const to = {};
+  for (const [k, [key, lo, hi]] of Object.entries(SLIDE_NUM)) if (st[k] != null) to[key] = clamp(+st[k], lo, hi);
+  if (st.play && 't' in to) { S.t = to.t; delete to.t; }   // przy odtwarzaniu czas startuje od razu od wartości slajdu
+  for (const [k, [key, lo, hi]] of Object.entries(SLIDE_INT)) if (st[k] != null) S[key] = Math.round(clamp(+st[k], lo, hi));
+  if (st.comp != null) { if (['glc', 'mal', 'suc', 'gf'].includes(st.comp)) S.comp = st.comp; else warn.push(`unknown comp "${st.comp}"`); }
+  if (st.glycogen != null) { if (STATUS[st.glycogen]) S.status = st.glycogen; else warn.push(`unknown glycogen "${st.glycogen}"`); }
+  if (st.acetazolamide != null) S.acz = !!st.acetazolamide;
+  $('days').value = S.days; $('vo2max').value = S.vo2max; $('mass').value = S.mass;
+  if (tween > 0 && !REDUCE && Object.keys(to).some(k => to[k] !== S[k])) TW = { from: Object.fromEntries(Object.keys(to).map(k => [k, S[k]])), to, t0: performance.now(), ms: tween };
+  else Object.assign(S, to);
+  render();
+  // sekcje lewego panelu: open = [1, 3] (numery od 1), "all" albo fragmenty nagłówków; brak pola = wszystkie zamknięte
+  const D = [...$('tMore').querySelectorAll('details')], want = st.open == null ? [] : st.open === 'all' ? D.map((d, i) => i + 1) : [].concat(st.open);
+  D.forEach((d, i) => { d.open = want.some(w => typeof w === 'number' ? w === i + 1 : d.querySelector('summary').textContent.toLowerCase().includes(String(w).toLowerCase())); });
+  if (want.some(w => typeof w === 'number' && w > D.length)) warn.push(`this topic has ${D.length} sections`);
+  $('detWrap').classList.toggle('zoom', !!st.zoom);
+  closePanes(); if (st.pane) openPane({ topic: 'paneTopic', organ: 'paneOrgan', settings: 'paneSettings' }[st.pane]);
+  if (st.sources) { if (!srcDlg.open) srcDlg.showModal(); } else if (srcDlg.open) srcDlg.close();
+  if (PLAY_REQ != null && !TW) startPlay();
+  return warn;
+}
+function slideState() {
+  const st = { topic: topicNum(S.topic), organ: S.organ, intensity: S.pace, time: Math.round(S.t), gph: S.gph, comp: S.comp, glycogen: S.status,
+    altitude: S.alt, days: S.days, acetazolamide: S.acz, vo2max: S.vo2max, mass: S.mass };
+  const open = [...$('tMore').querySelectorAll('details')].map((d, i) => d.open ? i + 1 : 0).filter(Boolean);
+  if (open.length) st.open = open;
+  if ($('detWrap').classList.contains('zoom')) st.zoom = true;
+  return st;
+}
+window.HoEBMSketch = { set: applySlide, get: slideState, topics: () => TOPICS.map(t => ({ num: topicNum(t.id), id: t.id, name: t.name, organ: t.organ, sections: t.more.map(m => m[0]) })), organs: () => Object.keys(ORGANS) };
+const EMBED = window.parent !== window;
+addEventListener('message', ev => {
+  const m = ev.data; if (!m || typeof m !== 'object' || !m.hoebm) return;
+  if (m.hoebm === 'slide') ev.source?.postMessage({ hoebm: 'applied', id: m.id, warnings: applySlide(m.state, m.tween || 0), state: slideState() }, '*');
+  else if (m.hoebm === 'hold') {   // pauza (Space w studiu): zatrzymuje przejście i odtwarzanie czasu
+    const on = m.on ?? !HOLD, now = performance.now();
+    if (on && !HOLD) HOLD = now; else if (!on && HOLD) { if (TW) TW.t0 += now - HOLD; HOLD = false; }
+  }
+  else if (m.hoebm === 'get') ev.source?.postMessage({ hoebm: 'state', state: slideState() }, '*');
+});
+if (EMBED) { window.parent.postMessage({ hoebm: 'ready', topics: window.HoEBMSketch.topics() }, '*'); }
+document.addEventListener('keydown', ev => {
+  if (ev.target.tagName === 'INPUT' || ev.key.toLowerCase() !== 'c' || ev.metaKey || ev.ctrlKey) return;
+  const json = JSON.stringify(slideState()); console.log(json); navigator.clipboard?.writeText(json).catch(() => {});
+});
+
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (S.playing) { S.t = Math.min(TMAX, S.t + dt * 25); if (S.t >= TMAX) stopPlay(); render(); }
+  if (TW && !HOLD) tweenStep(now);
+  if (S.playing && !HOLD) { const end = PLAY_TO ?? TMAX; S.t = Math.min(end, S.t + dt * 25); if (S.t >= end) { stopPlay(); PLAY_TO = null; } render(); }
   const beat = REDUCE ? 1 : 1 + 0.07 * Math.max(0, Math.sin(now / 1000 * Math.PI * 2 * (1 + 2 * S.p / 100)));
   heartPath.setAttribute('transform', `translate(372,222) scale(${beat}) translate(-372,-222)`);
   const br = REDUCE ? 1 : 1 + 0.03 * (0.4 + S.p / 100) * Math.sin(now / 1000 * Math.PI * 2 * (0.25 + 0.5 * S.p / 100));
@@ -1642,6 +1730,7 @@ function frame(now) {
 }
 placeMore();
 render();
+if (location.hash.startsWith('#s=')) { try { const w = applySlide(JSON.parse(decodeURIComponent(location.hash.slice(3)))); if (w.length) console.warn('slide:', w); } catch (e) { console.warn('slide: bad #s= JSON', e); } }
 requestAnimationFrame(frame);
 })();
 </script>
