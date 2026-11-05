@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.0] — 2026-11-05 (Akademia = duża animacja; studio nagrywa animację)
+
+### Zmienione
+- Akademia publiczna to teraz szkic wzorcowy (energy map) — `dist/index.html` powstaje z `reference/energy-map.html` (tytuł strony, favicon, logo prowadzi na stronę główną). Dawna przeglądarka rycin nie jest już publikowana.
+- Studio nagrań nagrywa animację Akademii: szkic w ramce obok podglądu rolki; autor steruje nim na żywo albo sekwencją slajdów (`data/slides`, wybór w panelu ROLKA, → następny slajd). Obraz ramki pobierany z karty (getDisplayMedia „ta karta”, w Chrome przycięty przez Region Capture). Kadr animacji: strefa Reels (zalecane) albo pełne 9:16; kółko kamery w prawym dolnym albo górnym rogu. Sceny bez zmian: tytuł (temat szkicu albo własny) → zdjęcie / wideo → twarz → animacja.
+- Nawigacja widoków prywatnych: Akademia · Studio nagrań · Slajdy.
+
+### Usunięte
+- FIG. 1 „Where does your blood go on a hard effort?” (rycina kanwy, moduł i szkic referencyjny) — zastąpiona przez szkic.
+
+### Testy
+- `budowa`: Akademia = szkic (HoEBMSketch, tytuł, logo), brak paska prywatnego i studia w wersji publicznej. Rdzeń kanwy dla testów w `studio/core.js` (nie publikowany).
+
 ## [0.9.0] — 2026-11-05 (jedno narzędzie: Akademia, studio, slajdy, szkic)
 
 ### Dodane

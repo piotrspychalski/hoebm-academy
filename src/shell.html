@@ -139,9 +139,11 @@ html.mobile footer { padding-bottom: 12px; }
    Sama scena 1080×1920 na całą wysokość okna, czarne tło, bez interfejsu i kursora; skróty w 12-studio.js. */
 html.studio body { background: #000; overflow: hidden; padding: 0; }
 html.studio body > :not(main):not(.studiohud):not(.vnav):not(.rolka):not(.rk-count):not(.rk-seg):not(dialog) { display: none !important; }
-html.studio main { display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; max-width: none; height: 100vh; }
+html.studio main { display: flex; justify-content: center; align-items: center; gap: 18px; padding: 0 330px 0 12px; margin: 0; max-width: none; height: 100vh; }
+html.studio .stagecol { flex-direction: row; align-items: center; gap: 18px; }
+html.studio #skFrame { flex: none; border: 0; background: var(--paper); box-shadow: 0 0 0 1.5px #555; }
 html.studio .panel, html.studio .controls { display: none !important; }
-html.studio .stage-wrap { width: min(100vw, 100vh * 9 / 16); }
+html.studio .stage-wrap { flex: none; width: min(100vw, (100vh - 24px) * 9 / 16); }
 html.studio canvas#stage { border: 0; aspect-ratio: 9 / 16; }
 html.studio.hidecursor, html.studio.hidecursor * { cursor: none !important; }
 .studiohud { position: fixed; left: 12px; top: 12px; z-index: 50; max-width: 300px; background: rgba(242, 240, 241, .94); color: var(--ink);
@@ -208,7 +210,8 @@ html.studio.hidecursor, html.studio.hidecursor * { cursor: none !important; }
 /*REG*/
 const VERSION = '%VERSION%';
 const LOGO_SRC = '%LOGO%';
-const STUDIO = %STUDIO%;   // true tylko w studio/index.html (lokalnie)
+const STUDIO = %STUDIO%;   // true tylko w buildzie studia
+const SEQS = %SEQS%;       // sekwencje slajdów szkicu (data/slides, rozwinięte przez tools/sketch-slides.js)
 /*CORE*/
 /*APP*/
 })();

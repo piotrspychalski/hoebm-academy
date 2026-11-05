@@ -41,7 +41,7 @@ const sandbox = {
 };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-const core = fs.readFileSync(path.join(R, 'dist/core.js'), 'utf8');
+const core = fs.readFileSync(path.join(R, 'studio/core.js'), 'utf8');
 vm.runInContext(`const REG = ${JSON.stringify(reg)}; const LOGO_SRC = ''; const STUDIO = false;\n${core}\n` +
   `this.__api = { FIGMOD, LAYOUTS, setLY: l => { LY = l; }, getLY: () => LY, TEXT_LOG, beginFrame, frameHeader, keyAt, smooth };`, sandbox);
 const api = sandbox.__api;

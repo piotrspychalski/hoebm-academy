@@ -22,12 +22,14 @@ const shell = fs.readFileSync(path.join(R, 'src/shell.html'), 'utf8');
 //  dist/<STUDIO_PATH>/index.html — to samo studio online pod adresem znanym tylko autorowi: ścieżka z sekretu GitHuba
 //    STUDIO_PATH (CI), nigdy w kodzie; strona z noindex, bez linków z wersji publicznej. Szkice i tak są widoczne tylko lokalnie.
 const studioJs = rd('src/studio');
+const slides = require('./tools/sketch-slides.js').compile(R);   // sekwencje slajdów dla studia nagrań
 const studioNav = fs.readFileSync(path.join(R, 'src/studio-nav.js'), 'utf8');   // pasek widoków prywatnych (tylko studio)
 const make = studio => shell
   .replace('/*REG*/', () => 'const REG = ' + JSON.stringify(reg) + ';')
   .replace('/*CORE*/', () => core)
   .replace('/*APP*/', () => app + (studio ? '\n' + studioJs : ''))
   .replaceAll('%STUDIO%', () => String(studio))
+  .replace('%SEQS%', () => JSON.stringify(slides.seqs))
   .replace('<!--ROBOTS-->', () => studio ? '<meta name="robots" content="noindex, nofollow">' : '')
   .replaceAll('%FAVICON%', () => favicon)
   .replaceAll('%LOGO%', () => logo)
@@ -36,9 +38,13 @@ const make = studio => shell
 
 fs.mkdirSync(path.join(R, 'dist'), { recursive: true });
 fs.mkdirSync(path.join(R, 'studio'), { recursive: true });
-fs.writeFileSync(path.join(R, 'dist/core.js'), core);
-fs.writeFileSync(path.join(R, 'dist/app.js'), app);
-const html = make(false);
+fs.writeFileSync(path.join(R, 'studio/core.js'), core);   // dla testów (tests/liczby_strefa.js); nie publikujemy
+// Akademia publiczna = szkic wzorcowy (reference/energy-map.html) — duża interaktywna animacja (od 0.10.0).
+// Logo w nagłówku prowadzi na stronę główną; favicon jak w studiu.
+const html = fs.readFileSync(path.join(R, 'reference/energy-map.html'), 'utf8')
+  .replace(/<link rel="icon"[^>]*>\n?/g, '')   // własna ikona szkicu = ściśnięty logotyp; zastępujemy kwadratowym sygnetem
+  .replace('<a class="brand" href="../"', '<a class="brand" href="./"')
+    .replace(/<title>[^<]*<\/title>/, () => `<title>Sports Academy · House of EBM</title>\n<link rel="icon" type="image/svg+xml" href="${favicon}">`);
 fs.writeFileSync(path.join(R, 'dist/index.html'), html);
 fs.writeFileSync(path.join(R, 'studio/index.html'), make(true));
 const SP = process.env.STUDIO_PATH;
@@ -49,7 +55,7 @@ if (SP) {
   console.log('studio online: dist/<STUDIO_PATH>/index.html');   // ścieżki nie wypisujemy
 }
 const pub = reg.figures.filter(f => f.status === 'published').length;
-console.log(`dist/index.html ${Math.round(html.length / 1024)} KB · studio/index.html (lokalnie) · rycin: ${reg.figures.length} (opublikowanych: ${pub})`);
+console.log(`dist/index.html (Akademia = szkic) ${Math.round(html.length / 1024)} KB · studio/index.html (lokalnie) · rycin kanwy: ${reg.figures.length} (opublikowanych: ${pub})`);
 // Slajdy szkicu wzorcowego: data/slides/*.json → studio/sketch/index.html (lokalnie; tylko do nagrań, nie do dist/)
 require('./tools/sketch-slides.js').build(R, studioNav);
 // Studio slajdów online — obok studia rycin pod tą samą tajną ścieżką

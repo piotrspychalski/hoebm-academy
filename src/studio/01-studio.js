@@ -1,28 +1,22 @@
-// STUDIO — prywatny widok do nagrywania (tylko studio/index.html, budowany lokalnie, nigdy publikowany).
-// Telefon 9:16 na komputerze: sama scena na całą wysokość okna, bez interfejsu. Rycina: ?f=<id> albo ← →.
-// Skróty: R — restart (1,5 s czystej klatki, potem sekwencja; chowa pomoc) · Space — pauza · S — strefa bezpieczna Reels
-//         F — pełny ekran · ← → — poprzednia / następna rycina · H — pomoc · N — nagraj rolkę (02-rolka.js)
-// Telefon / tablet (bez klawiatury): dotknięcie ryciny = restart nagrania (jak R); sekwencja startuje sama po otwarciu.
+// STUDIO NAGRAŃ — prywatny widok (studio/index.html lokalnie, online pod tajną ścieżką; nigdy linkowany ze strony publicznej).
+// Od 0.10.0 nagrywa animację Akademii (szkic wzorcowy, reference/energy-map.html) osadzoną obok podglądu rolki 9:16.
+// Autor steruje szkicem na żywo (tematy, narządy, suwaki) albo sekwencją slajdów z data/slides; nagrywanie: 02-rolka.js.
+// Skróty: N — nagraj · 1–4 — podgląd scen · S — strefa bezpieczna Reels · F — pełny ekran · H — pomoc.
 function initStudio() {
   const root = document.documentElement;
   root.classList.add('studio');
   const hud = el('div', { class: 'studiohud', role: 'note' });
-  hud.innerHTML = '<b>STUDIO</b> · nie linkować<br>R lub dotknięcie ryciny: restart (czysta klatka 1,5 s)<br>Space pauza · S strefa bezpieczna · F pełny ekran<br>← → rycina · H pomoc<br>N nagraj rolkę (panel ROLKA po prawej)<br><span id="hudFig"></span>';
+  hud.innerHTML = '<b>STUDIO NAGRAŃ</b> · nie linkować<br>Po lewej: animacja Akademii — klikaj w niej tematy, narządy, suwaki.<br>'
+    + 'Po prawej: panel ROLKA. N — nagraj · 1–4 podgląd scen<br>S strefa bezpieczna · F pełny ekran · H pomoc';
   document.body.append(hud);
-  const setHud = () => { const f = figById(STATE.figure); $('hudFig').textContent = f ? `FIG. ${f.fig} ${f.id}${f.status !== 'published' ? ' · DRAFT' : ''}` : 'brak ryciny (?f=<id>)'; };
-  setHud();
-  const restart = () => { if (ROLKA.seg) return; hud.hidden = true; CLOCK.restart(T.cleanMs); };
-  $('stage').addEventListener('click', restart);   // dotknięcie na telefonie też wywołuje click
   let idle = null;
   addEventListener('mousemove', () => { root.classList.remove('hidecursor'); clearTimeout(idle); idle = setTimeout(() => root.classList.add('hidecursor'), 1500); });
   addEventListener('keydown', e => {
+    if (e.target instanceof Element && e.target.matches('input[type=text], input[type=number], select, textarea')) return;
     const k = e.key.toLowerCase();
-    if (k === ' ') { e.preventDefault(); CLOCK.toggle(); }
-    else if (k === 'r') restart();
-    else if (k === 's') STATE.safe = !STATE.safe;
+    if (k === 's') STATE.safe = !STATE.safe;
     else if (k === 'f') { document.fullscreenElement ? document.exitFullscreen?.() : document.documentElement.requestFullscreen?.().catch(() => {}); }
     else if (k === 'h') hud.hidden = !hud.hidden;
-    else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { stepFigure(e.key === 'ArrowRight' ? 1 : -1); setHud(); }
   });
-  initRolka();   // nagrywanie gotowej rolki z kamerą (02-rolka.js)
+  initRolka();
 }

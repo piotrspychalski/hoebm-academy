@@ -1,3 +1,5 @@
+> **Od 0.10.0:** Akademia publiczna = `reference/energy-map.html` (szkic wzorcowy). Studio nagrań (`src/studio/02-rolka.js`) nagrywa szkic osadzony w ramce, przechwycony z karty przeglądarki. Rdzeń kanwy (`src/core`, rejestr rycin) zostaje dla kart rolki i przyszłych rycin, ale nie ma teraz opublikowanych rycin kanwy.
+
 # Sports Academy — kod źródłowy
 
 Interaktywne, schematyczne ryciny o fizjologii sportów wytrzymałościowych (House of EBM).

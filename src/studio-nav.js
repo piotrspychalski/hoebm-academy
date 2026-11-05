@@ -1,4 +1,4 @@
-// Nawigacja główna prywatnych widoków (studio rycin, slajdy szkicu, szkic) — tylko w buildach studia, nigdy na stronie publicznej.
+// Nawigacja główna prywatnych widoków (Akademia, studio nagrań, slajdy) — tylko w buildach studia, nigdy na stronie publicznej.
 // Online: wszystkie widoki leżą pod tajną ścieżką (dist/<STUDIO_PATH>/…), Akademia to strona publiczna piętro wyżej.
 // Lokalnie (localhost / file://): studio/ i studio/sketch/; Akademia — wersja na żywo.
 // Pasek chowa się po 2 s bez ruchu myszy i znika całkiem w trakcie nagrywania (html.recording).
@@ -11,11 +11,10 @@
   const keep = new URLSearchParams(location.search).has('preview') ? '?preview' : '';
   const items = [
     ['academy', 'Akademia', local ? LIVE : base + '../', 'Strona publiczna: ryciny i animacje'],
-    ['studio', 'Studio rycin', base + keep, 'Nagrywanie rolki z ryciny (N)'],
-    ['slides', 'Slajdy szkicu', base + 'sketch/' + keep, 'Sekwencje slajdów; nowe: poproś Claude (skill sketch-slides)'],
-    ['sketch', 'Szkic', base + 'sketch/energy-map.html', 'Szkic wzorcowy (energy map), klawisz C kopiuje stan jako slajd'],
+    ['studio', 'Studio nagrań', base + keep, 'Rolka z animacji Akademii: kamera, zdjęcie, slajdy (N)'],
+    ['slides', 'Slajdy', base + 'sketch/' + keep, 'Odtwarzacz sekwencji slajdów 16:9; nowe sekwencje: poproś Claude (skill sketch-slides)'],
   ];
-  const cur = /energy-map\.html$/.test(here) ? 'sketch' : inSketch ? 'slides' : 'studio';
+  const cur = /energy-map\.html$/.test(here) ? 'academy' : inSketch ? 'slides' : 'studio';
   const css = `.vnav{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:70;display:flex;gap:2px;padding:3px;
     background:rgba(27,31,48,.88);border-radius:999px;font:600 12px/1 "IBM Plex Mono",ui-monospace,monospace;transition:opacity .3s}
     .vnav a{color:#F2F0F1;text-decoration:none;padding:7px 12px;border-radius:999px;white-space:nowrap}
