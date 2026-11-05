@@ -286,6 +286,7 @@ const SRC = {
   jamnick2020: 'Jamnick et al. 2020, Sports Med (PMID 32729096): LT1, GET and VT delineate the moderate and heavy domains; CP the heavy and severe',
   baker2010: 'Baker, McCormick & Robergs 2010, J Nutr Metab (PMID 21188163): 10-s sprint 53% PCr / 44% glycolysis / 3% mitochondria; 30-s 23/49/28; equal aerobic and anaerobic at ≈75 s; anaerobic capacity used in 2–3 min above VO₂max',
   gore2013: 'Gore et al. 2013, Br J Sports Med (PMID 24282204): Hbmass +1.1% per 100 h at altitude; 95% prediction interval after 300 h 1.1–6%',
+  vanloon2001: 'van Loon et al. 2001, J Physiol (PMID 11579177): trained cyclists; fat 56% of energy at rest, 55% at 44% VO₂max, unchanged up to 57% VO₂max, lower at 72%',
   tersteege2012: 'ter Steege & Kolkman 2012, Aliment Pharmacol Ther (PMID 22229513): splanchnic blood flow may fall ≥80%',
   costa2017: 'Costa 2017, Aliment Pharmacol Ther (PMID 28589631): ≥2 h at 60% VO₂max: threshold for GI perturbations',
   gonzalez2015: 'Gonzalez 2015, Am J Physiol (PMID 26487008): ingested glucose/sucrose prevents liver, not muscle, glycogen depletion',
@@ -297,7 +298,7 @@ const SRC = {
   wehrlin2006: 'Wehrlin & Hallén 2006, Eur J Appl Physiol (PMID 16311764): VO₂max −6.3% per 1000 m (range 4.6–7.5%) from 300 to 2800 m; SpO₂ at VO₂max 89% → 76.5%',
   maggiorini1990: 'Maggiorini 1990, BMJ (PMID 2282425): 466 climbers; AMS (>2 symptoms/signs) in 9% at 2850 m, 13% at 3050 m, 34% at 3650 m, 53% at 4559 m; 11 HAPE/HACE at 4559 m; severe signs → descend',
   roach2018: 'Roach 2018, High Alt Med Biol (PMID 29583031): AMS = Lake Louise score ≥3 from four symptoms, including headache, after a recent ascent',
-  luks2017: 'Luks, Swenson & Bärtsch 2017, Eur Respir Rev (PMID 28143879): onset 4–12 h; above 2500–3000 m ≤300–600 m/night more sleeping altitude, rest day every 3–4 days; prophylaxis for moderate–high risk; acetazolamide the mainstay',
+  luks2017: 'Luks, Swenson & Bärtsch 2017, Eur Respir Rev (PMID 28143879; PMC full text): HACE = truncal ataxia, decreased consciousness → immediate descent; HAPE 1–5 days >2500–3000 m; AMS: stop ascent, descend 500–1000 m if not better; risk table; HAPE recurrence ≈60%; onset 4–12 h; above 2500–3000 m ≤300–600 m/night more sleeping altitude, rest day every 3–4 days; prophylaxis for moderate–high risk; acetazolamide the mainstay',
   leaf2007: 'Leaf & Goldfarb 2007, J Appl Physiol (PMID 17023566): renal CA inhibition → bicarbonaturia, metabolic acidosis → offsets respiratory alkalosis, fuller hypoxic response',
   swenson2016: 'Swenson 2016, J Appl Physiol (PMID 26294748): ventilatory stimulation and better arterial oxygenation from renal CA inhibition',
   schmickl2020: 'Schmickl 2020, BMJ Open Respir Res (PMID 32332024): acetazolamide raised the risk of paraesthesia, dysgeusia, polyuria and fatigue',
@@ -319,7 +320,7 @@ const SRC = {
   kreider2017: 'Kreider 2017, J Int Soc Sports Nutr (PMID 28615996): PCr buffers ATP; ≈2/3 of muscle creatine is PCr, total ≈120 mmol/kg dm; ~95% in muscle; made in liver and kidney (AGAT, GAMT); 1–2%/day → creatinine; supplementation raises muscle creatine and PCr 20–40%, high-intensity capacity and lean body mass during training (performance 10–20%); vegetarians have lower stores (90–110 mmol/kg dm); fluid retention ≈0.5–1.0 L; safe',
   soderlund1991: 'Söderlund & Hultman 1991, Am J Physiol (PMID 1767834): resting PCr 72.3 (type I) and 83.3 (type II) mmol/kg dm; ATP ≈24–25 mmol/kg dm',
   gaitanos1993: 'Gaitanos 1993, J Appl Physiol (PMID 8226473): first 6-s sprint powered equally by PCr and anaerobic glycolysis; PCr fell 57%',
-  bogdanis1996: 'Bogdanis 1996, J Appl Physiol (PMID 8964751): PCr important for power in the first 10 s; 78.7% resynthesised after 3.8 min',
+  bogdanis1996: 'Bogdanis 1996, J Appl Physiol (PMID 8964751): after a 30-s sprint PCr 16.9% of rest, 78.7% after 3.8 min; PCr resynthesis correlated with recovery of power (r = 0.84)',
   harris1976: 'Harris 1976, Pflugers Arch (PMID 1034909): PCr resynthesis half-time 21–22 s (fast) and >170 s (slow); abolished by occluding the circulation',
   mcmahon2002: 'McMahon & Jenkins 2002, Sports Med (PMID 12238940): PCr resynthesis = rephosphorylation of creatine by aerobically produced ATP',
   brosnan2007: 'Brosnan & Brosnan 2007, Annu Rev Nutr (PMID 17430086): creatine/PCr = ATP buffer and energy shuttle from mitochondria',
@@ -512,8 +513,9 @@ const TOPICS = [
   { id: 'fuel', name: 'Fuel mix', organ: 'muscle', flows: ['glcMus', 'ffa', 'lacOut', 'glcHep', 'food'], chart: 'mix',
     lead: ['Fat and carbohydrate are always burned together; intensity sets the mix. As effort rises carbohydrate takes over (the crossover), and above the lactate threshold more of it leaves the muscle as lactate, to be burned elsewhere or turned back into glucose.', 'brooks1994 brooks2018'],
     more: [["Fatmax and where carbohydrate comes from", [
-        ["About 48% of VO₂max in the general population and about 63% in trained men, at about 0.5 g of fat per minute.", "venables2005 achten2003"],
-        ["It comes from muscle glycogen, glucose released by the liver, and what you eat or drink during exercise.", ""],
+        ["Fat supplies about half the energy at rest and at easy paces: in trained cyclists 56% at rest and 55% at 44% VO₂max, unchanged up to about 57% VO₂max, then falling.", "vanloon2001"],
+        ["Peak fat burning (Fatmax) is at about 48% of VO₂max in the general population and about 63% in trained men, at about 0.5 g of fat per minute.", "venables2005 achten2003"],
+        ["Carbohydrate comes from muscle glycogen, glucose released by the liver, and what you eat or drink during exercise.", ""],
         ["As glycogen runs down, the mix at the same intensity shifts back towards fat.", ""]]]] },
   { id: 'energy', name: 'Energy budget', organ: 'muscle', flows: ['glcMus', 'ffa', 'glcHep'], chart: 'stores',
     lead: ['Carbohydrate is the fuel that runs out. The body stores about 500 g of glycogen, roughly 2,000 kcal, against roughly 100,000 kcal of fat, and hard exercise burns mostly carbohydrate.', 'hearris2018 lange2004 hall2008'],
@@ -535,16 +537,16 @@ const TOPICS = [
     more: [["Transporters and limits", [
         ["Glucose (also from maltodextrin and sucrose) crosses through SGLT1, fructose through GLUT5; both leave the cell towards the blood through GLUT2.", "jeukendrup2014 sun2012"],
         ["Maltodextrin is split by α-amylase and brush-border enzymes, sucrose by sucrase at the brush border; neither step is the bottleneck. Maltodextrin behaves like glucose; sucrose supplies glucose and fructose.", "wagenmakers1993 sun2012 gonzalez2015"],
-        ["Gut blood flow falls and absorption may fall too.", "tersteege2012 costa2017"]]]] },
+        ["In hard and long efforts gut blood flow falls, and absorption may fall too.", "tersteege2012 costa2017"]]]] },
   { id: 'glycogen', name: 'Glycogen, the wall & TTE', organ: 'muscle', flows: ['glcHep', 'glcMus', 'glcPortal', 'food', 'lacOut', 'ala'], chart: 'glycogen',
     lead: ['Muscle glycogen fuels only the muscle that holds it; liver glycogen keeps blood glucose up for the rest of the body. How full the stores are at the start decides how long a hard effort lasts: 59, 126 and 189 min at 75% VO₂max after a low-, mixed- and high-carbohydrate diet. When they run out you hit the wall.', 'bergstrom1967'],
     more: [["The wall and eating during exercise", [
         ["“Hitting the wall” (“bonking”) means running out of carbohydrate. In recreational marathons it hits about 28% of men and 17% of women, typically after about 32 km.", "rapoport2010 smyth2021"],
         ["Why about 32 km: running costs about 1 kcal per kg per km, so a 70-kg runner needs ≈2950 kcal for the marathon, ≈70 kcal per km. Glycogen holds ≈2000 kcal; if it paid for everything it would last ≈29 km. Fat covers part of the cost, but only the glycogen in the running legs (plus the liver) can be used, so the stores run out at around 30–35 km.", "rapoport2010 hearris2018 hall2008"],
         ["Carbohydrate eaten during exercise spares the liver, not the muscle, yet still delays fatigue (about 3 → 4 h at 71% VO₂max).", "gonzalez2015 coyle1986"],
-        ["For VO₂max 55, 75% VO₂max is already at OBLA, so the times here are shorter than Bergström’s (his subjects worked below their threshold); the ratios between low, mixed and high glycogen are the same.", "bergstrom1967"]]],
+        ["In this sketch: for VO₂max 55, 75% VO₂max is already at OBLA, so the times here are shorter than Bergström’s (his subjects worked below their threshold); the ratios between low, mixed and high glycogen are the same.", "bergstrom1967"]]],
       ["Loading and why muscle cannot share", [
-        ["Raises muscle glycogen about 1.8×; it stays high for at least 3 days, up to about 5, at rest.", "goforth1997 arnall2007"],
+        ["Carbohydrate loading raises muscle glycogen about 1.8×; it stays high for at least 3 days, up to about 5, at rest.", "goforth1997 arnall2007"],
         ["After exercise insulin sensitivity and glycogen synthase activity rise, so the stores refill above the starting level.", "jensen2012"],
         ["One day of ≈10 g/kg carbohydrate at rest, or a short supramaximal bout followed by one day of high carbohydrate, raises glycogen close to 2×.", "bussau2002 fairchild2002"],
         ["Muscle lacks glucose-6-phosphatase (found in liver, kidney and gut), so its glycogen leaves as lactate, alanine or pyruvate, practically never as glucose.", "adeva2016"]]]] },
@@ -562,7 +564,7 @@ const TOPICS = [
         ["At LT1 about 1.5 h in healthy men; just below VT1 about 4 h in trained cyclists (in 30-min bouts).", "pires2011 gallo2024"],
         ["At the maximal lactate steady state (close to OBLA) about 35–65 min, typically ≈55.", "baron2008 fontana2009 pallares2026"],
         ["At critical power 20–40 min; at VO₂max about 3.5–6 min.", "brickley2002 pallares2026 billat1996"],
-        ["Below OBLA, starting glycogen and carbohydrate intake change it a lot.", "bergstrom1967 coyle1986"]]],
+        ["Below OBLA, starting glycogen and carbohydrate eaten during exercise change TTE a lot.", "bergstrom1967 coyle1986"]]],
       ["Thresholds, critical power and breathing", [
         ["VT1 (first ventilatory threshold): where breathing first rises faster than oxygen uptake. Like LT1 it separates moderate from heavy exercise.", "jamnick2020"],
         ["Critical power (CP): the highest pace that still settles into a steady state, close to the maximal lactate steady state, at about 70–80% VO₂max in healthy young people.", "poole2016 jones2010 jamnick2020"],
@@ -592,17 +594,21 @@ const TOPICS = [
         ["Above 2500–3000 m raise your sleeping altitude by no more than 300–600 m a night, with a rest day every 3–4 days.", "luks2017"],
         ["Drug prophylaxis should be strongly considered for moderate- to high-risk ascents, not for low-risk ones; acetazolamide is the mainstay. Discuss it with a doctor before the trip.", "luks2017"],
         ["Severe headache, vomiting, dizziness, fast breathing and marked crackles in the lungs mean severe AMS: descend at once.", "maggiorini1990"],
-        ["With symptoms, do not go higher. If they get worse, or with confusion, unsteady walking or breathlessness at rest (possible HACE or HAPE), descend and get medical help.", ""]]]] },
+        ["With AMS symptoms, stop going up; most cases settle with rest and simple painkillers. If symptoms last several days despite this, descend 500–1000 m.", "luks2017"],
+        ["Confusion, drowsiness or unsteady walking (truncal ataxia) point to high-altitude cerebral oedema (HACE): descend immediately. Untreated, HACE is usually fatal, sometimes within 24 h.", "luks2017"],
+        ["Breathlessness on exertion out of step with companions, cough and falling performance, later breathlessness at rest and frothy sputum, point to high-altitude pulmonary oedema (HAPE), usually 1–5 days after arrival above 2500–3000 m: get oxygen and medical help, or descend.", "luks2017"],
+        ["Higher risk: going above 3000 m in one day without knowing how you react, a very fast ascent above 4000 m, or AMS, HACE or HAPE before on a similar ascent. After one HAPE, about 60% get it again on a similar trip.", "luks2017"]]]] },
   { id: 'acz', name: 'Acetazolamide & the kidney', organ: 'kidney', flows: [], chart: 'acz',
     lead: ['Acetazolamide blocks carbonic anhydrase in the kidney, so bicarbonate is lost in urine and the blood turns slightly acidic. That offsets the alkalosis caused by breathing harder at altitude and lets breathing respond more fully to low oxygen, improving arterial oxygenation.', 'leaf2007 swenson2016'],
     more: [["Side effects and use", [
-        ["Tingling (paraesthesia), altered taste, more urine, fatigue.", "schmickl2020"],
+        ["Side effects: tingling (paraesthesia), altered taste, more urine, fatigue.", "schmickl2020"],
         ["Whether to take it is a decision for a clinician.", ""]]]] },
   { id: 'pcr', name: 'Phosphocreatine & creatine', organ: 'mito', flows: ['rbcMus', 'glcMus'], chart: 'pcr',
     lead: ['Phosphocreatine is the muscle’s instant ATP reserve. It re-makes ATP within seconds, but the store is small, so it matters most in the first ~10 s of a sprint. Refilling needs oxygen and takes minutes, which is why recovery between sprints matters.', 'kreider2017 bogdanis1996 harris1976'],
     more: [['Numbers', [['Store: PCr ≈72–83 mmol/kg dry muscle, ATP ≈24–25; about two thirds of muscle creatine is PCr.', 'soderlund1991 kreider2017'],
                      ['In a 6-s sprint PCr and anaerobic glycolysis supply energy equally, and PCr falls by 57%.', 'gaitanos1993'],
-                     ['Refilling half-time ≈21–22 s (fast phase) and >170 s (slow); no blood flow, no refilling.', 'harris1976 mcmahon2002']]],
+                     ['Refilling half-time ≈21–22 s (fast phase) and >170 s (slow); no blood flow, no refilling.', 'harris1976 mcmahon2002'],
+                     ['After a 30-s sprint PCr was 17% of rest, and 79% after 3.8 min of rest; how much PCr had refilled predicted how much sprint power came back.', 'bogdanis1996']]],
            ['Where creatine comes from', [['About 95% of body creatine is in muscle. It is made in the liver and kidneys (AGAT, GAMT) and eaten in meat and fish; 1–2% a day becomes creatinine.', 'kreider2017 brosnan2011'],
                                           ['PCr also shuttles high-energy phosphate from the mitochondria to where ATP is used.', 'brosnan2007']]],
            ['Supplementation', [['Raises muscle creatine and PCr by about 20–40%, most with low starting stores (vegetarians: 90–110 mmol/kg dm); some barely respond.', 'kreider2017 harris1992 syrotuik2004'],
@@ -611,14 +617,14 @@ const TOPICS = [
   { id: 'mito', name: 'Muscle cell & mitochondrion', organ: 'mito', flows: ['glcMus', 'ffa', 'bcaa', 'lacOut', 'rbcMus'], chart: 'mix',
     lead: ['Inside the muscle cell, glucose and glycogen are split in the cytosol for a quick but small 2–3 ATP, then finished in the mitochondrion for about 30–32 ATP in all. Fat gives far more ATP per molecule but less per unit of oxygen, one reason carbohydrate is favoured at high intensity.', 'rowland2026 schmidt2021'],
     more: [["Glycolysis and lactate", [
-        ["Glucose → 2 pyruvate: net 2 ATP per glucose, 3 from a glycogen unit.", "rowland2026 hargreaves2018 mookerjee2017"],
+        ["Glycolysis (glucose → 2 pyruvate) gives a net 2–3 ATP.", "rowland2026 hargreaves2018 mookerjee2017"],
         ["Glucose-6-phosphate cannot leave the muscle cell: muscle lacks glucose-6-phosphatase, which the liver (and kidney) has.", "adeva2016"],
         ["If the mitochondria cannot keep up, pyruvate becomes lactate; it leaves and is burned in other fibres and the heart, or made into glucose in the liver.", "brooks2018"]]],
       ["Mitochondrion and ATP yields", [
         ["Pyruvate (via PDH) and fatty acids (via β-oxidation) become acetyl-CoA, which the TCA cycle and the electron transport chain burn with O₂ to CO₂ and water.", ""],
         ["Glucose fully oxidised: ≈30–32 ATP per molecule, ≈0.17 mol ATP per gram.", "rowland2026 mookerjee2017"],
         ["Palmitate (fat) fully oxidised: ≈106 ATP per molecule, ≈0.41 mol ATP per gram, about 2.4× glucose.", "rowland2026"],
-        ["Glucose to lactate: 2 ATP per molecule (3 from glycogen), ≈0.011 mol ATP per gram, about 1/15 of full oxidation.", "rowland2026 hargreaves2018"],
+        ["Glucose to lactate: 2–3 ATP per molecule, ≈0.011 mol ATP per gram, about 1/15 of full oxidation.", "rowland2026 hargreaves2018"],
         ["Per oxygen atom the order flips: ≈2.78 ATP for carbohydrate, ≈2.45 for fat, so fat needs more O₂ for the same ATP.", "schmidt2021"]]]] }
 ];
 // Grupy tematów (nawigacja dwupoziomowa); kolejność TOPICS = kolejność grup
@@ -1192,13 +1198,16 @@ const CHARTS = {
     return ['Blood lactate and intensity', LEG([['blood lactate', C.ink2], ['4 mmol/L = OBLA', C.grey, 1]])];
   },
   pcr() {
-    const a = axes('recovery (s)', 'PCr (% of rest)', [0, 60, 120, 180, 240].map(t => [t / 240, String(t)]), [[0.25, '25'], [0.5, '50'], [0.75, '75'], [1, '100']]);
-    const P0 = 43, f = t => 100 - (100 - P0) * (0.6 * Math.exp(-t * Math.LN2 / 21.5) + 0.4 * Math.exp(-t * Math.LN2 / 170));
-    line(range(60, u => [u, f(240 * u) / 100]), a, { c: C.ink, w: 3 });
+    // Odbudowa PCr po 30-s sprincie: dwufazowa; faza szybka t½ ≈21 s [harris1976], dopasowana do pomiarów Bogdanisa
+    // (16,9% na końcu, 78,7% po 3,8 min [bogdanis1996]; 65% po 1,5 min i 85,5% po 6 min, cyt. wg [baker2010])
+    const a = axes('recovery after a 30-s sprint (s)', 'PCr (% of rest)', [0, 60, 120, 180, 240, 300, 360].map(t => [t / 360, String(t)]), [[0.25, '25'], [0.5, '50'], [0.75, '75'], [1, '100']]);
+    const P0 = 16.9, f = t => 100 - 39.6 * Math.exp(-t / 30.3) - 43.5 * Math.exp(-t / 320);
+    line(range(72, u => [u, f(360 * u) / 100]), a, { c: C.ink, w: 3 });
     line([[0, P0 / 100], [1, P0 / 100]], a, { c: C.blood, w: 2, d: '5 3' });
-    tx(ch, 'after a 6-s sprint (−57%)', a.X(0) + 4, a.Y(P0 / 100) + 14, { size: 10, it: true });
-    tx(ch, 'fast phase t½ ≈ 21 s', a.X(21.5 / 240) + 6, a.Y(f(21.5) / 100) + 4, { size: 11, w: 600, fill: C.ink });
-    return ['PCr refilling after a sprint', LEG([['blood flow intact', C.ink], ['circulation occluded: no refilling', C.blood, 1]])];
+    [[90, 65], [228, 78.7], [360, 85.5]].forEach(([t, v]) => { el('circle', { cx: a.X(t / 360), cy: a.Y(v / 100), r: 4, fill: C.paper, stroke: C.ink2, 'stroke-width': 1.8 }, ch); tx(ch, `${v}%`, a.X(t / 360) - (t === 360 ? 4 : 0), a.Y(v / 100) + 16, { size: 9.5, anchor: t === 360 ? 'end' : 'middle', fill: C.ink2 }); });
+    tx(ch, 'end of sprint: 17% left', a.X(0) + 4, a.Y(P0 / 100) + 14, { size: 10, it: true });
+    tx(ch, 'fast phase t½ ≈ 21 s', a.X(40 / 360) + 6, a.Y(f(21) / 100) + 2, { size: 10.5, w: 600, fill: C.ink });
+    return ['PCr refilling after a 30-s sprint', LEG([['model (two phases)', C.ink], ['measured (Bogdanis)', C.ink2], ['circulation occluded: no refilling', C.blood, 1]])];
   },
   vent() {
     const a = axes('% VO₂max', 'ventilation (L/min)', PT, [[0.25, '50'], [0.5, '100'], [0.75, '150'], [1, '200']]);
@@ -1307,7 +1316,7 @@ function renderOrgan() {
   if (S.organ === 'muscle') { R = [['Total muscle glycogen at start', `${SIM.st.m} g`], ['Left in the working fibres', `${fmt(cur.gm)} of ${fmt(SIM.w0)} g`], ['Carbohydrate burned', `${fmt(E.cho * 60)} g/h`], ['… from muscle glycogen', `${fmt(cur.glyUse * 60)} g/h`], ['… from blood glucose', `${fmt(cur.U * 60)} g/h`], ['Fat burned', `${fmt(E.fat * 60)} g/h`],
       ['Glycogen runs out (the wall)', SIM.wall === null ? 'not within 5 h' : '≈ ' + fmtT(SIM.wall)], [`Time to exhaustion (TTE)${tteWhy() ? `<i>: ${tteWhy()}</i>` : ''}`, fmtDur(TTE())]];
     G = [gauge('Fat → CO₂', sh.f, 'soft'), gauge('Glucose → CO₂', sh.c * (1 - sh.l)), gauge('Pyruvate → lactate (carbon flux)', sh.c * sh.l, 'warn'), gauge('Protein (incl. BCAA)', sh.b / 0.1, 'soft')]; }
-  if (view === 'pcr') { R = [['PCr now', `${fmt(100 * pcrLevel(S.p))} % of rest`], ['Store at rest', '≈72–83 mmol/kg'], ['6-s sprint: PCr falls by', '57 %'], ['Refilling half-time (fast phase)', '≈21–22 s'], ['Circulation occluded', 'no refilling']];
+  if (view === 'pcr') { R = [['PCr now', `${fmt(100 * pcrLevel(S.p))} % of rest`], ['Store at rest', '≈72–83 mmol/kg'], ['6-s sprint: PCr falls by', '57 %'], ['Refilling half-time (fast phase)', '≈21–22 s'], ['30-s sprint, then 3.8 min rest', '79 % refilled'], ['Circulation occluded', 'no refilling']];
     G = [gauge('PCr store', pcrLevel(S.p)), gauge('Mitochondrial refilling (O₂ supply)', clamp(S.p / 100), 'soft')]; }
   else if (S.organ === 'mito') { const glc = E.cho / 180, ox = glc * (1 - sh.l) * 31, gl = glc * sh.l * (2 + cur.glyUse / Math.max(1e-6, cur.glyUse + cur.U)), fa = E.fat / 256 * 106, tot = ox + gl + fa;
     const cost = (ox + gl) > 0 ? glc / ((ox + gl) / 31) : 1;
