@@ -49,7 +49,7 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 .ctl { flex: none; }
 .ctl output, .tte { display: inline-block; overflow: hidden; text-overflow: ellipsis; }
 .tte { font: 600 12px var(--mono); color: var(--blood); white-space: nowrap; }
-#intOut { width: 16ch; } .tte { width: 12ch; } #timeOut { width: 7ch; } #gphOut { width: 7ch; } #altOut { width: 9ch; }
+#intOut { width: 16ch; } .tte { width: 13.5ch; } #timeOut { width: 7ch; } #gphOut { width: 7ch; } #altOut { width: 9ch; }
 .ticks { position: absolute; left: 8px; right: 8px; bottom: -2px; height: 12px; font: italic 400 10px var(--sans); }
 .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; color: var(--blood); }
 .ticks span::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 5px; background: var(--blood); }
@@ -89,9 +89,14 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 .pane li { margin: 4px 0; }
 .pane li::marker { color: var(--blood); }
 .ref { color: #7a7090; font-size: 12px; }
-dl.terms { margin: 0; }
-dl.terms dt { font-weight: 600; color: var(--ink); margin-top: 6px; }
-dl.terms dd { margin: 0; }
+.pane p.lead { margin: 2px 0 10px; font-size: 14.5px; line-height: 1.55; color: var(--ink-2); }
+#tMore { margin-top: 10px; border-top: 1px solid var(--hair); }
+#tMore details { border-bottom: 1px solid var(--hair); padding: 5px 0; }
+#tMore summary { cursor: pointer; font: 600 13px var(--sans); color: var(--ink); list-style: none; }
+#tMore summary::-webkit-details-marker { display: none; }
+#tMore summary::before { content: '+'; display: inline-block; width: 14px; color: var(--blood); font-weight: 700; }
+#tMore details[open] summary::before { content: '−'; }
+#tMore ul { margin: 4px 0 2px; font-size: 13px; }
 .chart { margin-top: 12px; }
 .chart h4 { margin: 0; font: 400 13px var(--sans); }
 .chart h4 b { font: 800 14px var(--display); color: var(--ink); margin-right: 6px; }
@@ -192,9 +197,9 @@ dl.terms dd { margin: 0; }
     <div class="sheethead"><span>Topic</span><button class="close" type="button" data-close aria-label="Close">×</button></div>
     <div class="crumb" id="tNum"></div>
     <h2 id="tTitle"></h2>
-    <ul id="tBullets"></ul>
-    <div id="tTerms"></div>
+    <p class="lead" id="tLead"></p>
     <div class="chart"><h4 id="chTitle"></h4><svg id="chart" viewBox="0 0 330 190"></svg><div class="legend" id="chLegend"></div></div>
+    <div id="tMore"></div>
   </section>
   <div class="mapwrap"><svg id="map" viewBox="0 0 700 840" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Schematic body: heart and lungs in the chest, liver and gut in the abdomen, fat under the skin, working muscles in the legs and arms. Click an organ."></svg></div>
   <section class="pane right" id="paneOrgan" aria-live="polite">
@@ -294,7 +299,8 @@ const SRC = {
   poole2016: 'Poole 2016, Med Sci Sports Exerc (PMID 27031742): CP = upper boundary of the heavy domain, close to MLSS, at 70–80% VO₂max',
   billat1996: 'Billat & Koralsztein 1996, Sports Med (PMID 8857705): time to exhaustion at vVO₂max averages about 6 min (CV ≈25%)',
   gastin2001: 'Gastin 2001, Sports Med (PMID 11547894): aerobic and anaerobic supply equal at about 75 s of maximal exercise',
-  kreider2017: 'Kreider 2017, J Int Soc Sports Nutr (PMID 28615996): PCr buffers ATP; ≈2/3 of muscle creatine is PCr, total ≈120 mmol/kg dm; ~95% in muscle; made in liver and kidney (AGAT, GAMT); 1–2%/day → creatinine; supplementation raises muscle creatine and PCr 20–40%, high-intensity performance 10–20%; fluid retention ≈0.5–1.0 L; safe',
+  severinghaus1979: 'Severinghaus 1979, J Appl Physiol: equations for the O₂–haemoglobin dissociation curve, used here to turn PaO₂ into SpO₂ (model)',
+  kreider2017: 'Kreider 2017, J Int Soc Sports Nutr (PMID 28615996): PCr buffers ATP; ≈2/3 of muscle creatine is PCr, total ≈120 mmol/kg dm; ~95% in muscle; made in liver and kidney (AGAT, GAMT); 1–2%/day → creatinine; supplementation raises muscle creatine and PCr 20–40%, high-intensity capacity and lean body mass during training (performance 10–20%); vegetarians have lower stores (90–110 mmol/kg dm); fluid retention ≈0.5–1.0 L; safe',
   soderlund1991: 'Söderlund & Hultman 1991, Am J Physiol (PMID 1767834): resting PCr 72.3 (type I) and 83.3 (type II) mmol/kg dm; ATP ≈24–25 mmol/kg dm',
   gaitanos1993: 'Gaitanos 1993, J Appl Physiol (PMID 8226473): first 6-s sprint powered equally by PCr and anaerobic glycolysis; PCr fell 57%',
   bogdanis1996: 'Bogdanis 1996, J Appl Physiol (PMID 8964751): PCr important for power in the first 10 s; 78.7% resynthesised after 3.8 min',
@@ -344,10 +350,10 @@ function breath(p, o = {}) {   // p = % VO₂max (względne); o = { alt, days, a
   const vd = 1 + acute + accl + acz;
   const vdEx = vd * (1 + 0.25 * hy * Math.min(p, 100) / 100 + 0.2 * clamp((p - OBLA()) / (100 - OBLA())));       // wysiłek w hipoksji: dodatkowa hiperwentylacja (ilustracyjnie)
   const paco2 = 40 / vd, pao2A = PIO2(alt) - paco2 / 0.8, pao2Ex = PIO2(alt) - 40 / vdEx / 0.8;
-  const grad = 2 + (12 + 0.5 * Math.max(0, S.vo2max - 55)) * (Math.min(p, 100) / 100) ** 2 * (1 + 0.6 * hy);   // w hipoksji dochodzi ograniczenie dyfuzji   // u lepiej wytrenowanych większa desaturacja wysiłkowa   // gradient A–a rośnie z wysiłkiem (ilustracyjnie)
+  const grad = 2 + (12 + 0.3 * Math.max(0, S.vo2max - 55)) * (Math.min(p, 100) / 100) ** 2 * (1 + 0.3 * hy);   // w hipoksji dochodzi ograniczenie dyfuzji   // u lepiej wytrenowanych większa desaturacja wysiłkowa   // gradient A–a rośnie z wysiłkiem (ilustracyjnie)
   const sat = (P, pc, ex = 0) => { const pH = 7.40 + 0.008 * (40 - pc) - 0.12 * ex, Pv = P * 10 ** (0.40 * (pH - 7.4) + 0.06 * Math.log10(40 / pc) - 0.05 * ex); return 100 / (1 + 23400 / (Pv ** 3 + 150 * Pv)); };   // Severinghaus z poprawką Bohra
   const vo2 = Math.min(p, 100) / 100 * S.vo2max * VF(alt) * S.mass / 1000;
-  const VE = vo2 * 24 * vd * (1 + 0.12 * clamp((p - LT()) / (OBLA() - LT())) + 0.35 * clamp((p - OBLA()) / (100 - OBLA())) ** 1.5);   // powyżej VO₂max wentylacja już nie rośnie
+  const VE = vo2 * 24 * vdEx * (1 + 0.12 * clamp((p - LT()) / (OBLA() - LT())) + 0.35 * clamp((p - OBLA()) / (100 - OBLA())) ** 1.5);   // powyżej VO₂max wentylacja już nie rośnie
   const comp = hy * (1 - Math.exp(-days / 0.5));                     // nerkowa kompensacja zasadowicy: pH wyrównane w ~24 h na 3800 m [bird2021]
   const hco3 = 24 - 3.5 * comp - (az ? 4 : 0);                       // mmol/L, ilustracyjnie
   const urineHCO3 = clamp(0.08 + 0.5 * hy * Math.exp(-days / 4) * Math.min(1, 0.3 + days) + (az ? 0.1 + 0.4 * Math.exp(-days / 1.5) : 0));
@@ -365,23 +371,25 @@ const pcrLevel = p => clamp(1 - 0.25 * p / OBLA() - 0.45 * smooth((p - OBLA()) /
 //   CP: 20–41 min [brickley2002] → 30 min;  VO₂max: ≈4–6 min [pallares2026, billat1996] → 5 min;  powyżej CP: W′/(P − CP) [jones2010]
 const TLIM100 = 5, T_MLSS = 55, T_CP = 30;
 const lerpLog = (p, p0, t0, p1, t1) => Math.exp(Math.log(t0) + (Math.log(t1) - Math.log(t0)) * (p - p0) / (p1 - p0));
-// Krzywa: LT1 ≈94 min (niewytrenowani) … ≈4 h (wytrenowani) wg VO₂max [pires2011, gallo2024]; OBLA ≈ MLSS 55 min; CP 30 min; VO₂max 5 min.
-// Poniżej OBLA mnożniki ze źródeł: glikogen niski ×59/126, załadowany ×189/126 [bergstrom1967]; węglowodany ×1,33 przy 60 g/h [coyle1986];
-// wygaszane w pasie 6 punktów poniżej OBLA (od OBLA w górę decyduje zmęczenie).
+// Krzywa zmęczenia: LT1 ≈94 min (niewytrenowani) … ≈4 h tuż poniżej VT1 u wytrenowanych, wg VO₂max [pires2011, gallo2024];
+// OBLA ≈ MLSS 55 min; CP 30 min; VO₂max 5 min; powyżej CP W′/(P − CP). TTE = min(krzywa, ściana glikogenowa z symulacji):
+// glikogen startowy i węglowodany działają przez ścianę (symulacja zgodna z proporcjami Bergström 1967 i Coyle 1986).
 const T_LT1 = () => 94 + (240 - 94) * clamp((S.vo2max - 40) / 25);
+// Glikogen startowy i jedzenie skalują też krzywę: ×59/126 / ×189/126 [bergstrom1967], ×1,33 przy ≥60 g/h wchłoniętych [coyle1986];
+// wpływ wygasa między OBLA a CP (wyżej decyduje zmęczenie); niedobór glikogenu skraca TTE w całym zakresie (krzywa nie rośnie z intensywnością).
 const KGLY = { low: 59 / 126, normal: 1, loaded: 189 / 126 };
 const tteCP = p => {
   const lt = LT(), ob = OBLA(), cp = CPp();
-  const k = KGLY[S.status] * (1 + 0.33 * clamp(S.gph / 60));
-  const kUp = Math.min(1, k);   // niedobór glikogenu skraca TTE także powyżej OBLA (krzywa nie może rosnąć z intensywnością)
-  if (p > cp) return Math.min(T_CP * kUp, TLIM100 * (100 - cp) / (p - cp));
-  if (p > ob) return Math.min(T_MLSS * kUp, lerpLog(p, ob, T_MLSS, cp, T_CP));
-  const base = p <= lt - 15 ? Infinity : p <= lt ? lerpLog(p, lt - 15, T_LT1() * 4, lt, T_LT1()) : lerpLog(p, lt, T_LT1(), ob, T_MLSS);
-  return k < 1 ? base * k : base * (1 + (k - 1) * clamp((ob - p) / 6));
+  const k = KGLY[S.status] * (1 + 0.33 * clamp((SIM ? SIM.tr[0].A.absorbed : 0) / 60));
+  const fade = p <= ob ? 1 : clamp((cp - p) / (cp - ob));
+  const kk = k < 1 ? k : 1 + (k - 1) * fade;
+  if (p > cp) return Math.min(T_CP * Math.min(1, k), TLIM100 * (100 - cp) / (p - cp));
+  const base = p > ob ? lerpLog(p, ob, T_MLSS, cp, T_CP) : p <= lt - 15 ? Infinity : p <= lt ? lerpLog(p, lt - 15, T_LT1() * 4, lt, T_LT1()) : lerpLog(p, lt, T_LT1(), ob, T_MLSS);
+  return base * kk;
 };
-const TTE = () => tteCP(S.p);
+const TTE = () => Math.min(tteCP(S.p), SIM.wall === null ? Infinity : SIM.wall);
 const fmtDur = m => m > TMAX ? '> 5 h' : m >= 60 ? '≈ ' + fmtT(m) : m >= 2 ? `≈ ${Math.round(m)} min` : `≈ ${Math.round(m * 60)} s`;
-const tteWhy = () => S.p > CPp() ? 'above critical power' : S.p > OBLA() ? 'above MLSS' : TTE() > TMAX ? '' : 'glycogen and fatigue';
+const tteWhy = () => TTE() > TMAX ? '' : SIM.wall !== null && SIM.wall <= tteCP(S.p) ? 'carbohydrate runs out' : S.p > CPp() ? 'above critical power' : S.p > OBLA() ? 'above MLSS' : 'fatigue';
 const tteText = () => fmtDur(TTE()) + (tteWhy() ? ` (${tteWhy()})` : '');                         // gdzie mleczan = 4 mmol/L [sjodin1981]
 const gutFlow = p => 1 - 0.8 * smooth((p - 10) / 90);               // −80% przy maks. [tersteege2012]
 const musFlow = p => 0.15 + 0.85 * smooth((p - 5) / 95);
@@ -413,6 +421,8 @@ function energy(p, dep) {
   // glikoliza beztlenowa daje ≈3 ATP z jednostki glikogenu zamiast ≈30–34 (≈10× więcej węglowodanu na ATP); część pokrywa PCr, stąd ×7 (ilustracyjnie)
   return { vo2, kcal: aer + ana, aer, ana, anaShare: ana / (aer + ana), sh, cho: aer * sh.c / 4.2 + ana / 4.2 * 7, fat: aer * sh.f / 9.4 };   // g/min
 }
+const HGO_MAX = 1.0;   // g/min: maks. oddawanie glukozy przez wątrobę w wysiłku (ilustracyjnie)
+const EXO_EFF = 0.75;   // część wchłoniętego CHO krążąca i utleniana (ilustracyjnie)
 function simulate(statusKey) {
   const st = STATUS[statusKey], A = absorb(S.p, S.gph, S.comp), e = (S.p - 5) / 95;
   const w0 = st.m * WORK;
@@ -423,15 +433,15 @@ function simulate(statusKey) {
     const avail = Math.min(1, gm / (0.12 * w0));
     const gs0 = 0.62 + 0.15 * e;                                     // udział glikogenu mięśni w CHO (ilustracyjnie)
     const glyUse = E.cho * gs0 * avail, short = E.cho * gs0 * (1 - avail);
-    const brain = 120 / 1440, exo = 0.75 * A.absorbed / 60;   // nie całe wchłonięte CHO od razu krąży i jest utleniane (ilustracyjnie)
+    const brain = 120 / 1440, exo = EXO_EFF * A.absorbed / 60;   // nie całe wchłonięte CHO od razu krąży i jest utleniane (ilustracyjnie)
     const gng = 0.08 + 0.12 * E.sh.l + 0.06 * dep;                    // glukoneogeneza g/min (ilustracyjnie)
     // pobór glukozy z krwi: część stała + pokrycie braku glikogenu; dużo wchłoniętego CHO mięsień też utlenia [coyle1986]
     const Uwant = Math.max(E.cho * (1 - gs0) + short, 0.8 * exo);
     const need = Uwant + brain - exo - gng;                            // ile musiałaby oddać wątroba
-    const hgo = gl > 3 ? clamp(need, 0, 1.0) : 0;                      // wydajność wątroby ograniczona (≈1 g/min, ilustracyjnie)
-    const U = need <= 0 ? Uwant : Math.max(0, Uwant - (need - hgo));   // brak pokrycia = mięsień dostaje mniej glukozy
+    const hgo = gl > 3 ? clamp(need, 0, HGO_MAX) : 0;                      // wydajność wątroby ograniczona (≈1 g/min, ilustracyjnie)
+    const U = need <= 0 ? Uwant : Math.max(0, Uwant - (need - hgo));   // brak pokrycia = mięsień dostaje mniej glukozy; pobór z krwi ograniczony
     const bg = gl > 3 || need <= 0 ? 1 : 1 - 0.5 * clamp((need - hgo) / (Uwant + brain));
-    const potential = exo + gng + (gl > 3 ? 1.0 : 0) - brain;         // ile glukozy z krwi mięsień mógłby dostać
+    const potential = exo + gng + (gl > 3 ? HGO_MAX : 0) - brain;   // ile glukozy z krwi mięsień mógłby dostać
     if (wall === null && ((gm < 0.1 * w0 && potential < 0.75 * E.cho) || bg < 0.8)) wall = t;   // ściana: glikogen nóg wyczerpany i glukoza z krwi nie pokrywa potrzeb
     tr.push({ t, gm, gl, bg, glyUse, U, exo, gng, need, hgo, E, A });
     gm = Math.max(0, gm - glyUse);
@@ -444,6 +454,11 @@ function recompute() {
   S.p = Math.min(PMAX, Math.round(S.pace / VF(S.alt)));
   BR = breath(S.p);
   SIM = simulate(S.status);
+  { // ściana: z symulacji bez węglowodanów (zgodna z proporcjami Bergström 1967), karmienie wydłuża ją ×(1 + 0,33·wchłonięte/60) [coyle1986: ≈3 → 4 h]
+    const g = S.gph; S.gph = 0; const w0 = simulate(S.status).wall; S.gph = g;
+    const f = 1 + 0.33 * clamp(SIM.tr[0].A.absorbed / 60);
+    SIM.wall = w0 === null ? SIM.wall : (w0 * f <= TMAX ? Math.round(w0 * f) : null);
+  }
   GHOST = S.status !== 'normal' ? simulate('normal') : null;
   cur = SIM.tr[Math.round(S.t)];
   const sh = cur.E.sh, k = cur.E.kcal;
@@ -458,101 +473,88 @@ function recompute() {
 /* ───────────── TEMATY ───────────── */
 const TOPICS = [
   { id: 'vo2', name: 'VO₂max & intensity', organ: 'blood', flows: ['rbcMus', 'rbcGut', 'rbcLiv'], chart: 'vo2',
-    b: [['Intensity is shown as a percentage of VO₂max, the highest oxygen uptake you can reach.', ''],
-        ['Each litre of oxygen releases about 5.05 kcal when carbohydrate is burned and 4.69 kcal when fat is burned.', 'cramer2019'],
-        ['VO₂max rises with training mainly through a larger maximal cardiac output.', 'bassett2000'],
-        ['Maximal cardiac output is about 15–25 L/min in untrained people and 30–40 L/min in elite endurance athletes.', 'heinonen2025'],
-        ['The same pace is a lower % of VO₂max for a fitter athlete: a different fuel mix and more blood left for the gut.', '']] },
+    lead: ['Intensity here is a percentage of VO₂max, the most oxygen the body can take up. Each litre of oxygen releases about 5 kcal, so VO₂ is also the rate of energy use. A fitter athlete has a higher VO₂max, so the same pace is a smaller percentage of it: less carbohydrate burned and more blood left for the gut.', 'cramer2019'],
+    more: [['Numbers', [['1 L of O₂ releases about 5.05 kcal with carbohydrate and 4.69 kcal with fat.', 'cramer2019'],
+                        ['Maximal cardiac output is about 15–25 L/min in untrained people and 30–40 L/min in elite endurance athletes.', 'heinonen2025']]],
+           ['What training changes', [['VO₂max rises with training mainly through a larger maximal cardiac output.', 'bassett2000']]]] },
   { id: 'fuel', name: 'Fuel mix', organ: 'muscle', flows: ['glcMus', 'ffa', 'lacOut', 'glcHep', 'food'], chart: 'mix',
-    b: [['As intensity rises, the share of carbohydrate rises and the share of fat falls (the “crossover”).', 'brooks1994'],
-        ['Fat oxidation peaks at moderate intensity: about 48% of VO₂max in the general population and about 63% in trained men (about 0.5 g/min). Change VO₂max to see it move.', 'venables2005 achten2003'],
-        ['Carbohydrate comes from muscle glycogen, glucose released by the liver, and what you eat or drink.', ''],
-        ['Above the lactate threshold, more glucose carbon leaves the fibre as lactate; it is oxidised later in the heart and other fibres, or made into glucose.', 'brooks2018'],
-        ['Drag Time: as glycogen runs down, the mix at the same intensity shifts back towards fat.', '']] },
+    lead: ['Fat and carbohydrate are always burned together; intensity sets the mix. As effort rises carbohydrate takes over (the crossover), and above the lactate threshold more of it leaves the muscle as lactate, to be burned elsewhere or turned back into glucose.', 'brooks1994 brooks2018'],
+    more: [['Peak fat burning (Fatmax)', [['About 48% of VO₂max in the general population and about 63% in trained men, at about 0.5 g of fat per minute.', 'venables2005 achten2003']]],
+           ['Where the carbohydrate comes from', [['Muscle glycogen, glucose released by the liver, and what you eat or drink during exercise.', '']]],
+           ['Over time', [['As glycogen runs down, the mix at the same intensity shifts back towards fat.', '']]]] },
   { id: 'energy', name: 'Energy budget', organ: 'muscle', flows: ['glcMus', 'ffa', 'glcHep'], chart: 'stores',
-    b: [['1 g of carbohydrate (glycogen) ≈ 4 kcal; 1 g of fat ≈ 9 kcal.', 'hall2008'],
-        ['Stores: muscle glycogen ≈400 g, liver ≈100 g (at most ≈160 g), blood glucose only ≈4–5 g.', 'hearris2018 rapoport2010 wasserman2009'],
-        ['Fat stores are huge: ≈12 kg of fat in adipose tissue ≈95,000 kcal, plus ≈300 g of fat inside muscle.', 'lange2004'],
-        ['In the lab, carbohydrate and fat oxidation are calculated from VO₂ and VCO₂ (Frayn equations). Here the model uses VO₂ and the fuel mix.', 'frayn1983'],
-        ['So carbohydrate, not fat, is what runs out: about 2,000 kcal against tens of thousands.', '']] },
+    lead: ['Carbohydrate is the fuel that runs out. The body stores about 500 g of glycogen, roughly 2,000 kcal, against roughly 100,000 kcal of fat, and hard exercise burns mostly carbohydrate.', 'hearris2018 lange2004 hall2008'],
+    more: [['Conversions', [['1 g of carbohydrate (glycogen) ≈ 4 kcal; 1 g of fat ≈ 9 kcal.', 'hall2008']]],
+           ['Stores', [['Muscle glycogen ≈400 g, liver ≈100 g (at most ≈160 g), blood glucose only ≈4–5 g.', 'hearris2018 rapoport2010 wasserman2009'],
+                       ['Adipose tissue ≈12 kg of fat (≈100,000 kcal), plus ≈300 g of fat inside muscle.', 'lange2004']]],
+           ['How it is measured', [['In the lab, carbohydrate and fat burning are calculated from VO₂ and VCO₂ (Frayn equations).', 'frayn1983']]]] },
   { id: 'flow', name: 'Blood flow', organ: 'gut', flows: ['rbcGut', 'rbcMus', 'rbcLiv', 'glcPortal'], chart: 'flow',
-    b: [['Cardiac output rises and is redistributed: working muscle gets more, the gut and liver get less.', ''],
-        ['With prolonged and/or intense exercise, splanchnic blood flow may fall by 80% or more.', 'tersteege2012'],
-        ['About 2 h or more at 60% VO₂max is the threshold at which significant GI disturbances appear, whatever the fitness level.', 'costa2017']] },
+    lead: ['During exercise cardiac output rises and is redistributed: working muscle gets more, the gut and liver get less. With long or hard exercise splanchnic blood flow can fall by 80% or more, one reason the gut struggles in races.', 'tersteege2012'],
+    more: [['Gut symptoms', [['About 2 h or more at 60% VO₂max is the threshold at which significant gut disturbances appear, whatever the fitness level.', 'costa2017']]]] },
   { id: 'gut', name: 'Gut absorption', organ: 'gut', flows: ['food', 'glcPortal', 'rbcGut', 'glcHep'], chart: 'absorb',
-    b: [['Glucose (including glucose from maltodextrin and sucrose) crosses the gut wall through SGLT1. A single glucose source is oxidised at only about 60 g/h (≈1 g/min), thought to reflect SGLT1 saturation.', 'jeukendrup2014'],
-        ['Fructose uses a second transporter, GLUT5; both leave the cell towards the blood through GLUT2.', 'sun2012'],
-        ['Maltodextrin and sucrose are first split (α-amylase, then brush-border enzymes), but this is not the bottleneck. Maltodextrin behaves like glucose; sucrose supplies glucose + fructose, so at high intake it behaves like a glucose + fructose mix.', 'wagenmakers1993 sun2012 gonzalez2015'],
-        ['So glucose + fructose can reach about 90 g/h; more glucose alone cannot.', 'jeukendrup2014'],
-        ['At very high intensity and over long durations, gut blood flow falls and absorption may fall too. What is not absorbed stays in the gut (GI symptoms).', 'tersteege2012 costa2017']] },
+    lead: ['Sugar enters the blood through two doors in the gut wall: SGLT1 for glucose, which tops out at about 60 g/h, and GLUT5 for fructose. Glucose with fructose uses both and lifts the ceiling to about 90 g/h; what is not absorbed stays in the gut and can cause symptoms.', 'jeukendrup2014'],
+    more: [['Transporters', [['Glucose (also from maltodextrin and sucrose) crosses through SGLT1, fructose through GLUT5; both leave the cell towards the blood through GLUT2.', 'jeukendrup2014 sun2012']]],
+           ['Maltodextrin and sucrose', [['Maltodextrin is split by α-amylase and brush-border enzymes, sucrose by sucrase at the brush border; neither step is the bottleneck. Maltodextrin behaves like glucose; sucrose supplies glucose and fructose.', 'wagenmakers1993 sun2012 gonzalez2015']]],
+           ['Hard and long efforts', [['Gut blood flow falls and absorption may fall too.', 'tersteege2012 costa2017']]]] },
   { id: 'glycogen', name: 'Glycogen, the wall & TTE', organ: 'muscle', flows: ['glcHep', 'glcMus', 'glcPortal', 'food', 'lacOut', 'ala'], chart: 'glycogen',
-    b: [['Muscle glycogen is used mainly in the fibre itself: muscle lacks the glucose-releasing glucose-6-phosphatase (G6PC1: liver, kidney, gut), so its carbon leaves as lactate (or alanine, pyruvate), not as glucose.', 'adeva2016'],
-        ['Liver glycogen keeps blood glucose up. In cycling studies, carbohydrate eaten during exercise spared the liver, not the muscle, yet still delayed fatigue by keeping carbohydrate oxidation going (≈3 → 4 h at 71% VO₂max).', 'gonzalez2015 coyle1986'],
-        ['“Hitting the wall” (also called “bonking”) means running out of carbohydrate. In recreational marathons it hits about 28% of men and 17% of women, typically after about 32 km.', 'rapoport2010 smyth2021'],
-        ['Starting muscle glycogen strongly affects how long you last: 59, 126 and 189 min on a cycle ergometer at 75% VO₂max after a low-, mixed- and high-carbohydrate diet.', 'bergstrom1967'],
-        ['Loading (supercompensation) raises muscle glycogen about 1.8×; it stays high for at least 3 days, and up to about 5, at rest.', 'goforth1997 arnall2007']],
-    terms: [['TTE (time to exhaustion)', 'How long a fixed intensity can be held before it must drop. In the cycling studies here, TTE at about 70–75% VO₂max was set by carbohydrate: more glycogen at the start, or carbohydrate during exercise, lengthened it. Above critical power fatigue comes much sooner (see Breathing, thresholds & TTE).', 'bergstrom1967 coyle1986'],
-            ['Supercompensation', 'After exercise, insulin sensitivity and glycogen synthase activity rise (synthase is more active when glycogen is low), so the stores refill above the starting level.', 'jensen2012'],
-            ['How to load', 'One day of ≈10 g/kg carbohydrate at rest, or a short supramaximal bout followed by one day of high carbohydrate: both raise glycogen close to 2×.', 'bussau2002 fairchild2002']] },
+    lead: ['Muscle glycogen fuels only the muscle that holds it; liver glycogen keeps blood glucose up for the rest of the body. How full the stores are at the start decides how long a hard effort lasts: 59, 126 and 189 min at 75% VO₂max after a low-, mixed- and high-carbohydrate diet. When they run out you hit the wall.', 'bergstrom1967'],
+    more: [['The wall', [['“Hitting the wall” (“bonking”) means running out of carbohydrate. In recreational marathons it hits about 28% of men and 17% of women, typically after about 32 km.', 'rapoport2010 smyth2021']]],
+           ['Eating during exercise', [['Carbohydrate eaten during exercise spares the liver, not the muscle, yet still delays fatigue (about 3 → 4 h at 71% VO₂max).', 'gonzalez2015 coyle1986']]],
+           ['Loading (supercompensation)', [['Raises muscle glycogen about 1.8×; it stays high for at least 3 days, up to about 5, at rest.', 'goforth1997 arnall2007'],
+                                            ['After exercise insulin sensitivity and glycogen synthase activity rise, so the stores refill above the starting level.', 'jensen2012'],
+                                            ['One day of ≈10 g/kg carbohydrate at rest, or a short supramaximal bout followed by one day of high carbohydrate, raises glycogen close to 2×.', 'bussau2002 fairchild2002']]],
+           ['Why muscle cannot share', [['Muscle lacks glucose-6-phosphatase (found in liver, kidney and gut), so its glycogen leaves as lactate, alanine or pyruvate, practically never as glucose.', 'adeva2016']]],
+           ['In the model', [['For VO₂max 55, 75% VO₂max is already at OBLA, so the times here are shorter than Bergström’s (his subjects worked below their threshold); the ratios between low, mixed and high glycogen are the same.', 'bergstrom1967']]]] },
   { id: 'lactate', name: 'Lactate, LT1 & OBLA', organ: 'blood', flows: ['lacOut', 'lacLiv', 'lacHeart'], chart: 'lactate',
-    b: [['Lactate is made all the time, and far more at high intensity.', 'brooks2018'],
-        ['It is a fuel, not waste: a major energy source (heart, oxidative fibres) and the main precursor of new glucose in the liver (Cori cycle).', 'brooks2018'],
-        ['Blood lactate rises when production outruns clearance.', '']],
-    terms: [['LT1 (lactate threshold)', 'The intensity at which blood lactate begins to rise above baseline. It sits at a higher % of VO₂max in trained athletes.', 'faude2009'],
-            ['OBLA', 'Onset of blood lactate accumulation: the intensity at which blood lactate reaches a fixed 4 mmol/L.', 'sjodin1981']] },
+    lead: ['Lactate is made all the time and is a fuel, not waste: the heart and oxidative fibres burn it, and the liver turns it back into glucose. Blood lactate rises only when production outruns clearance; the intensities where this happens are the thresholds used to set training zones.', 'brooks2018'],
+    more: [['Key terms', [['LT1 (lactate threshold): the intensity at which blood lactate begins to rise above baseline.', 'faude2009'],
+                       ['OBLA: the intensity at which blood lactate reaches a fixed 4 mmol/L.', 'sjodin1981']]]] },
   { id: 'bcaa', name: 'BCAA', organ: 'muscle', flows: ['bcaa', 'ala', 'glcHep'], chart: 'bcaa',
-    b: [['Protein covers only about 3% of energy during endurance exercise.', 'clauss2025'],
-        ['BCAA (leucine, isoleucine, valine) are oxidised mainly in muscle; their key enzyme (BCKDH) is switched on during exercise when glycogen is low, not when it is full.', 'wagenmakers1991'],
-        ['The nitrogen leaves muscle as alanine and glutamine; alanine goes to the liver to make new glucose (glucose–alanine cycle).', '']] },
+    lead: ['Protein is a minor fuel, about 3% of energy in endurance exercise. Branched-chain amino acids are burned mainly in muscle, more so when glycogen is low, and their nitrogen travels to the liver as alanine, which becomes new glucose.', 'clauss2025 wagenmakers1991'],
+    more: [['Details', [['The key enzyme, BCKDH, is switched on during exercise when glycogen is low, not when it is full.', 'wagenmakers1991'],
+                     ['Nitrogen leaves muscle as alanine and glutamine (glucose–alanine cycle).', '']]]] },
   { id: 'vent', name: 'Breathing, thresholds & TTE', organ: 'lungs', flows: ['rbcMus'], chart: 'vent',
-    b: [['Ventilation rises with VO₂; above the first ventilatory threshold (VT1) it rises faster than VO₂.', ''],
-        ['At the respiratory compensation point (RCP) ventilation starts to rise faster than CO₂ output, so blood CO₂ falls (compensating for lactic acid).', 'keir2024'],
-        ['In competitive cyclists maximal ventilation was about 147 L/min (range 122–180).', 'mota1999'],
-        ['Critical power (CP) is the top of the heavy domain, close to the maximal lactate steady state, at about 70–80% VO₂max in healthy young people (higher in trained athletes). Above it TTE = W′/(P − CP): at VO₂max about 4–6 min.', 'poole2016 jones2010 billat1996 pallares2026'],
-        ['Above 100% VO₂max the extra energy comes without oxygen (PCr, glycolysis to lactate). In an all-out effort aerobic and anaerobic supply are equal at about 75 s.', 'gastin2001']],
-    terms: [['VT1', 'First ventilatory threshold: ventilation starts to rise faster than VO₂.', ''],
-            ['RCP (VT2)', 'Respiratory compensation point: ventilation rises faster than CO₂ output and blood CO₂ falls.', 'keir2024'],
-            ['TTE (time to exhaustion)', 'How long a fixed intensity can be held. At LT1 about 1.5 h in healthy men and up to about 4 h in trained cyclists; at MLSS (close to OBLA) typically 35–75 min, about 55; at critical power 20–40 min; at VO₂max 4–6 min. Above CP: W′/(P − CP). Carbohydrate (the wall), heat and fluid loss can cut it shorter.', 'pires2011 gallo2024 baron2008 fontana2009 brickley2002 pallares2026 jones2010']] },
+    lead: ['Breathing rises with oxygen uptake and then faster at two thresholds: VT1, and the respiratory compensation point (RCP), where breathing outpaces CO₂ output to offset lactic acid. The same thresholds frame how long an effort can last: hours below the first, about an hour near the maximal lactate steady state, minutes at VO₂max.', 'keir2024 pires2011 baron2008 pallares2026'],
+    more: [['Time to exhaustion (TTE)', [['At LT1 about 1.5 h in healthy men; just below VT1 about 4 h in trained cyclists (in 30-min bouts).', 'pires2011 gallo2024'],
+                                      ['At the maximal lactate steady state (close to OBLA) about 35–65 min, typically ≈55.', 'baron2008 fontana2009 pallares2026'],
+                                      ['At critical power 20–40 min; at VO₂max about 3.5–6 min.', 'brickley2002 pallares2026 billat1996'],
+                                      ['Below OBLA, starting glycogen and carbohydrate intake change it a lot.', 'bergstrom1967 coyle1986']]],
+           ['Critical power (CP)', [['The top of the heavy domain, close to the maximal lactate steady state, at about 70–80% VO₂max in healthy young people. Above it TTE = W′/(P − CP).', 'poole2016 jones2010']]],
+           ['Above VO₂max', [['The extra energy comes without oxygen (phosphocreatine, glycolysis to lactate). In an all-out effort aerobic and anaerobic supply are equal at about 75 s.', 'gastin2001']]],
+           ['Maximal ventilation', [['About 147 L/min (122–180) in competitive cyclists.', 'mota1999']]]] },
   { id: 'alt', name: 'Altitude & hypoxia', organ: 'lungs', flows: ['rbcMus'], chart: 'alt',
-    b: [['Air pressure falls with altitude (about 537 mmHg at 3000 m and 420 at 5000 m, from West’s model), so each breath carries less O₂.', 'west1996'],
-        ['VO₂max falls by about 6.3% per 1000 m (4.6–7.5%), measured from 300 to 2800 m; higher up the line here is extended and probably underestimates the loss.', 'wehrlin2006'],
-        ['So the same pace is a higher % of VO₂max: more carbohydrate, more lactate, shorter TTE.', ''],
-        ['SpO₂ falls further during hard exercise: in elite athletes at VO₂max from 89% at 300 m to 76.5% at 2800 m; in another study, on acute exposure to 4100 m, to about 73%. The model shows a typical person: trained athletes desaturate more.', 'wehrlin2006 lundby2004'],
-        ['Breathing more (ventilatory acclimatisation) improves oxygenation but lowers CO₂ (respiratory alkalosis); the kidneys excrete bicarbonate and pH moves back towards normal (largely within a day at 3800 m in one study).', 'bird2021']] },
+    lead: ['Higher up, air pressure falls and each breath carries less oxygen. VO₂max drops by about 6% per 1000 m, so the same pace becomes a harder effort, with more carbohydrate, more lactate and a shorter time to exhaustion. Breathing more helps at once; over the following days the kidneys excrete bicarbonate and breathing can rise further.', 'west1996 wehrlin2006 bird2021'],
+    more: [['Numbers', [['Air pressure about 537 mmHg at 3000 m and 420 at 5000 m (West’s model).', 'west1996'],
+                     ['VO₂max −6.3% per 1000 m (4.6–7.5%), measured from 300 to 2800 m; higher up the line is extended.', 'wehrlin2006']]],
+           ['During hard exercise', [['SpO₂ falls further: in elite athletes at VO₂max from 89% at 300 m to 76.5% at 2800 m; on acute exposure to 4100 m to about 73%.', 'wehrlin2006 lundby2004']]],
+           ['Acclimatisation', [['Breathing more improves oxygenation but lowers CO₂ (respiratory alkalosis); the kidneys excrete bicarbonate and pH moves back towards normal, largely within a day at 3800 m in one study.', 'bird2021']]]] },
   { id: 'ams', name: 'Acute mountain sickness', organ: 'lungs', flows: [], chart: 'ams',
-    b: [['AMS: headache plus other symptoms after a recent ascent (Lake Louise score of 3 or more, including headache).', 'roach2018'],
-        ['It usually starts 4–12 h after arriving at a new altitude.', 'luks2017'],
-        ['In Swiss Alps huts AMS affected 9% of climbers at 2850 m, 13% at 3050 m, 34% at 3650 m and 53% at 4559 m.', 'maggiorini1990'],
-        ['Prevention: above 2500–3000 m raise your sleeping altitude by no more than 300–600 m a night, with a rest day every 3–4 days.', 'luks2017'],
-        ['Drug prophylaxis should be strongly considered for moderate- to high-risk ascents, not for low-risk ones; acetazolamide is the mainstay.', 'luks2017'],
-        ['With symptoms, do not go higher. If they get worse, or with confusion, unsteady walking or breathlessness at rest (possible HACE or HAPE), descend and get medical help.', '']],
-    terms: [['Low risk', 'Ascent of 500 m a day or less above 2500 m.', 'luks2017'],
-            ['Moderate risk', 'Planned ascent of more than 500 m a day above 3000 m.', 'luks2017'],
-            ['High risk', 'Very rapid ascent (well over 500 m a day) to more than 4000 m.', 'luks2017']] },
+    lead: ['Acute mountain sickness is headache with other symptoms after a recent ascent, usually starting 4–12 h after arrival. It becomes more common the higher you sleep, and the main protection is a slow ascent.', 'roach2018 luks2017 maggiorini1990'],
+    more: [['How common', [['9% of climbers at 2850 m, 13% at 3050 m, 34% at 3650 m and 53% at 4559 m (Swiss Alps huts).', 'maggiorini1990']]],
+           ['Prevention', [['Above 2500–3000 m raise your sleeping altitude by no more than 300–600 m a night, with a rest day every 3–4 days.', 'luks2017'],
+                          ['Drug prophylaxis should be strongly considered for moderate- to high-risk ascents, not for low-risk ones; acetazolamide is the mainstay. Discuss it with a doctor before the trip.', 'luks2017']]],
+           ['Warning signs', [['With symptoms, do not go higher. If they get worse, or with confusion, unsteady walking or breathlessness at rest (possible HACE or HAPE), descend and get medical help.', '']]]] },
   { id: 'acz', name: 'Acetazolamide & the kidney', organ: 'kidney', flows: [], chart: 'acz',
-    b: [['Acetazolamide inhibits carbonic anhydrase (CA) in the kidney: bicarbonate is lost in urine and a mild metabolic acidosis develops.', 'leaf2007'],
-        ['The acidosis offsets the respiratory alkalosis of altitude and lets the chemoreceptors respond more fully to hypoxia: more breathing, better arterial oxygenation.', 'leaf2007 swenson2016'],
-        ['In effect it does early what the kidneys and breathing do during acclimatisation.', ''],
-        ['Side effects: tingling (paraesthesia), altered taste, more urine, fatigue.', 'schmickl2020'],
-        ['Whether to take it is a decision for a clinician.', '']] },
+    lead: ['Acetazolamide blocks carbonic anhydrase in the kidney, so bicarbonate is lost in urine and the blood turns slightly acidic. That offsets the alkalosis caused by breathing harder at altitude and lets breathing respond more fully to low oxygen, improving arterial oxygenation.', 'leaf2007 swenson2016'],
+    more: [['Side effects', [['Tingling (paraesthesia), altered taste, more urine, fatigue.', 'schmickl2020']]],
+           ['Use', [['Whether to take it is a decision for a clinician.', '']]]] },
   { id: 'pcr', name: 'Phosphocreatine & creatine', organ: 'mito', flows: ['rbcMus', 'glcMus'], chart: 'pcr',
-    b: [['Phosphocreatine (PCr) gives its phosphate to ADP (creatine kinase): an instant ATP buffer, most important in maximal sprints.', 'kreider2017'],
-        ['The store is small: PCr ≈72–83 mmol/kg dry muscle, ATP ≈24–25. About two thirds of muscle creatine is PCr.', 'soderlund1991 kreider2017'],
-        ['In a 6-s sprint PCr and anaerobic glycolysis supply energy equally, and PCr falls by 57%. PCr matters most in the first ~10 s.', 'gaitanos1993 bogdanis1996'],
-        ['Refilling needs oxygen: creatine is rephosphorylated by aerobic ATP. Half-time ≈21–22 s (fast phase) and >170 s (slow); no blood flow, no refilling.', 'harris1976 mcmahon2002'],
-        ['PCr also shuttles high-energy phosphate from the mitochondria to where ATP is used.', 'brosnan2007'],
-        ['About 95% of body creatine is in muscle. It is made in the liver and kidneys (AGAT, GAMT) and eaten in meat and fish; 1–2% a day becomes creatinine.', 'kreider2017 brosnan2011']],
-    terms: [['Supplementation: what it does', 'Raises muscle creatine and PCr by about 20–40%, most in people with low starting stores (vegetarians have lower stores: 90–110 mmol/kg dm); some barely respond.', 'kreider2017 harris1992 syrotuik2004'],
-            ['Who benefits', 'High-intensity and repeated efforts (in some laboratory tests up to about 10–20%, ISSN position stand) and lean-mass gains with training. For prolonged endurance: no effect, possibly worse.', 'kreider2017 forbes2023'],
-            ['Side effects', 'Body mass rises from water retention (about 0.5–1 L). Considered safe in healthy people; weight gain is the only consistent side effect.', 'kreider2017'],
-            ['With carbohydrate', 'Creatine taken before or with carbohydrate may enhance glycogen loading.', 'nelson2001 forbes2023']] },
+    lead: ['Phosphocreatine is the muscle’s instant ATP reserve. It re-makes ATP within seconds, but the store is small, so it matters most in the first ~10 s of a sprint. Refilling needs oxygen and takes minutes, which is why recovery between sprints matters.', 'kreider2017 bogdanis1996 harris1976'],
+    more: [['Numbers', [['Store: PCr ≈72–83 mmol/kg dry muscle, ATP ≈24–25; about two thirds of muscle creatine is PCr.', 'soderlund1991 kreider2017'],
+                     ['In a 6-s sprint PCr and anaerobic glycolysis supply energy equally, and PCr falls by 57%.', 'gaitanos1993'],
+                     ['Refilling half-time ≈21–22 s (fast phase) and >170 s (slow); no blood flow, no refilling.', 'harris1976 mcmahon2002']]],
+           ['Where creatine comes from', [['About 95% of body creatine is in muscle. It is made in the liver and kidneys (AGAT, GAMT) and eaten in meat and fish; 1–2% a day becomes creatinine.', 'kreider2017 brosnan2011'],
+                                          ['PCr also shuttles high-energy phosphate from the mitochondria to where ATP is used.', 'brosnan2007']]],
+           ['Supplementation', [['Raises muscle creatine and PCr by about 20–40%, most with low starting stores (vegetarians: 90–110 mmol/kg dm); some barely respond.', 'kreider2017 harris1992 syrotuik2004'],
+                               ['Helps high-intensity and repeated efforts (in some lab tests up to about 10–20%) and lean-mass gains with training; for prolonged endurance no effect, possibly worse.', 'kreider2017 forbes2023'],
+                               ['Body mass rises from water retention (about 0.5–1 L); considered safe in healthy people. Taken with carbohydrate it may enhance glycogen loading.', 'kreider2017 nelson2001 forbes2023']]]] },
   { id: 'mito', name: 'Muscle cell & mitochondrion', organ: 'mito', flows: ['glcMus', 'ffa', 'bcaa', 'lacOut', 'rbcMus'], chart: 'mix',
-    b: [['Glucose and glycogen both become glucose-6-phosphate (G6P). G6P cannot leave the muscle cell: muscle lacks glucose-6-phosphatase, which the liver (and kidney) has. Muscle glycogen serves only that muscle.', ''],
-        ['Glycolysis (cytosol) → 2 pyruvate: net 2 ATP per glucose, 3 from a glycogen unit. Fast, but small.', 'rowland2026 hargreaves2018 mookerjee2017'],
-        ['If PDH and the mitochondria cannot keep up, pyruvate becomes lactate; it leaves and is burned in other fibres, the heart, or turned back into glucose in the liver.', 'brooks2018'],
-        ['In the mitochondrion pyruvate (via PDH) and fatty acids (via β-oxidation) become acetyl-CoA, which the TCA cycle and the electron transport chain burn with O₂ to CO₂ and H₂O.', ''],
-        ['Gross yield: glucose fully oxidised ≈30–32 ATP; palmitate ≈106 ATP.', 'rowland2026 mookerjee2017'],
-        ['Per oxygen, fat gives less ATP than carbohydrate (ATP/O ≈2.45 vs ≈2.78). When O₂ delivery limits at high intensity, carbohydrate is the more oxygen-efficient fuel.', 'schmidt2021']] }
+    lead: ['Inside the muscle cell, glucose and glycogen are split in the cytosol for a quick but small 2–3 ATP, then finished in the mitochondrion for about 30–32 ATP in all. Fat gives far more ATP per molecule but less per unit of oxygen, one reason carbohydrate is favoured at high intensity.', 'rowland2026 schmidt2021'],
+    more: [['Glycolysis', [['Glucose → 2 pyruvate: net 2 ATP per glucose, 3 from a glycogen unit.', 'rowland2026 hargreaves2018 mookerjee2017'],
+                         ['Glucose-6-phosphate cannot leave the muscle cell: muscle lacks glucose-6-phosphatase, which the liver (and kidney) has.', 'adeva2016']]],
+           ['Mitochondrion', [['Pyruvate (via PDH) and fatty acids (via β-oxidation) become acetyl-CoA, which the TCA cycle and the electron transport chain burn with O₂ to CO₂ and water.', '']]],
+           ['ATP yields', [['Glucose fully oxidised ≈30–32 ATP; palmitate ≈106 ATP. ATP per oxygen atom ≈2.78 for carbohydrate, ≈2.45 for fat.', 'rowland2026 mookerjee2017 schmidt2021']]],
+           ['Lactate', [['If the mitochondria cannot keep up, pyruvate becomes lactate; it leaves and is burned in other fibres and the heart, or made into glucose in the liver.', 'brooks2018']]]] }
 ];
 // Grupy tematów (nawigacja dwupoziomowa); kolejność TOPICS = kolejność grup
 const GROUPS = [['fuel', 'Fuel & energy', ['vo2', 'fuel', 'energy', 'mito', 'pcr', 'bcaa']], ['stores', 'Gut, liver & glycogen', ['flow', 'gut', 'glycogen']],
@@ -873,7 +875,7 @@ const DETAIL = {
     tx(p, 'triglyceride droplet', 100, 114, { it: true, size: 11, anchor: 'middle' });
     arrow(p, 318, 110, 410, 110, 1 + 8 * cur.flows.ffa, C.ink); tx(p, 'fatty acids → muscle', 410, 98, { size: 11, anchor: 'end' });
     arrow(p, 318, 170, 410, 170, 1 + 6 * cur.flows.gly, C.ink2); tx(p, 'glycerol → liver', 410, 192, { size: 11, anchor: 'end' });
-    tx(p, 'About 12 kg of stored fat ≈ 95,000 kcal: fat does not run out.', 8, 250, { size: 12, fill: C.ink });
+    tx(p, 'About 12 kg of stored fat, roughly 100,000 kcal: fat does not run out.', 8, 250, { size: 12, fill: C.ink });
   },
   muscle() {
     // glikogen → G1P → G6P → glikoliza → pirogronian; G6P ✕→ glukoza do krwi (brak glukozo-6-fosfatazy)
@@ -1052,7 +1054,7 @@ const CHARTS = {
     const y = 14 + 4 * 28; tx(ch, 'Adipose tissue', X0 - 6, y + 10, { size: 11, anchor: 'end' });
     el('rect', { x: X0, y, width: X1 - X0 + 10, height: 13, fill: C.marker }, ch);
     el('path', { d: `M${X1 - 40},${y - 3} l6,19 M${X1 - 32},${y - 3} l6,19`, stroke: C.paper, 'stroke-width': 4 }, ch);
-    tx(ch, '≈95,000', X1 + 14, y + 10, { size: 10, w: 600 });
+    tx(ch, '≈100,000', X1 + 14, y + 10, { size: 10, w: 600 });
     const r = cur.E;
     tx(ch, `Now: ${fmt(r.kcal * 60)} kcal/h; carbohydrate ${fmt(r.cho * 60)} g/h,`, 6, 168, { size: 11, fill: C.ink, w: 600 });
     tx(ch, `fat ${fmt(r.fat * 60)} g/h. TTE: ${fmtDur(TTE())}.`, 6, 184, { size: 11, fill: C.ink, w: 600 });
@@ -1083,8 +1085,8 @@ const CHARTS = {
     line(SIM.tr.map(r => [r.t / TMAX, (r.gm + rest) / top]), a, { c: C.ink, w: 3 });
     line(SIM.tr.map(r => [r.t / TMAX, r.gl / top]), a, { c: C.ink2, w: 3, d: '7 3' });
     line(SIM.tr.map(r => [r.t / TMAX, r.bg * 0.2]), a, { c: C.blood, w: 1.5 });
-    if (SIM.wall !== null) { const x = a.X(SIM.wall / TMAX); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2 }, ch); tx(ch, 'the wall', x > 240 ? x - 4 : x + 4, a.Y1 + 24, { size: 11, w: 600, fill: C.blood, anchor: x > 240 ? 'end' : 'start' }); }
-    if (TTE() <= TMAX) { const x = a.X(tteCP(S.p) / TMAX); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2 }, ch); tx(ch, 'TTE', x + 4, a.Y1 + 24, { size: 11, w: 600, fill: C.blood }); }
+    if (SIM.wall !== null) { const x = a.X(SIM.wall / TMAX); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2 }, ch); tx(ch, Math.abs(SIM.wall - TTE()) < 1 ? 'the wall = TTE' : 'the wall', x > 240 ? x - 4 : x + 4, a.Y1 + 24, { size: 11, w: 600, fill: C.blood, anchor: x > 240 ? 'end' : 'start' }); }
+    if (TTE() <= TMAX && (SIM.wall === null || Math.abs(SIM.wall - TTE()) >= 1)) { const x = a.X(tteCP(S.p) / TMAX); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 2 }, ch); tx(ch, 'TTE', x + 4, a.Y1 + 24, { size: 11, w: 600, fill: C.blood }); }
     vmark(a, S.t / TMAX);
     return ['Glycogen over time', LEG([['muscle (total)', C.ink], ['liver', C.ink2, 1], ['blood glucose (relative)', C.blood]].concat(GHOST ? [['normal start', C.grey, 1]] : []))];
   },
@@ -1192,17 +1194,17 @@ function renderOrgan() {
   let R = [], G = [];
   if (S.organ === 'gut') { R = [['Eaten', `${S.gph} g/h`], ['Absorbed', `${fmt(A.absorbed)} g/h`], ['Not absorbed', `${fmt(A.unabs)} g/h`]];
     G = [gauge('Gut blood flow', gutFlow(S.p), 'warn'), gauge('SGLT1 load (tick = capacity now)', A.glc / 90, A.glc > A.sglt ? 'warn' : '', A.sglt / 90), gauge('GLUT5 load (tick = capacity now)', A.fru / 45, A.fru > A.glut5 ? 'warn' : '', A.glut5 / 45), gauge('Brush-border enzymes', A.enzyme / 200, 'soft')]; }
-  if (S.organ === 'liver') { R = [['Liver glycogen', `${fmt(cur.gl)} g (${fmt(cur.gl * 4.2)} kcal)`], ['Glucose from liver glycogen', `${fmt(cur.hgo * 60)} g/h`], ['… of which new glucose', `${fmt(cur.gng * 60)} g/h`]];
-    G = [gauge('Liver glycogen (max ≈160 g)', cur.gl / 160), gauge('Hepatic blood flow', 0.3 + 0.7 * gutFlow(S.p), 'warn')]; }
+  if (S.organ === 'liver') { R = [['Liver glycogen', `${fmt(cur.gl)} g (${fmt(cur.gl * 4.2)} kcal)`], ['Glucose from liver glycogen', `${fmt(cur.hgo * 60)} g/h`], ['New glucose (gluconeogenesis)', `${fmt(cur.gng * 60)} g/h`]];
+    G = [gauge('Liver glycogen (max ≈160 g)', cur.gl / 160), gauge('Hepatic blood flow', 0.3 + 0.6 * gutFlow(S.p), 'warn')]; }
   if (S.organ === 'blood') { R = [['VO₂', `${fmt(E.vo2, 2)} L/min (${S.p}% VO₂max)`], ['Energy use', `${fmt(E.kcal * 60)} kcal/h`], ['Blood lactate', `${fmt(lactate(S.p), 1)} mmol/L`]];
     G = [gauge('VO₂ / VO₂max', S.p / 100), gauge('Cardiac output (relative)', 0.25 + 0.75 * S.p / 100, 'warn'), gauge('Blood glucose', cur.bg), gauge('Blood lactate (tick = 4 mmol/L)', lactate(S.p) / 12, 'warn', 4 / 12)]; }
   if (S.organ === 'lungs') { R = [['Altitude', S.alt ? `${S.alt} m` : 'sea level'], ['Air pressure', `${fmt(PB(S.alt))} mmHg`], ['Inspired O₂ (PIO₂)', `${fmt(PIO2(S.alt))} mmHg`], ['SpO₂ at rest / now', `${fmt(BR.spo2Rest)} / ${fmt(BR.spo2)} %`], ['Ventilation', `${fmt(BR.VE)} L/min`], ['VO₂max here', `${fmt(100 * VF(S.alt))}% of sea level`]];
     G = [gauge('Drive to breathe (relative)', (BR.vd - 1) / 0.8, 'warn'), gauge('Ventilation', BR.VE / 200), gauge('SpO₂ (tick = 90%)', (BR.spo2 - 50) / 50, BR.spo2 < 90 ? 'warn' : '', 0.8)]; }
   if (S.organ === 'kidney') { R = [['Days at this altitude', String(S.days)], ['Acetazolamide', S.acz ? 'yes' : 'no'], ['Plasma bicarbonate', `≈${fmt(BR.hco3)} mmol/L`]];
     G = [gauge('Bicarbonate lost in urine', BR.urineHCO3, S.acz ? 'warn' : ''), gauge('Renal compensation of alkalosis', BR.comp, 'soft')]; }
-  if (S.organ === 'adipose') { R = [['Fat oxidised (adipose + muscle fat)', `${fmt(E.fat * 60)} g/h (${fmt(E.fat * 60 * 9.4)} kcal/h)`], ['Store', '≈12 kg fat ≈ 95,000 kcal']]; G = [gauge('Fatty-acid release', cur.flows.ffa, 'soft')]; }
+  if (S.organ === 'adipose') { R = [['Fat oxidised (adipose + muscle fat)', `${fmt(E.fat * 60)} g/h (${fmt(E.fat * 60 * 9.4)} kcal/h)`], ['Store', '≈12 kg fat ≈ 100,000 kcal']]; G = [gauge('Fatty-acid release', cur.flows.ffa, 'soft')]; }
   if (S.organ === 'muscle') { R = [['Total muscle glycogen at start', `${SIM.st.m} g`], ['Left in working legs', `${fmt(cur.gm)} of ${fmt(SIM.w0)} g`], ['Carbohydrate burned', `${fmt(E.cho * 60)} g/h`], ['… from muscle glycogen', `${fmt(cur.glyUse * 60)} g/h`], ['… from blood glucose', `${fmt(cur.U * 60)} g/h`], ['Fat burned', `${fmt(E.fat * 60)} g/h`],
-      ['Time to exhaustion (TTE) at this pace', tteText()]];
+      ['Glycogen runs out (the wall)', SIM.wall === null ? 'not within 5 h' : '≈ ' + fmtT(SIM.wall)], ['Time to exhaustion (TTE) at this pace', tteText()]];
     G = [gauge('Fat → CO₂', sh.f, 'soft'), gauge('Glucose → CO₂', sh.c * (1 - sh.l)), gauge('Pyruvate → lactate (carbon flux)', sh.c * sh.l, 'warn'), gauge('Protein (incl. BCAA)', sh.b / 0.1, 'soft')]; }
   if (S.organ === 'mito') { const glc = E.cho / 180, ox = glc * (1 - sh.l) * 31, gl = glc * sh.l * (2 + cur.glyUse / Math.max(1e-6, cur.glyUse + cur.U)), fa = E.fat / 256 * 106, tot = ox + gl + fa;
     R = [['Glucose → 2 lactate', '2 ATP'], ['Glycogen unit → 2 lactate', '3 ATP'], ['Glucose → CO₂ + H₂O', '≈30–32 ATP'], ['Palmitate → CO₂ + H₂O', '≈106 ATP'], ['ATP per O atom: carbohydrate vs fat', '≈2.78 vs ≈2.45'],
@@ -1222,8 +1224,11 @@ function renderTopic() {
   const i = TOPICS.findIndex(x => x.id === S.topic), T = TOPICS[i];
   $('tNum').textContent = `${groupOf(T.id)[1]} · topic ${topicNum(T.id)}`;
   $('tTitle').textContent = T.name;
-  $('tBullets').innerHTML = T.b.map(([s, k]) => `<li>${s}${srcHTML(k)}</li>`).join('');
-  $('tTerms').innerHTML = T.terms ? '<h3>Key terms</h3><dl class="terms">' + T.terms.map(([a, b, k]) => `<dt>${a}</dt><dd>${b}${srcHTML(k)}</dd>`).join('') + '</dl>' : '';
+  $('tLead').innerHTML = T.lead[0] + srcHTML(T.lead[1]);
+  if ($('tMore').dataset.t !== T.id) {   // sekcje przebudowywane tylko przy zmianie tematu (żeby nie zamykały się przy ruchu suwaka)
+    $('tMore').dataset.t = T.id;
+    $('tMore').innerHTML = T.more.map(([h, items]) => `<details><summary>${h}</summary><ul>${items.map(([x, k]) => `<li>${x}${srcHTML(k)}</li>`).join('')}</ul></details>`).join('');
+  }
   const [title, legend] = CHARTS[T.chart]();
   $('chTitle').innerHTML = `<b>${topicNum(T.id)}</b>${title}`; $('chLegend').innerHTML = legend;
 }
@@ -1253,7 +1258,7 @@ $('srcOpen').addEventListener('click', openSrc);
 document.querySelector('.dock [data-src]').addEventListener('click', openSrc);
 $('srcClose').addEventListener('click', () => srcDlg.close());
 srcDlg.addEventListener('click', ev => { if (ev.target === srcDlg) srcDlg.close(); });
-$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~60% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE: a curve through the sourced points (LT1, MLSS, CP, VO₂max), interpolated between them, with TTE at LT1 scaled by VO₂max; below OBLA multiplied by the glycogen and carbohydrate ratios from Bergström 1967 and Coyle 1986; the glycogen ‘wall’ on the chart is a separate simulation; VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity and the phase weights of PCr refilling; anaerobic carbohydrate use above VO₂max.</li>';
+$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~75% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE: the shorter of a fatigue curve through the sourced points (LT1, MLSS, CP, VO₂max; interpolated, TTE at LT1 scaled by VO₂max) and the simulated glycogen wall; the glycogen wall comes from the simulation without carbohydrate and is lengthened by eating (×1.33 at ≥60 g/h absorbed, from Coyle 1986); VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity and the phase weights of PCr refilling; anaerobic carbohydrate use above VO₂max.</li>';
 
 /* ───────────── INTERAKCJA ───────────── */
 function renderNav() {
