@@ -5,11 +5,14 @@ let ctx = null, lastNow = performance.now();
 // Kadr widoku: studio — płótno 9:16 (1080 × 1920) z układem rolki skalowanym do strefy Reels; telefon pionowo — 720 × 1100;
 // komputer i telefon poziomo — 1440 × 810 (panele obok siebie). setView() przy starcie i przy zmianie orientacji.
 let VIEW = null;
+// Zaczepy studia (rolka z kamerą): cam — kamera włączona (układ reelCam); draw(ctx, now) — scena rolki zamiast ryciny
+// (zwraca true, gdy narysowała całą klatkę); after(ctx) — dorysowanie na rycinie (kółko kamery). Poza studiem puste.
+const STUDIO_HOOK = { cam: false, draw: null, after: null };
 const landMQ = matchMedia('(orientation: landscape)');
 function setView() {
   // telefon trzymany poziomo dostaje układ poziomy (jak komputer) — w pionowym kadrze rycina byłaby za mała
   const wide = !STUDIO && (!MOBILE || landMQ.matches);
-  LY = STUDIO ? LAYOUTS.reel : wide ? LAYOUTS.landscape : LAYOUTS.phone;   // telefon pionowo: osobny, węższy układ
+  LY = STUDIO ? (STUDIO_HOOK.cam ? LAYOUTS.reelCam : LAYOUTS.reel) : wide ? LAYOUTS.landscape : LAYOUTS.phone;   // telefon pionowo: osobny, węższy układ
   VIEW = STUDIO ? { w: W, h: H } : { w: LY.W, h: LY.H };   // studio: płótno 9:16, treść rolki skalowana do strefy Reels
   const c = cv(); if (c.width !== VIEW.w) c.width = VIEW.w; if (c.height !== VIEW.h) c.height = VIEW.h;
   document.documentElement.classList.toggle('wide', LY.id === 'landscape');
@@ -124,12 +127,14 @@ function loop(now) {
   if (CLOCK.stopAt != null && ms >= CLOCK.stopAt) { CLOCK.pause(CLOCK.stopAt); ms = CLOCK.stopAt; CLOCK.stopAt = null; }
   if (SCN.mod && !SCN.manual && ms > frameEnd() && !CLOCK.paused) { CLOCK.pause(frameEnd()); ms = frameEnd(); }
   const f = curFig();
+  if (STUDIO_HOOK.draw && STUDIO_HOOK.draw(ctx, now)) { requestAnimationFrame(loop); return; }
   if (f && SCN.mod) {
     const st = drawFigure(f, ms, dt);
     const fi = frameIndex(Math.max(0, ms));
     if (!SCN.manual && (!CLOCK.paused || fi !== lastFrameIdx)) syncUi(st);
     lastFrameIdx = fi;
   } else drawEmpty(ms);
+  if (f && SCN.mod && STUDIO_HOOK.after) STUDIO_HOOK.after(ctx);
   if (f && f.status !== 'published') drawDraftMark();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (STATE.safe) frameSafeZone(ctx);   // nakładka w pikselach płótna 1080 × 1920

@@ -63,4 +63,19 @@ LAYOUTS.reel = (() => {
     bounds: { x0: 0, x1: 720, y0: 0, y1: 742 },
   };
 })();
+// reelCam — rolka z kółkiem kamery autora w prawym górnym rogu (studio, nagrywanie z kamerą).
+// Tytuł zawija się po słowach do szerokości titleW (obok kółka), więc ma do trzech linii; panele są nieco niższe.
+LAYOUTS.reelCam = (() => {
+  const r = LAYOUTS.reel, L4 = r.L, w = r.R - r.L, rad = 75;
+  return {
+    ...r, id: 'reelCam',
+    titleY: 100, titleLh: 50, titlePx: 44, titleW: w - 2 * rad - 16,
+    cam: { x: r.R - rad, y: 60 + rad, r: rad },
+    readY: 218, readH: 70,
+    scenes: {
+      AB: { A: { x: L4, y: 302, w, h: 182 }, B: { x: L4, y: 510, w, h: 126 } },
+      C: { C: { x: L4, y: 302, w, h: 320 } },
+    },
+  };
+})();
 let LY = LAYOUTS.phone;   // bieżący układ (ustawia scena)

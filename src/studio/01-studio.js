@@ -1,17 +1,17 @@
 // STUDIO — prywatny widok do nagrywania (tylko studio/index.html, budowany lokalnie, nigdy publikowany).
 // Telefon 9:16 na komputerze: sama scena na całą wysokość okna, bez interfejsu. Rycina: ?f=<id> albo ← →.
 // Skróty: R — restart (1,5 s czystej klatki, potem sekwencja; chowa pomoc) · Space — pauza · S — strefa bezpieczna Reels
-//         F — pełny ekran · ← → — poprzednia / następna rycina · H — pomoc
+//         F — pełny ekran · ← → — poprzednia / następna rycina · H — pomoc · N — nagraj rolkę (02-rolka.js)
 // Telefon / tablet (bez klawiatury): dotknięcie ryciny = restart nagrania (jak R); sekwencja startuje sama po otwarciu.
 function initStudio() {
   const root = document.documentElement;
   root.classList.add('studio');
   const hud = el('div', { class: 'studiohud', role: 'note' });
-  hud.innerHTML = '<b>STUDIO</b> · nie linkować<br>R lub dotknięcie ryciny: restart (czysta klatka 1,5 s)<br>Space pauza · S strefa bezpieczna · F pełny ekran<br>← → rycina · H pomoc<br><span id="hudFig"></span>';
+  hud.innerHTML = '<b>STUDIO</b> · nie linkować<br>R lub dotknięcie ryciny: restart (czysta klatka 1,5 s)<br>Space pauza · S strefa bezpieczna · F pełny ekran<br>← → rycina · H pomoc<br>N nagraj rolkę (panel ROLKA po prawej)<br><span id="hudFig"></span>';
   document.body.append(hud);
   const setHud = () => { const f = figById(STATE.figure); $('hudFig').textContent = f ? `FIG. ${f.fig} ${f.id}${f.status !== 'published' ? ' · DRAFT' : ''}` : 'brak ryciny (?f=<id>)'; };
   setHud();
-  const restart = () => { hud.hidden = true; CLOCK.restart(T.cleanMs); };
+  const restart = () => { if (ROLKA.seg) return; hud.hidden = true; CLOCK.restart(T.cleanMs); };
   $('stage').addEventListener('click', restart);   // dotknięcie na telefonie też wywołuje click
   let idle = null;
   addEventListener('mousemove', () => { root.classList.remove('hidecursor'); clearTimeout(idle); idle = setTimeout(() => root.classList.add('hidecursor'), 1500); });
@@ -24,4 +24,5 @@ function initStudio() {
     else if (k === 'h') hud.hidden = !hud.hidden;
     else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { stepFigure(e.key === 'ArrowRight' ? 1 : -1); setHud(); }
   });
+  initRolka();   // nagrywanie gotowej rolki z kamerą (02-rolka.js)
 }

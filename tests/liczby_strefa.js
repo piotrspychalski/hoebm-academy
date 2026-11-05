@@ -96,6 +96,10 @@ for (const f of reg.figures) {
           else if (t.role === 'fig') { for (const x of n) if (x !== String(f.fig)) err(`${f.id}: numer „${t.s}” różny od FIG. ${f.fig}`); }
         }
         const [x0, y0, x1, y1] = t.box;
+        if (layout.cam) {   // kółko kamery autora: żaden tekst nie może na nie wchodzić
+          const c = layout.cam, nx = Math.max(x0, Math.min(c.x, x1)), ny = Math.max(y0, Math.min(c.y, y1));
+          if ((nx - c.x) ** 2 + (ny - c.y) ** 2 < (c.r + 4) ** 2) err(`${where}: tekst „${t.s}” wchodzi na kółko kamery`);
+        }
         if (x0 < B.x0 || x1 > B.x1 || y0 < B.y0 || y1 > B.y1) err(`${where}: tekst „${t.s}” poza granicami [${t.box.map(Math.round)}]`);
       }
       for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) {

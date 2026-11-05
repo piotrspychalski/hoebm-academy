@@ -10,7 +10,14 @@ function frameHeader(ctx, { label, title, highlight = -1, revealK = 1, markerK =
   ctx.strokeStyle = T.c.ink; ctx.lineWidth = T.line;
   ctx.beginPath(); ctx.moveTo(LY.L, LY.ruleY); ctx.lineTo(LY.R, LY.ruleY); ctx.stroke();
   const tf = font('display', 800, LY.titlePx), px = LY.titlePx;
-  // pozycje linii / odcinków tytułu: pionowo (portrait) albo w jednej linii (landscape)
+  const lines = LY.titleW ? wrapTitle(ctx, title, tf, LY.titleW, highlight) : null;
+  if (lines) {   // tytuł zawijany po słowach (rolka z kółkiem kamery); zakreślacz pod słowami wyróżnionego odcinka
+    const ys = lines.map((_, i) => LY.titleY + i * LY.titleLh);
+    if (markerK > 0) lines.forEach((ln, i) => { if (ln.hl) marker(ctx, LY.L + ln.hl[0] - 8, ys[i] - px * 0.66, ln.hl[1] - ln.hl[0] + 16, px, markerK); });
+    titleText(ctx, revealK, () => lines.forEach((ln, i) => txt(ctx, ln.s, LY.L, ys[i], { font: tf, color: T.c.ink })));
+    return;
+  }
+  // pozycje linii / odcinków tytułu: pionowo albo w jednej linii (landscape)
   ctx.font = tf;
   const sp = ctx.measureText(' ').width;
   let x = LY.L;
@@ -20,11 +27,30 @@ function frameHeader(ctx, { label, title, highlight = -1, revealK = 1, markerK =
     x += w + sp; return p;
   });
   if (highlight >= 0 && markerK > 0) { const p = pos[highlight]; marker(ctx, p.x - 8, p.y - px * 0.66, p.w + 16, px, markerK); }
+  titleText(ctx, revealK, () => title.forEach((s, i) => txt(ctx, s, pos[i].x, pos[i].y, { font: tf, color: T.c.ink })));
+}
+// Tytuł wyostrza się z rozmycia (motyw „Science made clear”); przy prefers-reduced-motion bez rozmycia
+function titleText(ctx, revealK, draw) {
   const blur = REDUCE ? 0 : 14 * (1 - smooth(revealK));
   ctx.save();
-  if (blur > 0.3) { if ('filter' in ctx) ctx.filter = `blur(${blur.toFixed(1)}px)`; else ctx.globalAlpha = 0.3 + 0.7 * revealK; }
-  title.forEach((s, i) => txt(ctx, s, pos[i].x, pos[i].y, { font: tf, color: T.c.ink }));
+  if (blur > 0.3) { if ('filter' in ctx) ctx.filter = `blur(${blur.toFixed(1)}px)`; else ctx.globalAlpha *= 0.3 + 0.7 * revealK; }
+  draw();
   ctx.restore();
+}
+// Zawijanie tytułu po słowach do szerokości maxW. Zwraca linie { s, hl: [x0, x1] | null } — hl to zakres słów
+// z odcinka `highlight` (do zakreślacza). Używa go rama rolki z kamerą i karta tytułowa w studiu.
+function wrapTitle(ctx, title, f, maxW, highlight = -1) {
+  ctx.font = f;
+  const words = title.flatMap((seg, i) => seg.split(/\s+/).filter(Boolean).map(w => ({ w, i })));
+  const lines = []; let cur = [];
+  const width = ws => ctx.measureText(ws.map(x => x.w).join(' ')).width;
+  for (const wd of words) { if (cur.length && width([...cur, wd]) > maxW) { lines.push(cur); cur = []; } cur.push(wd); }
+  if (cur.length) lines.push(cur);
+  return lines.map(ws => {
+    const k0 = ws.findIndex(x => x.i === highlight), k1 = ws.map(x => x.i).lastIndexOf(highlight);
+    const hl = k0 < 0 ? null : [k0 ? width(ws.slice(0, k0)) + ctx.measureText(' ').width : 0, width(ws.slice(0, k1 + 1))];
+    return { s: ws.map(x => x.w).join(' '), hl };
+  });
 }
 
 // Legenda: linie od dołu strefy bezpiecznej w górę (ostatnia linia kończy się nad SAFE.y1 łącznie z wydłużeniami liter)

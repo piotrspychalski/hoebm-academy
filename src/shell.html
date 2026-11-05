@@ -138,7 +138,7 @@ html.mobile footer { padding-bottom: 12px; }
 /* ── Widok 3: STUDIO (tylko lokalnie, studio/index.html): telefon 9:16 na komputerze, do nagrywania ekranu.
    Sama scena 1080×1920 na całą wysokość okna, czarne tło, bez interfejsu i kursora; skróty w 12-studio.js. */
 html.studio body { background: #000; overflow: hidden; padding: 0; }
-html.studio body > :not(main):not(.studiohud):not(dialog) { display: none !important; }
+html.studio body > :not(main):not(.studiohud):not(.rolka):not(.rk-count):not(.rk-seg):not(dialog) { display: none !important; }
 html.studio main { display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; max-width: none; height: 100vh; }
 html.studio .panel, html.studio .controls { display: none !important; }
 html.studio .stage-wrap { width: min(100vw, 100vh * 9 / 16); }
@@ -147,6 +147,23 @@ html.studio.hidecursor, html.studio.hidecursor * { cursor: none !important; }
 .studiohud { position: fixed; left: 12px; top: 12px; z-index: 50; max-width: 300px; background: rgba(242, 240, 241, .94); color: var(--ink);
   border: 1.5px solid var(--ink); padding: 10px 12px; font: 400 12px/1.6 var(--mono); }
 .studiohud b { font-weight: 600; }
+/* Panel ROLKA (nagrywanie z kamerą, 02-rolka.js) — poza płótnem, więc nie trafia do nagrania */
+.rolka { position: fixed; right: 12px; top: 12px; z-index: 50; width: 300px; max-height: calc(100vh - 24px); overflow: auto;
+  background: rgba(242, 240, 241, .96); color: var(--ink); border: 1.5px solid var(--ink); padding: 10px 12px; font: 400 12px/1.5 var(--mono); }
+.rolka[hidden], .rk-count[hidden] { display: none !important; }
+.rolka.min .rk-body { display: none; }
+.rolka p { margin: 8px 0 0; }
+.rolka button, .rolka select, .rolka input { font: inherit; color: inherit; }
+.rolka button { background: var(--paper); border: 1.5px solid var(--ink); padding: 3px 8px; cursor: pointer; }
+.rolka #rkHide { float: right; padding: 0 7px; }
+.rolka select { display: block; width: 100%; margin-top: 4px; }
+.rolka input[type=text] { width: 100%; box-sizing: border-box; }
+.rolka input[type=number] { width: 4.5em; }
+.rolka .rk-rec { background: var(--blood); color: #fff; border-color: var(--blood); font-weight: 600; width: 100%; padding: 7px; }
+.rolka .rk-help { color: var(--ink-2); }
+.rolka #rkMsg:empty { display: none; }
+.rk-count { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; font: 800 160px var(--display); color: #fff; text-shadow: 0 4px 24px #000; pointer-events: none; }
+.rk-seg { position: fixed; left: 12px; bottom: 12px; z-index: 50; font: 600 12px var(--mono); color: #fff; }
 </style>
 </head>
 <body>
