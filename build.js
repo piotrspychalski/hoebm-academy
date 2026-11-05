@@ -46,3 +46,5 @@ if (SP) {
 }
 const pub = reg.figures.filter(f => f.status === 'published').length;
 console.log(`dist/index.html ${Math.round(html.length / 1024)} KB · studio/index.html (lokalnie) · rycin: ${reg.figures.length} (opublikowanych: ${pub})`);
+// Slajdy szkicu wzorcowego: data/slides/*.json → studio/sketch/index.html (lokalnie; tylko do nagrań, nie do dist/)
+require('./tools/sketch-slides.js').build(R);
