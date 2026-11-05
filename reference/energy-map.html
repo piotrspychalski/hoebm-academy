@@ -574,9 +574,9 @@ const TOPICS = [
         ["In an all-out effort of about 75 s, oxygen-based and oxygen-free supply are equal; in longer efforts oxygen dominates.", "gastin2001 baker2010"],
         ["Working above VO₂max uses up the oxygen-free capacity in about 2–3 min in trained athletes.", "baker2010"]]]] },
   { id: 'alt', name: 'Altitude & hypoxia', organ: 'lungs', flows: ['rbcMus'], chart: 'alt',
-    lead: ['Higher up, air pressure falls and each breath carries less oxygen. VO₂max drops by about 6% per 1000 m, so the same pace becomes a harder effort, with more carbohydrate, more lactate and a shorter time to exhaustion. Breathing more helps at once; over the following days the kidneys excrete bicarbonate and breathing can rise further.', 'west1996 wehrlin2006 bird2021'],
+    lead: ['Higher up, air pressure falls and each breath carries less oxygen. VO₂max drops by about 6% per 1000 m, but a given pace still needs the same litres of oxygen. That pace is therefore a larger share of the smaller VO₂max: 70% of sea-level VO₂max becomes about 81% at 2500 m. A higher share means a harder effort: more of the energy comes from carbohydrate, more lactate is made and time to exhaustion is shorter. Breathing more helps at once; over the following days the kidneys excrete bicarbonate and breathing can rise further.', 'west1996 wehrlin2006 bird2021'],
     more: [["Numbers and acclimatisation", [
-        ["Air pressure about 537 mmHg at 3000 m and 420 at 5000 m (West’s model).", "west1996"],
+        ["Air still holds 20.9% oxygen at any altitude, but the air pressure falls: 760 mmHg at sea level, about 537 at 3000 m and 420 at 5000 m. The oxygen pressure of the inhaled, humidified air (PIO₂) falls with it, from about 149 mmHg to about 103 at 3000 m (≈69%) and 78 at 5000 m (≈52%).", "west1996"],
         ["VO₂max −6.3% per 1000 m (4.6–7.5%), measured from 300 to 2800 m; higher up the line is extended.", "wehrlin2006"],
         ["SpO₂ falls further: in elite athletes at VO₂max from 89% at 300 m to 76.5% at 2800 m; on acute exposure to 4100 m to about 73%.", "wehrlin2006 lundby2004"],
         ["Breathing more improves oxygenation but lowers CO₂ (respiratory alkalosis); the kidneys excrete bicarbonate and pH moves back towards normal, largely within a day at 3800 m in one study.", "bird2021"]]]] },
@@ -1204,13 +1204,14 @@ const CHARTS = {
     return ['Ventilation and intensity', LEG([['ventilation now', C.ink]].concat(S.alt || S.acz ? [['sea level, no drug', C.grey, 1]] : []))];
   },
   alt() {
-    const a = axes('altitude (m)', '% of sea level / SpO₂ %', [0, 1000, 2000, 3000, 4000, 5000].map(h => [h / 5000, String(h)]), [[0, '50'], [0.4, '70'], [0.8, '90'], [1, '100']]);
+    const a = axes('altitude (km)', '% of sea level / SpO₂ %', [0, 1, 2, 3, 4, 5].map(h => [h / 5, String(h)]), [[0, '50'], [0.4, '70'], [0.8, '90'], [1, '100']]);
     const Y = v => (v - 50) / 50;
     line(range(50, u => [u, Y(100 * VF(5000 * u))]), a, { c: C.ink, w: 3 });
     line(range(50, u => [u, Y(breath(0, { alt: 5000 * u }).spo2Rest)]), a, { c: C.blood, w: 3 });
-    line(range(50, u => [u, Y(breath(0, { alt: 5000 * u, days: 0, acz: false }).spo2Rest)]), a, { c: C.blood, w: 1.2, d: '3 3' });
-    vmark(a, S.alt / 5000, S.alt ? `${S.alt} m` : '');
-    return ['VO₂max and resting SpO₂ with altitude', LEG([['VO₂max (% of sea level)', C.ink], [`SpO₂, day ${S.days}${S.acz ? ', acetazolamide' : ''}`, C.blood], ['SpO₂ on arrival', C.blood, 1]])];
+    const changed = S.days > 0 || S.acz;   // przerywana (przyjazd) tylko gdy różni się od bieżącej
+    if (changed) line(range(50, u => [u, Y(breath(0, { alt: 5000 * u, days: 0, acz: false }).spo2Rest)]), a, { c: C.blood, w: 1.8, d: '4 3' });
+    if (S.alt) vmark(a, S.alt / 5000, `${S.alt} m`);
+    return ['VO₂max and resting SpO₂ with altitude', LEG([['VO₂max (% of sea level)', C.ink], [`SpO₂, day ${S.days}${S.acz ? ', acetazolamide' : ''}`, C.blood]].concat(changed ? [['SpO₂ on arrival, no drug', C.blood, 1]] : []))];
   },
   ams() {
     const a = axes('altitude (m)', 'AMS (% of climbers)', [0, 1000, 2000, 3000, 4000, 5000].map(h => [h / 5000, String(h)]), [[0.25, '15'], [0.5, '30'], [0.75, '45'], [1, '60']]);
