@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.0] — 2026-11-05 (nagrywanie rolki w studiu)
+
+### Dodane
+- Studio: panel ROLKA — gotowa rolka w jednym ujęciu, bez montażu i bez zależności: kamera i mikrofon (wybór urządzeń), zdjęcie albo krótkie wideo z wyprawy (przeciągnij i upuść; wideo wyciszone), podpis, układ pół ekranu / pełny ekran, czasy sceny tytułowej i zdjęcia.
+- Scenariusz: karta tytułowa (logo, tytuł wyostrza się z rozmycia) → zdjęcie / wideo z wyprawy → twarz na całym kadrze → rycina z kółkiem kamery. Autor przełącza spacją, strzałką albo pilotem; na rycinie każde „dalej” odtwarza następny kadr, a po ostatnim nagranie kończy się i zapisuje jako MP4 (Chrome) na tym komputerze. Esc przerywa bez zapisu; 1–4 to podgląd scen.
+- Układ `reelCam`: rolka z kółkiem kamery w prawym górnym rogu, tytuł zawijany po słowach obok kółka.
+
+### Testy
+- `liczby_strefa`: cztery układy; żaden tekst nie wchodzi na kółko kamery.
+
 ## [0.6.0] — 2026-11-05 (czytelność rolki)
 
 ### Zmienione
