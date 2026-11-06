@@ -207,6 +207,29 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
   .topics .nav { min-width: 32px; }
 }
 @media (hover: none) { .zhint { font-size: 0; } .zhint::after { content: 'tap or Esc to close'; font-size: 11px; } }
+
+/* ───── Poprawki 2026-11-06: pasek tematów bez przewijania (komputer), mapa i napisy na telefonie ───── */
+@media (min-width: 900px) {
+  /* wszystkie grupy i tematy widoczne: zawijanie zamiast przewijania w poziomie */
+  .topics { flex-wrap: wrap; overflow: visible; row-gap: 6px; }
+  .topics .groups, .topics .chips { flex-wrap: wrap; flex: 0 1 auto; row-gap: 4px; min-width: 0; }
+  .topics .nav { display: none; }
+}
+@media (max-width: 899px) {
+  /* napisy na mapie: ok. 7 px → ok. 10 px na ekranie 390 px */
+  #map text { font-size: 17px; }
+  #map text[font-style=italic] { font-size: 14px; }
+}
+@media (pointer: coarse) and (max-height: 520px) {
+  /* telefon w poziomie: suwaki obok siebie, grupy i tematy w jednym rzędzie, bez podziałek LT1/OBLA — mapa wyższa */
+  .controls { flex-wrap: nowrap; padding-top: 3px; padding-bottom: 3px; }
+  .ctl.core { flex: 1 1 45%; }
+  .ticks { display: none; }
+  .topics { flex-direction: row; align-items: baseline; gap: 12px; padding-top: 3px; padding-bottom: 3px; }
+  .topics .groups { flex: 0 1 45%; border-right: 1px solid var(--hair); padding-right: 12px; }
+  .topics .chips { flex: 1 1 55%; }
+  .top { padding-top: 2px; padding-bottom: 2px; }
+}
 </style>
 </head>
 <body>
@@ -1268,7 +1291,7 @@ const CHARTS = {
     return ['VO₂ and intensity', LEG([['VO₂ (L/min)', C.ink], ['your VO₂max', C.grey, 1]])];
   },
   mix() {
-    const a = axes('% VO₂max', 'share of fuel', PT, [[0.5, '50%'], [1, '100%']]);
+    const a = axes('% VO₂max', 'share of fuel, %', PT, [[0.5, '50'], [1, '100']]);
     const dep = clamp(1 - cur.gm / SIM.w0);
     const F = [], CO = [], LA = [];
     range(50, u => { const sh = shares(5 + (PMAX - 5) * u, dep), tot = sh.f + sh.c; F.push([u, sh.f / tot]); CO.push([u, (sh.f + sh.c * (1 - sh.l)) / tot]); LA.push([u, 1]); });
@@ -1430,7 +1453,7 @@ const CHARTS = {
       [[now, C.ink], [late, C.blood]].forEach(([v, c], k) => { el('rect', { x: x0 + k * (w + 6), y: a.Y(v / 8), width: w, height: a.Y0 - a.Y(v / 8), fill: c }, ch); tx(ch, String(v), x0 + k * (w + 6) + w / 2, a.Y(v / 8) - 4, { size: 10.5, w: 600, anchor: 'middle' }); });
       tx(ch, lab + ' after exercise', x0 + w + 3, 174, { size: 10.5, anchor: 'middle' });
     });
-    tx(ch, 'not yet fed', a.X(0.1) + 72, a.Y(2.5 / 8) - 16, { size: 9.5, it: true, anchor: 'middle', fill: C.blood });
+    tx(ch, 'not yet fed', a.X(0.1) + 72, a.Y(2.5 / 8) - 22, { size: 9.5, it: true, anchor: 'middle', fill: C.blood });
     return ['Refilling muscle glycogen: eat now or wait 2 h', LEG([['carbohydrate straight after', 0, 0, C.ink], ['carbohydrate 2 h later', 0, 0, C.blood]])];
   },
   women() {
