@@ -1,24 +1,33 @@
-# Składanie, testy i publikacja Sports Academy na GitHub Pages przy każdej zmianie w gałęzi main (jak w SURGITOME)
+# Sports Academy: budowa, testy i publikacja na GitHub Pages przy każdej zmianie w main; na pull requestach tylko testy.
 name: Sports Academy — build, testy, publikacja
 on:
   push: { branches: [main] }
+  pull_request:
   workflow_dispatch:
 permissions: { contents: read, pages: write, id-token: write }
-concurrency: { group: pages, cancel-in-progress: true }
+concurrency: { group: 'pages-${{ github.ref }}', cancel-in-progress: true }
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - name: Testy szybkie (budowa, rejestr i claims, zakazane treści, kontrast tokenów, liczby bez źródła i strefa bezpieczna)
+        with: { node-version: 22 }
+      - name: Testy (budowa, Akademia publiczna, slajdy)
         run: bash tests/uruchom_wszystkie.sh
+      - name: Budowa (Akademia + studio online zaszyfrowane hasłem)
+        if: github.event_name != 'pull_request'
+        run: node build.js
         env:
-          STUDIO_PASSWORD: ${{ secrets.STUDIO_PASSWORD }}   # studio online zaszyfrowane hasłem (puste = bez studia online)
+          STUDIO_PASSWORD: ${{ secrets.STUDIO_PASSWORD }}   # puste = bez studia online
+      - name: Test studia online (tylko zaszyfrowane)
+        if: github.event_name != 'pull_request'
+        run: node -e "const fs=require('fs');for(const f of ['dist/studio/index.html','dist/studio/sketch/index.html']){if(!fs.existsSync(f))continue;const h=fs.readFileSync(f,'utf8');if(/initStudio|ROLKA/.test(h)||!h.includes('crypto.subtle.decrypt')){console.error(f+': nie jest zaszyfrowane');process.exit(1)}}"
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with: { path: dist }
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
