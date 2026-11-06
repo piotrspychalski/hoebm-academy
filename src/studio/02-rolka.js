@@ -296,7 +296,9 @@ function setFrame() {
   fr.style.width = f.w + 'px'; fr.style.height = f.h + 'px';
   const stageW = Math.max(160, Math.min((innerHeight - 24) * 9 / 16, innerWidth - side - 12 - 18 - f.w));
   $('stage').closest('.stage-wrap').style.width = stageW + 'px';
-  if (ROLKA.cap) rolkaMsg('Zmieniono kadr — przechwyć animację ponownie, jeśli obraz się nie zgadza.');
+  // ostrzeżenie tylko przy zmianie kadru (nie przy zmianie rozmiaru okna, np. pasek „udostępniasz tę kartę”)
+  if (ROLKA.cap && ROLKA.lastFrame && ROLKA.lastFrame !== ROLKA.opt.frame && !ROLKA.cropped) rolkaMsg('Zmieniono kadr — przechwyć animację ponownie.');
+  ROLKA.lastFrame = ROLKA.opt.frame;
 }
 function initRolka() {
   const o = ROLKA.opt;
