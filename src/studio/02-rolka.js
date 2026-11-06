@@ -1,24 +1,24 @@
 // ROLKA — nagrywanie gotowej rolki 9:16 z animacji Akademii, bez montażu i bez zależności.
 // Animacja: szkic wzorcowy w ramce (#skFrame, ./sketch/energy-map.html) obok podglądu. Obraz ramki pobieramy z karty
-// przeglądarki (getDisplayMedia „ta karta”, w Chrome przycięty do ramki przez Region Capture), a płótno #stage składa sceny:
-//   1. tytuł   — logo i tytuł (temat szkicu albo własny), wyostrza się z rozmycia; przechodzi sam po „Tytuł, s”
-//   2. kotwica — zdjęcie albo krótkie wideo z wyprawy: pół ekranu z tytułem i podpisem albo pełny ekran; pomijana bez pliku
-//   3. twarz   — kamera na całym kadrze, aż autor przełączy; pomijana bez kamery
-//   4. animacja — szkic na żywo (kadr: strefa Reels albo pełne 9:16) z kółkiem kamery; „dalej” = następny slajd
-//                 wybranej sekwencji, a po ostatnim slajdzie (albo bez sekwencji) — koniec nagrania i zapis pliku
-// Plik MP4 (Chrome; inaczej WebM) zapisuje się na tym komputerze. Nic nie jest wysyłane. Dźwięk: mikrofon autora.
-// „Dalej”: spacja / → / PageDown / pilot (gdy kursor nie jest w ramce szkicu). Esc przerywa bez zapisu.
+// przeglądarki (getDisplayMedia „ta karta”, w Chrome przycięty do ramki przez Region Capture), a płótno #stage składa sceny
+// z listy: tytuł → zdjęcia / filmy na początek → animacja → zdjęcia / filmy na koniec. Każda scena czeka na „dalej”
+// (spacja / → / PageDown / pilot / klik w podgląd); na animacji „dalej” = następny slajd wybranej sekwencji.
+// Kółko kamery autora jest na wierzchu przez całe nagranie; przesuwa się je myszą na podglądzie.
+// Plik MP4 (Chrome; inaczej WebM) zostaje na tym komputerze. Nic nie jest wysyłane. Dźwięk: mikrofon autora (filmy wyciszone).
 const ROLKA = {
   seg: null, t0: 0, rec: null, chunks: [], countdown: null,
   stream: null, camEl: null,                       // kamera + mikrofon
   cap: null, capEl: null, cropped: false,          // przechwycona karta (animacja)
-  media: null, mediaKind: null, mediaUrl: null, mediaName: '',
+  start: [], end: [],                              // zdjęcia / filmy: { m, kind, url, name }
+  idx: -1,                                         // bieżąca scena z listy (-1 = podgląd animacji poza nagraniem)
   seq: null, slide: 0,
-  opt: Object.assign({ title: '', caption: '', variant: 'half', durTitle: 3, durMedia: 5, frame: 'full', circle: 'br' }, store.get('sa-rolka-2', {})),
+  opt: Object.assign({ title: '', caption: '', variant: 'half', frame: 'full', cx: 930, cy: 170, cr: 140 }, store.get('sa-rolka-3', {})),
   saved: null,
 };
-const SEGS = ['title', 'media', 'face', 'anim'];
-const SEG_PL = { title: 'tytuł', media: 'zdjęcie', face: 'twarz', anim: 'animacja' };
+// Lista scen rolki: tytuł, zdjęcia / filmy na początek, animacja, zdjęcia / filmy na koniec
+const scenes = () => [{ kind: 'title' }, ...ROLKA.start.map(x => ({ kind: 'media', item: x, part: 'start' })), { kind: 'anim' }, ...ROLKA.end.map(x => ({ kind: 'media', item: x, part: 'end' }))];
+const curScene = () => ROLKA.idx < 0 ? { kind: 'anim' } : scenes()[ROLKA.idx] || { kind: 'anim' };
+const SCENE_PL = sc => sc.kind === 'title' ? 'tytuł' : sc.kind === 'anim' ? 'animacja' : `${sc.part === 'start' ? 'początek' : 'koniec'}: ${sc.item.name}`;
 const FRAMES = { full: { w: 450, h: 800, label: 'pełne 9:16 (zalecane)' }, reel: { w: 500, h: 515, label: 'tylko strefa Reels' } };
 const sketch = () => $('skFrame')?.contentWindow?.HoEBMSketch || null;
 
@@ -59,8 +59,8 @@ function segTitle(ctx, el) {
 }
 
 // 2. Kotwica: zdjęcie / wideo z wyprawy
-function segMedia(ctx, el) {
-  const m = ROLKA.media, [sw, sh] = srcSize(m), L = LAYOUTS.reel, cap = ROLKA.opt.caption.trim();
+function segMedia(ctx, el, m) {
+  const [sw, sh] = srcSize(m), L = LAYOUTS.reel, cap = ROLKA.opt.caption.trim();
   if (ROLKA.opt.variant === 'full') {
     toCanvas(ctx); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
     drawCover(ctx, m, sw, sh, 0, 0, W, H);
@@ -80,13 +80,7 @@ function segMedia(ctx, el) {
   }
 }
 
-// 3. Twarz na całym kadrze (bez lustra — tak, jak zobaczą widzowie)
-function segFace(ctx) {
-  toCanvas(ctx); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-  const v = ROLKA.camEl; drawCover(ctx, v, v.videoWidth, v.videoHeight, 0, 0, W, H);
-}
-
-// 4. Animacja: przechwycona ramka szkicu + kółko kamery
+// Animacja: przechwycona ramka szkicu
 const animRect = () => ROLKA.opt.frame === 'full' ? { x: 0, y: 0, w: W, h: H } : { x: SAFE.x0, y: SAFE.y0, w: SAFE.x1 - SAFE.x0, h: SAFE.y1 - SAFE.y0 };
 function segAnim(ctx) {
   framePaper(ctx); toCanvas(ctx);
@@ -102,34 +96,30 @@ function segAnim(ctx) {
     txt(ctx, 'Animacja: „Przechwyć animację”', W / 2, r.y + r.h / 2, { font: font('sans', 600, 40), color: T.c.ink2, align: 'center' });
     txt(ctx, 'w panelu ROLKA (ta karta)', W / 2, r.y + r.h / 2 + 54, { font: font('sans', 500, 32), color: T.c.ink2, align: 'center' });
   }
-  const c = ROLKA.camEl;
-  if (ROLKA.stream && c && c.videoWidth) {
-    const full = ROLKA.opt.frame === 'full', rad = full ? 150 : 120;
-    const cx = full ? SAFE.x1 - rad - 10 : r.x + r.w - rad - 28;
-    const cy = ROLKA.opt.circle === 'tr' ? (full ? SAFE.y0 + rad + 10 : r.y + rad + 28) : (full ? SAFE.y1 - rad - 10 : r.y + r.h - rad - 28);
-    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.clip();
-    drawCover(ctx, c, c.videoWidth, c.videoHeight, cx - rad, cy - rad, 2 * rad, 2 * rad); ctx.restore();
-    ctx.strokeStyle = T.c.paper; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = T.c.ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, rad + 3, 0, Math.PI * 2); ctx.stroke();
-  }
+}
+// Kółko kamery autora: na wierzchu każdej sceny; pozycja i rozmiar z panelu / przeciągania na podglądzie (piksele 1080 × 1920)
+function camCircle(ctx) {
+  const c = ROLKA.camEl; if (!ROLKA.stream || !c || !c.videoWidth) return;
+  const { cx, cy, cr: rad } = ROLKA.opt;
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.clip();
+  drawCover(ctx, c, c.videoWidth, c.videoHeight, cx - rad, cy - rad, 2 * rad, 2 * rad); ctx.restore();
+  ctx.strokeStyle = T.c.paper; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = T.c.ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, rad + 3, 0, Math.PI * 2); ctx.stroke();
 }
 
 // Zaczep sceny: studio zawsze rysuje rolkę (poza nagraniem — podgląd animacji)
 function rolkaDraw(ctx, now) {
-  const seg = ROLKA.seg || 'anim', el = now - ROLKA.t0;
-  if (seg === 'title') { segTitle(ctx, el); if (ROLKA.rec && el > ROLKA.opt.durTitle * 1000) next(); }
-  else if (seg === 'media') {
-    segMedia(ctx, el);
-    if (ROLKA.rec && (ROLKA.mediaKind === 'video' ? ROLKA.media.ended : el > ROLKA.opt.durMedia * 1000)) next();
-  } else if (seg === 'face') segFace(ctx);
+  const sc = curScene(), el = now - ROLKA.t0;
+  if (sc.kind === 'title') segTitle(ctx, el);
+  else if (sc.kind === 'media') segMedia(ctx, el, sc.item.m);
   else segAnim(ctx);
   toCanvas(ctx);
+  camCircle(ctx);
   if (STATE.safe && !ROLKA.rec) frameSafeZone(ctx);   // nakładka tylko w podglądzie, nigdy w pliku
   return true;
 }
 
 // ── Sceny i slajdy
-const available = s => s === 'media' ? !!ROLKA.media : s === 'face' ? !!ROLKA.stream : true;
 function applySlide(i, tween = true) {
   const q = ROLKA.seq, S = sketch(); if (!q || !S) return;
   ROLKA.slide = Math.max(0, Math.min(q.slides.length - 1, i));
@@ -137,20 +127,25 @@ function applySlide(i, tween = true) {
   if (warn.length) rolkaMsg('Slajd: ' + warn.join('; '));
   rolkaHud();
 }
-function enter(seg) {
-  ROLKA.seg = seg; ROLKA.t0 = performance.now();
-  if (ROLKA.mediaKind === 'video') { const v = ROLKA.media; if (seg === 'media') { v.currentTime = 0; v.play().catch(() => {}); } else v.pause(); }
-  if (seg === 'anim' && ROLKA.seq) applySlide(0, false);
+function enter(i) {
+  const L = scenes(); ROLKA.idx = Math.max(0, Math.min(L.length - 1, i)); ROLKA.t0 = performance.now();
+  const sc = L[ROLKA.idx];
+  for (const x of [...ROLKA.start, ...ROLKA.end]) if (x.kind === 'video' && x !== sc.item) x.m.pause();
+  if (sc.kind === 'media' && sc.item.kind === 'video') { sc.item.m.currentTime = 0; sc.item.m.play().catch(() => {}); }   // film gra raz i stoi na ostatniej klatce
+  if (sc.kind === 'anim' && ROLKA.seq) applySlide(0, false);
   rolkaHud();
 }
+// „Dalej”: na animacji następny slajd sekwencji, potem następna scena; po ostatniej scenie — koniec nagrania i zapis
 function next() {
-  if (ROLKA.seg === 'anim' || !ROLKA.seg) {
-    if (ROLKA.seq && ROLKA.slide + 1 < ROLKA.seq.slides.length) return applySlide(ROLKA.slide + 1);
-    return ROLKA.rec ? stopRec(true) : null;
-  }
-  let k = SEGS.indexOf(ROLKA.seg) + 1;
-  while (k < SEGS.length && !available(SEGS[k])) k++;
-  enter(SEGS[Math.min(k, SEGS.length - 1)]);
+  const L = scenes(), sc = curScene();
+  if (sc.kind === 'anim' && ROLKA.seq && ROLKA.slide + 1 < ROLKA.seq.slides.length) return applySlide(ROLKA.slide + 1);
+  if (ROLKA.idx + 1 < L.length && ROLKA.idx >= 0) return enter(ROLKA.idx + 1);
+  if (ROLKA.rec) stopRec(true);
+}
+function prev() {
+  const sc = curScene();
+  if (sc.kind === 'anim' && ROLKA.seq && ROLKA.slide > 0) return applySlide(ROLKA.slide - 1);
+  if (ROLKA.idx > 0) enter(ROLKA.idx - 1);
 }
 
 // ── Kamera i mikrofon
@@ -203,23 +198,31 @@ async function startCapture() {
 }
 function stopCapture() { ROLKA.cap?.getTracks().forEach(t => t.stop()); ROLKA.cap = null; document.documentElement.classList.remove('capturing'); }
 
-// ── Zdjęcie / wideo z wyprawy (tylko w pamięci tej karty)
-function setMedia(file) {
-  if (!file) return;
-  const kind = file.type.startsWith('video/') ? 'video' : file.type.startsWith('image/') ? 'image' : null;
-  if (!kind) return rolkaMsg('To nie jest zdjęcie ani wideo: ' + file.name);
-  if (ROLKA.mediaUrl) URL.revokeObjectURL(ROLKA.mediaUrl);
-  const url = URL.createObjectURL(file);
-  const m = kind === 'video' ? Object.assign(document.createElement('video'), { muted: true, playsInline: true, preload: 'auto', src: url }) : Object.assign(new Image(), { src: url });
-  Object.assign(ROLKA, { media: m, mediaKind: kind, mediaUrl: url, mediaName: file.name });
-  const ok = () => rolkaMsg(`${kind === 'video' ? 'Wideo' : 'Zdjęcie'}: ${file.name}${kind === 'video' ? ` (${Math.round(m.duration)} s, bez dźwięku)` : ''}`);
-  m.addEventListener(kind === 'video' ? 'loadedmetadata' : 'load', ok, { once: true });
-  rolkaHud();
+// ── Zdjęcia / filmy z wyprawy na początek i na koniec (tylko w pamięci tej karty)
+function addMedia(files, part) {
+  for (const file of files) {
+    const kind = file.type.startsWith('video/') ? 'video' : file.type.startsWith('image/') ? 'image' : null;
+    if (!kind) { rolkaMsg('To nie jest zdjęcie ani film: ' + file.name); continue; }
+    const url = URL.createObjectURL(file);
+    const m = kind === 'video' ? Object.assign(document.createElement('video'), { muted: true, playsInline: true, preload: 'auto', src: url }) : Object.assign(new Image(), { src: url });
+    ROLKA[part].push({ m, kind, url, name: file.name });
+  }
+  renderMedia();
 }
-function clearMedia() {
-  if (ROLKA.mediaUrl) URL.revokeObjectURL(ROLKA.mediaUrl);
-  Object.assign(ROLKA, { media: null, mediaKind: null, mediaUrl: null, mediaName: '' });
-  if (ROLKA.seg === 'media') enter('title');
+function removeMedia(part, i) {
+  const [x] = ROLKA[part].splice(i, 1); if (x) URL.revokeObjectURL(x.url);
+  if (!ROLKA.rec) ROLKA.idx = -1;
+  renderMedia();
+}
+function renderMedia() {
+  for (const part of ['start', 'end']) {
+    const ul = $(part === 'start' ? 'rkStartList' : 'rkEndList');
+    ul.replaceChildren(...ROLKA[part].map((x, i) => {
+      const li = el('li', {}, `${x.kind === 'video' ? '▶' : '▣'} ${x.name} `);
+      const b = el('button', { type: 'button', class: 'rk-link', 'aria-label': 'Usuń ' + x.name, text: 'usuń' }); b.onclick = () => removeMedia(part, i);
+      li.append(b); return li;
+    }));
+  }
   rolkaHud();
 }
 
@@ -235,7 +238,7 @@ async function startRec() {
   if (ROLKA.rec || !$('rkCount').hidden) return;
   ROLKA.frozen = null; ROLKA.frozen = reelTitle();
   $('rkPanel').hidden = true; $('rkCount').hidden = false;
-  enter('title'); ROLKA.t0 = performance.now() + 1e9;   // karta tytułowa stoi rozmyta w czasie odliczania
+  enter(0); ROLKA.t0 = performance.now() + 1e9;   // karta tytułowa stoi rozmyta w czasie odliczania
   let n = 3; $('rkCount').textContent = n;
   ROLKA.countdown = setInterval(() => {
     n--; if (n > 0) { $('rkCount').textContent = n; return; }
@@ -247,14 +250,14 @@ async function startRec() {
     ROLKA.chunks = []; ROLKA.rec = rec;
     rec.ondataavailable = e => { if (e.data.size) ROLKA.chunks.push(e.data); };
     rec.onstop = () => { canvasTracks.forEach(t => t.stop()); saveRec(rec); ROLKA.chunks = []; };
-    rec.start(1000); document.documentElement.classList.add('recording'); enter('title');
+    rec.start(1000); document.documentElement.classList.add('recording'); enter(0);
   }, 1000);
 }
 function stopRec(keep) {
   clearInterval(ROLKA.countdown); $('rkCount').hidden = true;
   const rec = ROLKA.rec; ROLKA.rec = null; document.documentElement.classList.remove('recording');
   if (rec) { rec.keep = keep; if (rec.state !== 'inactive') rec.stop(); }
-  ROLKA.seg = null; if (ROLKA.mediaKind === 'video') ROLKA.media.pause();
+  ROLKA.idx = -1; for (const x of [...ROLKA.start, ...ROLKA.end]) if (x.kind === 'video') x.m.pause();
   $('rkPanel').hidden = false; rolkaHud();
   if (!rec) ROLKA.frozen = null;   // odliczanie przerwane; po nagraniu tytuł zwalnia saveRec
   if (!keep) rolkaMsg('Nagranie przerwane, nic nie zapisano.');
@@ -301,15 +304,15 @@ function rolkaMsg(s, link) {
 }
 function rolkaHud() {
   const o = ROLKA.opt;
-  $('rkMedia').textContent = ROLKA.media ? ROLKA.mediaName : 'brak (scena 2 pominięta)';
-  $('rkClear').hidden = !ROLKA.media;
   $('rkCamBtn').textContent = ROLKA.stream ? 'Wyłącz kamerę' : 'Włącz kamerę i mikrofon';
   $('rkDev').hidden = !ROLKA.stream;
   $('rkCapBtn').textContent = ROLKA.cap ? 'Zatrzymaj przechwytywanie' : 'Przechwyć animację (ta karta)';
   const q = ROLKA.seq;
   $('rkSlide').textContent = q ? `slajd ${ROLKA.slide + 1} / ${q.slides.length}: ${q.slides[ROLKA.slide].label}` : 'bez sekwencji — sterujesz szkicem ręcznie';
-  $('rkSeg').textContent = ROLKA.seg ? `${ROLKA.rec ? '● REC · ' : 'podgląd · '}${SEGS.indexOf(ROLKA.seg) + 1}/4 ${SEG_PL[ROLKA.seg]}` : '';
-  store.set('sa-rolka-2', { title: o.title, caption: o.caption, variant: o.variant, durTitle: o.durTitle, durMedia: o.durMedia, frame: o.frame, circle: o.circle });
+  const n = scenes().length;
+  $('rkSeg').textContent = ROLKA.idx >= 0 ? `${ROLKA.rec ? '● REC · ' : 'podgląd · '}scena ${ROLKA.idx + 1}/${n}: ${SCENE_PL(curScene())}` : '';
+  $('rkCr').value = o.cr;
+  store.set('sa-rolka-3', { title: o.title, caption: o.caption, variant: o.variant, frame: o.frame, cx: o.cx, cy: o.cy, cr: o.cr });
 }
 // Ramka ma stały rozmiar logiczny (szkic zawsze w tym samym układzie telefonu). Gdy nie mieści się w oknie, opakowanie
 // #skWrap pomniejsza ją transformacją (scale) — przechwycony obraz bierze piksele ekranu, więc pełne 9:16 działa też na
@@ -344,14 +347,12 @@ function initRolka() {
     <p><label>Tytuł rolki <input type="text" id="rkTitle" placeholder="puste = nazwa tematu" maxlength="70"></label></p>
     <p><button type="button" id="rkCamBtn"></button></p>
     <p id="rkDev" hidden><select id="rkCam" aria-label="Kamera"></select><select id="rkMic" aria-label="Mikrofon"></select></p>
-    <p>Kółko kamery: ${radio('rkCircle', 'br', 'prawy dolny')} ${radio('rkCircle', 'tr', 'prawy górny')}</p>
-    <p>Zdjęcie lub wideo z wyprawy (przeciągnij tutaj):<br><input type="file" id="rkFile" accept="image/*,video/*">
-       <br><span id="rkMedia"></span> <button type="button" id="rkClear">usuń</button></p>
+    <p>Kółko kamery: przeciągnij je myszą na podglądzie.<br><label>Rozmiar <input type="range" id="rkCr" min="80" max="260" step="5"></label></p>
+    <p><b>Na początek</b> (po tytule) — zdjęcia / filmy:<br><input type="file" id="rkStartFile" accept="image/*,video/*" multiple><ul class="rk-list" id="rkStartList"></ul></p>
+    <p><b>Na koniec</b> (po animacji) — zdjęcia / filmy:<br><input type="file" id="rkEndFile" accept="image/*,video/*" multiple><ul class="rk-list" id="rkEndList"></ul></p>
     <p><label>Podpis <input type="text" id="rkCap" placeholder="np. Aconcagua, 2024" maxlength="60"></label></p>
     <p>Układ zdjęcia: ${radio('rkVar', 'half', 'pół ekranu')} ${radio('rkVar', 'full', 'pełny ekran')}</p>
-    <p><label>Tytuł, s <input type="number" id="rkDurT" min="1" max="10" step="0.5"></label>
-       <label>Zdjęcie, s <input type="number" id="rkDurM" min="1" max="20" step="0.5"></label></p>
-    <p class="rk-help">Kolejność: tytuł → zdjęcie → twarz → animacja. Dalej: spacja / → / pilot (na animacji: następny slajd; po ostatnim — koniec i zapis). Esc — przerwij bez zapisu. Podgląd: 1–4, 0 wyłącz. W trakcie nagrania klawisze działają także z kursorem w szkicu.</p>
+    <p class="rk-help">Kolejność: tytuł → zdjęcia/filmy na początek → animacja → zdjęcia/filmy na koniec. Każda scena czeka: spacja / → / pilot / klik w podgląd = dalej (na animacji: następny slajd), ← wstecz; po ostatniej scenie — koniec i zapis. Esc — przerwij bez zapisu. Podgląd bez nagrania: ← → po scenach, 0 — wyłącz. Pliki można też przeciągnąć na stronę (trafiają na początek).</p>
     <p id="rkMsg" role="status"></p></div>`;
   const done = el('dialog', { id: 'rkDone', class: 'rk-done', 'aria-label': 'Nagranie gotowe' });
   done.innerHTML = `<b>Nagranie gotowe</b><video controls playsinline></video><p id="rkInfo"></p>
@@ -365,21 +366,34 @@ function initRolka() {
     panel.querySelector(`input[name=${name}][value=${o[key]}]`)?.setAttribute('checked', '');
     panel.querySelectorAll(`input[name=${name}]`).forEach(r => r.onchange = () => { o[key] = r.value; after?.(); rolkaHud(); });
   };
-  bindRadio('rkFrame', 'frame', setFrame); bindRadio('rkCircle', 'circle'); bindRadio('rkVar', 'variant');
+  bindRadio('rkFrame', 'frame', setFrame); bindRadio('rkVar', 'variant');
   $('rkHide').onclick = () => panel.classList.toggle('min');
   $('rkCapBtn').onclick = () => ROLKA.cap ? (stopCapture(), rolkaHud()) : startCapture();
   $('rkCamBtn').onclick = () => ROLKA.stream ? (stopCam(), rolkaHud()) : startCam().then(rolkaHud);
   $('rkCam').onchange = $('rkMic').onchange = () => startCam().then(rolkaHud);
   $('rkSeq').onchange = e => { ROLKA.seq = SEQS.find(q => q.id === e.target.value) || null; ROLKA.slide = 0; if (ROLKA.seq) applySlide(0, false); rolkaHud(); };
-  $('rkFile').onchange = e => setMedia(e.target.files[0]);
-  $('rkClear').onclick = () => { $('rkFile').value = ''; clearMedia(); };
-  for (const [id, key, def] of [['rkTitle', 'title'], ['rkCap', 'caption'], ['rkDurT', 'durTitle', 3], ['rkDurM', 'durMedia', 5]]) {
-    $(id).value = o[key];
-    $(id).oninput = e => { o[key] = def ? (+e.target.value || def) : e.target.value; rolkaHud(); };
-  }
+  $('rkStartFile').onchange = e => { addMedia(e.target.files, 'start'); e.target.value = ''; };
+  $('rkEndFile').onchange = e => { addMedia(e.target.files, 'end'); e.target.value = ''; };
+  $('rkCr').oninput = e => { o.cr = +e.target.value; rolkaHud(); };
+  for (const [id, key] of [['rkTitle', 'title'], ['rkCap', 'caption']]) { $(id).value = o[key]; $(id).oninput = e => { o[key] = e.target.value; rolkaHud(); }; }
+  // Kółko kamery: przeciąganie na podglądzie; klik poza kółkiem = „dalej” (w nagraniu albo podglądzie scen)
+  const stage = $('stage'); let drag = null;
+  const toXY = ev => { const r = stage.getBoundingClientRect(); return [(ev.clientX - r.left) * W / r.width, (ev.clientY - r.top) * H / r.height]; };
+  stage.addEventListener('pointerdown', ev => {
+    const [x, y] = toXY(ev);
+    if (ROLKA.stream && Math.hypot(x - o.cx, y - o.cy) <= o.cr) { drag = [x - o.cx, y - o.cy]; stage.setPointerCapture(ev.pointerId); return; }
+    if (ROLKA.rec || ROLKA.idx >= 0) next();
+  });
+  stage.addEventListener('pointermove', ev => {
+    const [x, y] = toXY(ev);
+    stage.style.cursor = ROLKA.stream && Math.hypot(x - o.cx, y - o.cy) <= o.cr ? 'grab' : '';
+    if (!drag) return;
+    o.cx = Math.round(Math.max(o.cr, Math.min(W - o.cr, x - drag[0]))); o.cy = Math.round(Math.max(o.cr, Math.min(H - o.cr, y - drag[1])));
+  });
+  stage.addEventListener('pointerup', () => { if (drag) { drag = null; rolkaHud(); } });
   $('rkRec').onclick = startRec;
   addEventListener('dragover', e => e.preventDefault());
-  addEventListener('drop', e => { e.preventDefault(); setMedia(e.dataTransfer.files[0]); });
+  addEventListener('drop', e => { e.preventDefault(); addMedia(e.dataTransfer.files, 'start'); });
   const onKey = e => {
     if ($('rkDone')?.open) return;   // okno nagrania: klawisze należą do niego (Esc zamyka)
     const inPanel = e.target instanceof Element && e.target.closest('#rkPanel');
@@ -391,12 +405,11 @@ function initRolka() {
     const k = e.key, nextKey = [' ', 'ArrowRight', 'PageDown', 'ArrowDown', 'Enter'].includes(k), prevKey = ['ArrowLeft', 'PageUp', 'ArrowUp'].includes(k);
     let done = true;
     if (!$('rkCount').hidden) { if (k === 'Escape') stopRec(false); }   // w trakcie odliczania tylko Esc
-    else if (ROLKA.rec) { if (k === 'Escape') stopRec(false); else if (nextKey) next(); else if (prevKey && ROLKA.seq && ROLKA.seg === 'anim') applySlide(ROLKA.slide - 1); else done = false; }
+    else if (ROLKA.rec) { if (k === 'Escape') stopRec(false); else if (nextKey) next(); else if (prevKey) prev(); else done = false; }
     else if (k === 'n' || k === 'N') startRec();
-    else if (/^[1-4]$/.test(k)) { if (available(SEGS[k - 1])) enter(SEGS[k - 1]); else rolkaMsg(k === '2' ? 'Najpierw dodaj zdjęcie lub wideo.' : 'Najpierw włącz kamerę.'); }
-    else if (k === '0' || (k === 'Escape' && ROLKA.seg)) { ROLKA.seg = null; if (ROLKA.mediaKind === 'video') ROLKA.media.pause(); rolkaHud(); }
-    else if (nextKey) next();
-    else if (prevKey && ROLKA.seq) applySlide(ROLKA.slide - 1);
+    else if (k === '0' || (k === 'Escape' && ROLKA.idx >= 0)) { ROLKA.idx = -1; for (const x of [...ROLKA.start, ...ROLKA.end]) if (x.kind === 'video') x.m.pause(); rolkaHud(); }
+    else if (nextKey) { if (ROLKA.idx < 0) enter(0); else next(); }   // podgląd scen bez nagrania
+    else if (prevKey) prev();
     else done = false;
     if (done) { e.preventDefault(); e.stopImmediatePropagation(); }
   };

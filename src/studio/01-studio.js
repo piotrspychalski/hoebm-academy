@@ -7,7 +7,7 @@ function initStudio() {
   root.classList.add('studio');
   const hud = el('div', { class: 'studiohud', role: 'note' });
   hud.innerHTML = '<b>STUDIO NAGRAŃ</b> · nie linkować<br>Po lewej: animacja Akademii — klikaj w niej tematy, narządy, suwaki.<br>'
-    + 'Po prawej: panel ROLKA. N — nagraj · 1–4 podgląd scen<br>S strefa bezpieczna · F pełny ekran · H pomoc (zamknij: H)';
+    + 'Po prawej: panel ROLKA. N — nagraj · → ← podgląd scen · 0 wyłącz<br>Kółko kamery: przeciągnij na podglądzie<br>S strefa bezpieczna · F pełny ekran · H pomoc (zamknij: H)';
   hud.hidden = true;   // pomoc pod klawiszem H (nie może leżeć na ramce szkicu)
   document.body.append(hud);
   let idle = null;
