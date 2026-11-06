@@ -60,7 +60,7 @@ if (PASS) {
   for (const [src, dst, title] of [['studio/index.html', 'dist/studio/index.html', 'Studio nagrań'], ['studio/sketch/index.html', 'dist/studio/sketch/index.html', 'Slajdy'], ['studio/sketch/energy-map.html', 'dist/studio/sketch/energy-map.html']]) {
     fs.mkdirSync(path.dirname(path.join(R, dst)), { recursive: true });
     const h = fs.readFileSync(path.join(R, src), 'utf8');
-    fs.writeFileSync(path.join(R, dst), title ? lock(h, PASS, title) : h);
+    fs.writeFileSync(path.join(R, dst), title ? lock(h, PASS, title, favicon) : h);
   }
   console.log('studio online: dist/studio/ (zaszyfrowane hasłem)');
 }

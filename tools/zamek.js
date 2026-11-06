@@ -6,7 +6,7 @@
 const crypto = require('crypto');
 const ITER = 310000;
 
-function lock(html, password, title = 'Studio') {
+function lock(html, password, title = 'Studio', favicon = '') {
   const salt = crypto.randomBytes(16), iv = crypto.randomBytes(12);
   const key = crypto.pbkdf2Sync(password, salt, ITER, 32, 'sha256');
   const c = crypto.createCipheriv('aes-256-gcm', key, iv);
@@ -14,7 +14,7 @@ function lock(html, password, title = 'Studio') {
   const payload = Buffer.concat([salt, iv, enc]).toString('base64');
   return `<!doctype html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer"><title>${title}</title>
+<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer"><title>${title}</title>${favicon ? `<link rel="icon" type="image/svg+xml" href="${favicon}">` : ''}
 <style>
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F2F0F1;color:#1B5996;font:15px/1.5 "IBM Plex Mono",ui-monospace,monospace}
 form{display:grid;gap:10px;width:min(320px,90vw)} b{font-weight:600;letter-spacing:.08em}
