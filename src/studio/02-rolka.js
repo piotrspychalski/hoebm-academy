@@ -265,15 +265,37 @@ function saveRec(rec) {
   const d = new Date(), p = n => String(n).padStart(2, '0');
   const name = `sports-academy-${slug}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.${ext}`;
   if (ROLKA.saved) URL.revokeObjectURL(ROLKA.saved.url);
-  ROLKA.saved = { url: URL.createObjectURL(new Blob(ROLKA.chunks, { type })), name };
-  const a = el('a', { href: ROLKA.saved.url, download: name }); document.body.append(a); a.click(); a.remove();
-  rolkaMsg(`Zapisano: ${name}${ext === 'webm' ? ' (WebM — ta przeglądarka nie nagrywa MP4)' : ''}`, true);
+  const blob = new Blob(ROLKA.chunks, { type });
+  ROLKA.saved = { url: URL.createObjectURL(blob), name, blob, type, ext };
+  showDone();
+}
+// Okno po nagraniu: podgląd i zapis. „Zapisz jako…” otwiera systemowe okno zapisu (File System Access API, Chrome/Edge;
+// wymaga kliknięcia, dlatego nie zapisujemy automatycznie). Zapas: zwykłe pobranie do folderu „Pobrane”.
+function showDone() {
+  const S = ROLKA.saved, dlg = $('rkDone'), v = dlg.querySelector('video');
+  v.src = S.url; v.load();
+  $('rkDl').href = S.url; $('rkDl').download = S.name;
+  $('rkInfo').textContent = `${S.name} · ${(S.blob.size / 1048576).toFixed(1)} MB${S.ext === 'webm' ? ' · WebM (ta przeglądarka nie nagrywa MP4)' : ''}`;
+  $('rkSaveMsg').textContent = '';
+  $('rkSave').hidden = !window.showSaveFilePicker;
+  dlg.showModal();
+  rolkaMsg(`Nagranie gotowe: ${S.name}`, true);
+}
+async function saveAs() {
+  const S = ROLKA.saved; if (!S) return;
+  try {
+    const h = await window.showSaveFilePicker({ suggestedName: S.name, types: [{ description: 'Wideo', accept: { [S.type.split(';')[0]]: ['.' + S.ext] } }] });
+    const w = await h.createWritable(); await w.write(S.blob); await w.close();
+    $('rkSaveMsg').textContent = `Zapisano: ${h.name}`;
+    rolkaMsg(`Zapisano: ${h.name}`, true);
+  } catch (e) { if (e.name !== 'AbortError') $('rkSaveMsg').textContent = 'Nie udało się zapisać: ' + e.message + ' — użyj „Pobierz”.'; }
 }
 
 // ── Panel ROLKA (poza płótnem — nie trafia do nagrania)
 function rolkaMsg(s, link) {
   const m = $('rkMsg'); m.textContent = s;
-  if (link && ROLKA.saved) m.append(' · ', el('a', { href: ROLKA.saved.url, download: ROLKA.saved.name, text: 'pobierz ponownie' }));
+  if (link && ROLKA.saved) m.append(' · ', el('button', { type: 'button', class: 'rk-link', text: 'pokaż / zapisz' }));
+  m.querySelector('.rk-link')?.addEventListener('click', showDone);
 }
 function rolkaHud() {
   const o = ROLKA.opt;
@@ -331,7 +353,14 @@ function initRolka() {
        <label>Zdjęcie, s <input type="number" id="rkDurM" min="1" max="20" step="0.5"></label></p>
     <p class="rk-help">Kolejność: tytuł → zdjęcie → twarz → animacja. Dalej: spacja / → / pilot (na animacji: następny slajd; po ostatnim — koniec i zapis). Esc — przerwij bez zapisu. Podgląd: 1–4, 0 wyłącz. W trakcie nagrania klawisze działają także z kursorem w szkicu.</p>
     <p id="rkMsg" role="status"></p></div>`;
-  document.body.append(panel, el('div', { id: 'rkCount', class: 'rk-count', hidden: '' }), el('div', { id: 'rkSeg', class: 'rk-seg' }));
+  const done = el('dialog', { id: 'rkDone', class: 'rk-done', 'aria-label': 'Nagranie gotowe' });
+  done.innerHTML = `<b>Nagranie gotowe</b><video controls playsinline></video><p id="rkInfo"></p>
+    <p class="rk-actions"><button type="button" id="rkSave" class="rk-rec">Zapisz jako…</button>
+    <a id="rkDl" class="rk-btn">Pobierz do „Pobrane”</a><button type="button" id="rkClose" class="rk-btn">Zamknij</button></p><p id="rkSaveMsg" role="status"></p>`;
+  document.body.append(panel, done, el('div', { id: 'rkCount', class: 'rk-count', hidden: '' }), el('div', { id: 'rkSeg', class: 'rk-seg' }));
+  $('rkSave').onclick = saveAs;
+  $('rkClose').onclick = () => { done.querySelector('video').pause(); done.close(); };
+  done.addEventListener('close', () => done.querySelector('video').pause());
   const bindRadio = (name, key, after) => {
     panel.querySelector(`input[name=${name}][value=${o[key]}]`)?.setAttribute('checked', '');
     panel.querySelectorAll(`input[name=${name}]`).forEach(r => r.onchange = () => { o[key] = r.value; after?.(); rolkaHud(); });
@@ -352,6 +381,7 @@ function initRolka() {
   addEventListener('dragover', e => e.preventDefault());
   addEventListener('drop', e => { e.preventDefault(); setMedia(e.dataTransfer.files[0]); });
   const onKey = e => {
+    if ($('rkDone')?.open) return;   // okno nagrania: klawisze należą do niego (Esc zamyka)
     const inPanel = e.target instanceof Element && e.target.closest('#rkPanel');
     if (inPanel && !e.target.matches('input[type=text], input[type=number], select, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }   // przyciski i radio w panelu działają normalnie
     if (e.target instanceof Element && e.target.matches('input[type=text], input[type=number], select, textarea')) {   // w polu: Enter / Esc oddaje klawisze rolce

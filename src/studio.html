@@ -62,6 +62,14 @@ html.capturing .studiohud, html.recording .studiohud, html.capturing .vnav { dis
 .rolka .rk-help { color: var(--ink-2); }
 .rolka #rkMsg:empty { display: none; }
 .rk-count { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; font: 800 160px var(--display); color: #fff; text-shadow: 0 4px 24px #000; pointer-events: none; }
+/* Okno po nagraniu: podgląd i zapis */
+.rk-done { border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); padding: 14px 16px; width: min(420px, 92vw); font: 400 13px/1.5 var(--mono); }
+.rk-done::backdrop { background: rgba(0, 0, 0, .6); }
+.rk-done video { display: block; width: 100%; max-height: 60vh; margin: 10px 0; background: #000; }
+.rk-done .rk-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rk-done .rk-rec { background: var(--blood); color: #fff; border: 0; font-weight: 600; padding: 8px 14px; cursor: pointer; }
+.rk-btn { background: var(--paper); border: 1.5px solid var(--ink); color: var(--ink); padding: 6px 10px; cursor: pointer; text-decoration: none; font: inherit; }
+.rk-link { border: 0; background: none; color: var(--ink); text-decoration: underline; cursor: pointer; padding: 0; font: inherit; }
 .rk-seg { position: fixed; left: 12px; bottom: 6px; z-index: 50; font: 600 12px var(--mono); color: #fff; }
 </style>
 </head>

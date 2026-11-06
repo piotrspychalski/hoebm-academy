@@ -1,33 +1,15 @@
-<svg viewBox="312.2661 329.1152 425.4677 98.7696" width="5000" height="1160.7179581434737" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="none"><defs></defs><style>.aD6z1nYkhcolor {fill:#1B5996;fill-opacity:1;}.akCaANJk1ccolor {fill:#1B5996;fill-opacity:0.78;}.akCaANJk1ccolor-floo {flood-color:#1B5996;flood-opacity:0.78;}.aN3BqQym-40filter-floo {flood-color:#D9C0CF;flood-opacity:0.5;}.aoqVunXeQkcolor {fill:#1B5996;fill-opacity:0.78;}.aoqVunXeQkcolor-floo {flood-color:#1B5996;flood-opacity:0.78;}.aSfG1YjIp5color-floo {flood-color:#1B5996;flood-opacity:0.78;}.axmg2hHvY9color {fill:#1B5996;fill-opacity:0.78;}.companyName {fill:#1B5996;fill-opacity:1;}.icon1 {fill:#D9C0CF;fill-opacity:1;}.icon2 {fill:#38305F;fill-opacity:1;}.icon3 {fill:#1B5996;fill-opacity:1;}.shapeStroke-str {stroke:#D9C0CF;stroke-opacity:1;}</style><defs>
-      <filter
-        x="-1000"
-        y="-1000"
-        width="5000"
-        height="5000"
-        id="qAvFHkUyt"
-        filterUnits="userSpaceOnUse"
+<svg viewBox="312.2661 329.1152 425.4677 98.7696" width="425.4677" height="98.7696" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="none"><defs></defs><style>.aD6z1nYkhcolor {fill:#1B5996;fill-opacity:1;}.akCaANJk1ccolor {fill:#1B5996;fill-opacity:0.78;}.akCaANJk1ccolor-floo {flood-color:#1B5996;flood-opacity:0.78;}.aN3BqQym-40filter-floo {flood-color:#D9C0CF;flood-opacity:0.5;}.aoqVunXeQkcolor {fill:#1B5996;fill-opacity:0.78;}.aoqVunXeQkcolor-floo {flood-color:#1B5996;flood-opacity:0.78;}.aSfG1YjIp5color-floo {flood-color:#1B5996;flood-opacity:0.78;}.axmg2hHvY9color {fill:#1B5996;fill-opacity:0.78;}.companyName {fill:#1B5996;fill-opacity:1;}.icon1 {fill:#D9C0CF;fill-opacity:1;}.icon2 {fill:#38305F;fill-opacity:1;}.icon3 {fill:#1B5996;fill-opacity:1;}.shapeStroke-str {stroke:#D9C0CF;stroke-opacity:1;}</style><defs>
+      <filter x="-20%" y="-80%" width="140%" height="260%" id="qAvFHkUyt" filterUnits="objectBoundingBox"
         primitiveUnits="userSpaceOnUse"
         color-interpolation-filters="sRGB">
         <feGaussianBlur  result="QdWPYQsKHF" stdDeviation="2" />
       </filter>
-      <filter
-        x="-1000"
-        y="-1000"
-        width="5000"
-        height="5000"
-        id="kmkoX62-d"
-        filterUnits="userSpaceOnUse"
+      <filter x="-20%" y="-80%" width="140%" height="260%" id="kmkoX62-d" filterUnits="objectBoundingBox"
         primitiveUnits="userSpaceOnUse"
         color-interpolation-filters="sRGB">
         <feGaussianBlur  result="DqgWv9a3WG" stdDeviation="1" />
       </filter>
-      <filter
-        x="-1000"
-        y="-1000"
-        width="5000"
-        height="5000"
-        id="N3BqQym-4"
-        filterUnits="userSpaceOnUse"
+      <filter x="-20%" y="-80%" width="140%" height="260%" id="N3BqQym-4" filterUnits="objectBoundingBox"
         primitiveUnits="userSpaceOnUse"
         color-interpolation-filters="sRGB">
         <feMerge><feMergeNode in="SourceGraphic" /></feMerge>
