@@ -1725,7 +1725,7 @@ document.addEventListener('keydown', ev => {
   const json = JSON.stringify(slideState()); console.log(json); navigator.clipboard?.writeText(json).catch(() => {});
 });
 
-let last = performance.now();
+let last = performance.now(), lastP = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (TW && !HOLD) tweenStep(now);
@@ -1734,19 +1734,30 @@ function frame(now) {
   heartPath.setAttribute('transform', `translate(372,222) scale(${beat}) translate(-372,-222)`);
   const br = REDUCE ? 1 : 1 + 0.03 * (0.4 + S.p / 100) * Math.sin(now / 1000 * Math.PI * 2 * (0.25 + 0.5 * S.p / 100));
   [lungL, lungR].forEach(l => l.setAttribute('transform', `translate(350,200) scale(${br}) translate(-350,-200)`));
-  for (const id in flowEls) {
-    const fe = flowEls[id];
-    if (!fe.on) { if (fe.shown !== false) { fe.parts.forEach(p => p.s.style.opacity = 0); fe.shown = false; } continue; }
-    fe.shown = true;
-    const rate = clamp(fe.rate || 0, 0, 1.4), kind = KIND[id];
-    const show = Math.round(NP * clamp(kind === 'rbc' ? 0.35 + 0.65 * rate : rate * 1.3));
-    fe.parts.forEach(p => {
-      if (!REDUCE) p.ph = (p.ph + dt * (0.06 + 0.3 * rate)) % 1;
-      const q = p.pp.path.getPointAtLength(p.ph * p.pp.len);
-      p.s.setAttribute('transform', `translate(${q.x.toFixed(1)},${q.y.toFixed(1)})`);
-      p.s.style.opacity = p.i < show ? 1 : 0;
-      if (kind === 'food') { const want = S.comp === 'gf' ? (p.i % 3 === 2 ? 'fru' : 'glc') : S.comp; for (const v of p.s.children) v.style.display = v.dataset.k === want ? '' : 'none'; }
-    });
+  // Cząstki: 30 klatek/s, punkty ścieżek policzone raz (tablica co 1/240 długości), styl tylko przy zmianie — CPU w spoczynku
+  const pdt = (now - lastP) / 1000;
+  if (pdt >= 1 / 31) {
+    lastP = now;
+    for (const id in flowEls) {
+      const fe = flowEls[id];
+      if (!fe.on) { if (fe.shown !== false) { fe.parts.forEach(p => { p.s.style.opacity = 0; p.op = 0; }); fe.shown = false; } continue; }
+      fe.shown = true;
+      const rate = clamp(fe.rate || 0, 0, 1.4), kind = KIND[id];
+      const show = Math.round(NP * clamp(kind === 'rbc' ? 0.35 + 0.65 * rate : rate * 1.3));
+      const want = kind === 'food' ? S.comp : null;
+      fe.parts.forEach(p => {
+        const op = p.i < show ? 1 : 0;
+        if (p.op !== op) { p.s.style.opacity = op; p.op = op; }
+        if (!op) return;
+        if (!REDUCE) p.ph = (p.ph + Math.min(0.1, pdt) * (0.06 + 0.3 * rate)) % 1;
+        const pts = p.pp.pts || (p.pp.pts = Array.from({ length: 241 }, (_, k) => { const q = p.pp.path.getPointAtLength(k / 240 * p.pp.len); return `translate(${q.x.toFixed(1)},${q.y.toFixed(1)})`; }));
+        p.s.setAttribute('transform', pts[Math.round(p.ph * 240)]);
+        if (kind === 'food' && p.want !== want) {
+          p.want = want; const w = want === 'gf' ? (p.i % 3 === 2 ? 'fru' : 'glc') : want;
+          for (const v of p.s.children) v.style.display = v.dataset.k === w ? '' : 'none';
+        }
+      });
+    }
   }
   requestAnimationFrame(frame);
 }
