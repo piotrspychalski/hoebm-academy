@@ -14,12 +14,12 @@ const ROLKA = {
   cap: null, capEl: null, cropped: false,          // przechwycona karta (animacja)
   media: null, mediaKind: null, mediaUrl: null, mediaName: '',
   seq: null, slide: 0,
-  opt: Object.assign({ title: '', caption: '', variant: 'half', durTitle: 3, durMedia: 5, frame: 'reel', circle: 'br' }, store.get('hoebm-rolka', {})),
+  opt: Object.assign({ title: '', caption: '', variant: 'half', durTitle: 3, durMedia: 5, frame: 'full', circle: 'br' }, store.get('sa-rolka-2', {})),
   saved: null,
 };
 const SEGS = ['title', 'media', 'face', 'anim'];
 const SEG_PL = { title: 'tytuł', media: 'zdjęcie', face: 'twarz', anim: 'animacja' };
-const FRAMES = { reel: { w: 500, h: 515, label: 'strefa Reels (zalecane)' }, full: { w: 450, h: 800, label: 'pełne 9:16' } };
+const FRAMES = { full: { w: 450, h: 800, label: 'pełne 9:16 (zalecane)' }, reel: { w: 500, h: 515, label: 'tylko strefa Reels' } };
 const sketch = () => $('skFrame')?.contentWindow?.HoEBMSketch || null;
 
 function drawCover(ctx, src, sw, sh, x, y, w, h) {
@@ -104,7 +104,9 @@ function segAnim(ctx) {
   }
   const c = ROLKA.camEl;
   if (ROLKA.stream && c && c.videoWidth) {
-    const rad = 120, cx = r.x + r.w - rad - 28, cy = ROLKA.opt.circle === 'tr' ? r.y + rad + 28 : r.y + r.h - rad - 28;
+    const full = ROLKA.opt.frame === 'full', rad = full ? 150 : 120;
+    const cx = full ? SAFE.x1 - rad - 10 : r.x + r.w - rad - 28;
+    const cy = ROLKA.opt.circle === 'tr' ? (full ? SAFE.y0 + rad + 10 : r.y + rad + 28) : (full ? SAFE.y1 - rad - 10 : r.y + r.h - rad - 28);
     ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.clip();
     drawCover(ctx, c, c.videoWidth, c.videoHeight, cx - rad, cy - rad, 2 * rad, 2 * rad); ctx.restore();
     ctx.strokeStyle = T.c.paper; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
@@ -307,22 +309,19 @@ function rolkaHud() {
   const q = ROLKA.seq;
   $('rkSlide').textContent = q ? `slajd ${ROLKA.slide + 1} / ${q.slides.length}: ${q.slides[ROLKA.slide].label}` : 'bez sekwencji — sterujesz szkicem ręcznie';
   $('rkSeg').textContent = ROLKA.seg ? `${ROLKA.rec ? '● REC · ' : 'podgląd · '}${SEGS.indexOf(ROLKA.seg) + 1}/4 ${SEG_PL[ROLKA.seg]}` : '';
-  store.set('hoebm-rolka', { title: o.title, caption: o.caption, variant: o.variant, durTitle: o.durTitle, durMedia: o.durMedia, frame: o.frame, circle: o.circle });
+  store.set('sa-rolka-2', { title: o.title, caption: o.caption, variant: o.variant, durTitle: o.durTitle, durMedia: o.durMedia, frame: o.frame, circle: o.circle });
 }
-// Ramka ma stały rozmiar (szkic zawsze w tym samym układzie telefonu), bez skalowania CSS — z CSS zoom przechwycony
-// obraz traci dół szkicu. Na ekranie Retina 500 px CSS = 1000 px obrazu, więc strefa Reels (950 px) jest ostra.
-// Kadr „pełne 9:16” (800 px) na za niskim oknie przełącza się na strefę Reels. Podgląd 9:16 dostaje resztę szerokości.
+// Ramka ma stały rozmiar logiczny (szkic zawsze w tym samym układzie telefonu). Gdy nie mieści się w oknie, opakowanie
+// #skWrap pomniejsza ją transformacją (scale) — przechwycony obraz bierze piksele ekranu, więc pełne 9:16 działa też na
+// niskim oknie (np. MacBook z paskiem zakładek), kosztem rozdzielczości. Podgląd 9:16 dostaje resztę szerokości.
 function setFrame() {
-  if (ROLKA.opt.frame === 'full' && innerHeight < FRAMES.full.h + 24) {
-    ROLKA.opt.frame = 'reel'; const r = $('rkPanel')?.querySelector('input[name=rkFrame][value=reel]'); if (r) r.checked = true;
-    rolkaMsg(`Okno ma ${innerHeight} px wysokości — kadr „pełne 9:16” potrzebuje ${FRAMES.full.h + 24}. Używam strefy Reels.`);
-  }
-  const f = FRAMES[ROLKA.opt.frame] || FRAMES.reel, fr = $('skFrame'), panel = $('rkPanel');
-  const side = panel && !panel.classList.contains('min') ? 284 : 60;
-  fr.style.width = f.w + 'px'; fr.style.height = f.h + 'px';
-  const stageW = Math.max(140, Math.min((innerHeight - 24) * 9 / 16, innerWidth - side - 12 - 18 - f.w));
+  const f = FRAMES[ROLKA.opt.frame] || FRAMES.reel, fr = $('skFrame'), wrap = $('skWrap'), panel = $('rkPanel');
+  const side = panel && !panel.classList.contains('min') ? 284 : 60, minStage = 150;
+  const k = Math.min(1, (innerHeight - 24) / f.h, (innerWidth - side - 12 - 18 - minStage) / f.w);
+  fr.style.width = f.w + 'px'; fr.style.height = f.h + 'px'; fr.style.transform = k < 1 ? `scale(${k.toFixed(4)})` : '';
+  wrap.style.width = f.w * k + 'px'; wrap.style.height = f.h * k + 'px';
+  const stageW = Math.max(120, Math.min((innerHeight - 24) * 9 / 16, innerWidth - side - 12 - 18 - f.w * k));
   $('stage').closest('.stage-wrap').style.width = stageW + 'px';
-  // ostrzeżenie tylko przy zmianie kadru (nie przy zmianie rozmiaru okna, np. pasek „udostępniasz tę kartę”)
   if (ROLKA.cap && ROLKA.lastFrame && ROLKA.lastFrame !== ROLKA.opt.frame && !ROLKA.cropped) rolkaMsg('Zmieniono kadr — przechwyć animację ponownie.');
   ROLKA.lastFrame = ROLKA.opt.frame;
 }
@@ -330,7 +329,8 @@ function initRolka() {
   const o = ROLKA.opt;
   // Ramka ze szkicem (Akademia) obok podglądu rolki
   const fr = el('iframe', { id: 'skFrame', src: './sketch/energy-map.html', title: 'Animacja Akademii (szkic)' });
-  $('stage').closest('.stage-wrap').before(fr);
+  const wrap = el('div', { id: 'skWrap' }); wrap.append(fr);
+  $('stage').closest('.stage-wrap').before(wrap);
   const seqs = SEQS;   // studio prywatne (online za hasłem): wszystkie sekwencje, szkice z dopiskiem DRAFT
   const radio = (name, val, label) => `<label><input type="radio" name="${name}" value="${val}"> ${label}</label>`;
   const panel = el('div', { id: 'rkPanel', class: 'rolka' });
@@ -338,7 +338,7 @@ function initRolka() {
     <div class="rk-body">
     <p><button type="button" id="rkRec" class="rk-rec">● Nagraj rolkę (N)</button></p>
     <p><button type="button" id="rkCapBtn"></button></p>
-    <p>Kadr animacji: ${radio('rkFrame', 'reel', FRAMES.reel.label)}<br>${radio('rkFrame', 'full', FRAMES.full.label)}</p>
+    <p>Kadr animacji: ${radio('rkFrame', 'full', FRAMES.full.label)}<br>${radio('rkFrame', 'reel', FRAMES.reel.label)}</p>
     <p><label>Sekwencja slajdów <select id="rkSeq"><option value="">— bez sekwencji (ręcznie) —</option>${seqs.map(q => `<option value="${q.id}">${q.title}${q.status !== 'published' ? ' · DRAFT' : ''}</option>`).join('')}</select></label>
        <span id="rkSlide"></span>${SEQS.length ? '' : '<br><i>Brak sekwencji — poproś Claude o slajdy (skill sketch-slides).</i>'}</p>
     <p><label>Tytuł rolki <input type="text" id="rkTitle" placeholder="puste = nazwa tematu" maxlength="70"></label></p>

@@ -37,7 +37,8 @@ button, input { font: inherit; color: inherit; }
 html.studio body { background: #000; overflow: hidden; padding: 0; }
 html.studio main { display: flex; justify-content: center; align-items: center; gap: 18px; padding: 0 284px 0 12px; margin: 0; max-width: none; height: 100vh; }
 html.studio .stagecol { display: flex; flex-direction: row; align-items: center; gap: 18px; }
-html.studio #skFrame { flex: none; border: 0; background: var(--paper); box-shadow: 0 0 0 1.5px #555; }
+html.studio #skWrap { flex: none; position: relative; box-shadow: 0 0 0 1.5px #555; background: var(--paper); }
+html.studio #skFrame { position: absolute; left: 0; top: 0; border: 0; background: var(--paper); transform-origin: 0 0; }
 html.studio .stage-wrap { flex: none; width: min(100vw, (100vh - 24px) * 9 / 16); }
 html.studio canvas#stage { display: block; width: 100%; height: auto; border: 0; aspect-ratio: 9 / 16; box-shadow: 0 0 0 1.5px #555; }
 html.studio.hidecursor, html.studio.hidecursor * { cursor: none !important; }
