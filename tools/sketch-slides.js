@@ -85,15 +85,16 @@ function compile(R) {
   return { html, V, seqs: out, errors };
 }
 
-function build(R, nav = '') {
+function build(R, nav = '', favicon = '') {
   const { html, seqs, errors } = compile(R);
   if (errors.length) { console.error('Slajdy szkicu — błędy:\n- ' + errors.join('\n- ')); process.exit(1); }
   const dir = path.join(R, 'studio/sketch');
   fs.mkdirSync(dir, { recursive: true });
   const withNav = h => nav ? h.replace(/<\/body>(?![\s\S]*<\/body>)/, () => `<script>\n${nav}</script>\n</body>`) : h;
-  fs.writeFileSync(path.join(dir, 'energy-map.html'), withNav(html));
+  // kopia szkicu dla studia: noindex i bez referrera (publiczna treść, ale prywatny kontekst)
+  fs.writeFileSync(path.join(dir, 'energy-map.html'), withNav(html).replace('<head>', '<head>\n<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">'));
   const player = fs.readFileSync(path.join(R, 'src/studio-sketch.html'), 'utf8').replace('/*SEQS*/', () => 'const SEQS = ' + JSON.stringify(seqs) + ';');
-  fs.writeFileSync(path.join(dir, 'index.html'), withNav(player));
+  fs.writeFileSync(path.join(dir, 'index.html'), withNav(favicon ? player.replace('</title>', () => `</title>\n<link rel="icon" type="image/svg+xml" href="${favicon}">`) : player));
   console.log(`studio/sketch/index.html (lokalnie) · sekwencji slajdów: ${seqs.length} (szkice: ?preview)`);
 }
 

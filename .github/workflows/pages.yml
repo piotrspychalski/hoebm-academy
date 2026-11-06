@@ -15,7 +15,7 @@ jobs:
       - name: Testy szybkie (budowa, rejestr i claims, zakazane treści, kontrast tokenów, liczby bez źródła i strefa bezpieczna)
         run: bash tests/uruchom_wszystkie.sh
         env:
-          STUDIO_PATH: ${{ secrets.STUDIO_PATH }}   # studio online pod adresem znanym tylko autorowi (puste = bez studia)
+          STUDIO_PASSWORD: ${{ secrets.STUDIO_PASSWORD }}   # studio online zaszyfrowane hasłem (puste = bez studia online)
       - uses: actions/upload-pages-artifact@v3
         with: { path: dist }
   deploy:

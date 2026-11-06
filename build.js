@@ -19,8 +19,9 @@ const shell = fs.readFileSync(path.join(R, 'src/shell.html'), 'utf8');
 // Dwa wyniki z jednego źródła:
 //  dist/index.html   — publiczny (komputer + telefon); tylko ten katalog publikuje pages.yml
 //  studio/index.html — prywatne studio do nagrywania (telefon 9:16 na komputerze); lokalnie, katalog w .gitignore
-//  dist/<STUDIO_PATH>/index.html — to samo studio online pod adresem znanym tylko autorowi: ścieżka z sekretu GitHuba
-//    STUDIO_PATH (CI), nigdy w kodzie; strona z noindex, bez linków z wersji publicznej. Szkice i tak są widoczne tylko lokalnie.
+//  dist/studio/… — to samo studio online, ZASZYFROWANE hasłem z sekretu STUDIO_PASSWORD (tools/zamek.js). Adres jest jawny,
+//    tajne jest tylko hasło; bez hasła (lokalnie, PR) studio online nie powstaje. Od 0.11.0 zamiast tajnej ścieżki STUDIO_PATH,
+//    bo katalog z tajną ścieżką trafiał do publicznego artefaktu GitHub Pages.
 const studioJs = rd('src/studio');
 const slides = require('./tools/sketch-slides.js').compile(R);   // sekwencje slajdów dla studia nagrań
 const studioNav = fs.readFileSync(path.join(R, 'src/studio-nav.js'), 'utf8');   // pasek widoków prywatnych (tylko studio)
@@ -47,19 +48,19 @@ const html = fs.readFileSync(path.join(R, 'reference/energy-map.html'), 'utf8')
     .replace(/<title>[^<]*<\/title>/, () => `<title>Sports Academy · House of EBM</title>\n<link rel="icon" type="image/svg+xml" href="${favicon}">`);
 fs.writeFileSync(path.join(R, 'dist/index.html'), html);
 fs.writeFileSync(path.join(R, 'studio/index.html'), make(true));
-const SP = process.env.STUDIO_PATH;
-if (SP) {
-  if (!/^[A-Za-z0-9_-]{16,}$/.test(SP)) { console.error('STUDIO_PATH: min. 16 znaków [A-Za-z0-9_-]'); process.exit(1); }
-  fs.mkdirSync(path.join(R, 'dist', SP), { recursive: true });
-  fs.writeFileSync(path.join(R, 'dist', SP, 'index.html'), make(true));
-  console.log('studio online: dist/<STUDIO_PATH>/index.html');   // ścieżki nie wypisujemy
-}
 const pub = reg.figures.filter(f => f.status === 'published').length;
 console.log(`dist/index.html (Akademia = szkic) ${Math.round(html.length / 1024)} KB · studio/index.html (lokalnie) · rycin kanwy: ${reg.figures.length} (opublikowanych: ${pub})`);
 // Slajdy szkicu wzorcowego: data/slides/*.json → studio/sketch/index.html (lokalnie; tylko do nagrań, nie do dist/)
-require('./tools/sketch-slides.js').build(R, studioNav);
-// Studio slajdów online — obok studia rycin pod tą samą tajną ścieżką
-if (SP) {
-  fs.mkdirSync(path.join(R, 'dist', SP, 'sketch'), { recursive: true });
-  for (const f of fs.readdirSync(path.join(R, 'studio/sketch'))) fs.copyFileSync(path.join(R, 'studio/sketch', f), path.join(R, 'dist', SP, 'sketch', f));
+require('./tools/sketch-slides.js').build(R, studioNav, favicon);
+// Studio online: studio/ → dist/studio/; strony HTML studia zaszyfrowane, kopia szkicu (publiczna treść) jawna, z noindex
+const PASS = process.env.STUDIO_PASSWORD;
+if (PASS) {
+  if (PASS.length < 12) { console.error('STUDIO_PASSWORD: min. 12 znaków'); process.exit(1); }
+  const { lock } = require('./tools/zamek.js');
+  for (const [src, dst, title] of [['studio/index.html', 'dist/studio/index.html', 'Studio nagrań'], ['studio/sketch/index.html', 'dist/studio/sketch/index.html', 'Slajdy'], ['studio/sketch/energy-map.html', 'dist/studio/sketch/energy-map.html']]) {
+    fs.mkdirSync(path.dirname(path.join(R, dst)), { recursive: true });
+    const h = fs.readFileSync(path.join(R, src), 'utf8');
+    fs.writeFileSync(path.join(R, dst), title ? lock(h, PASS, title) : h);
+  }
+  console.log('studio online: dist/studio/ (zaszyfrowane hasłem)');
 }

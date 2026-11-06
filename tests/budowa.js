@@ -12,7 +12,15 @@ if (html.includes('href="../"')) errors.push('dist: logo prowadzi poza stronę (
 function studio_noindex() { return studio.includes('noindex'); }
 // Trzy widoki: publiczny dist/ (komputer + telefon) nie może zawierać studia; studio/ tylko lokalnie
 if (html.includes('function initStudio')) errors.push('dist: kod studia w wersji publicznej');
-if (fs.existsSync(path.join(R, 'dist/studio'))) errors.push('dist: studio pod jawną ścieżką /studio');
+// Studio online (dist/studio/, tylko z STUDIO_PASSWORD): strony studia wyłącznie zaszyfrowane
+if (fs.existsSync(path.join(R, 'dist/studio'))) {
+  for (const f of ['index.html', 'sketch/index.html']) {
+    const h = fs.readFileSync(path.join(R, 'dist/studio', f), 'utf8');
+    if (/initStudio|ROLKA|const SEQS/.test(h) || !h.includes("crypto.subtle.decrypt")) errors.push(`dist/studio/${f}: studio nie jest zaszyfrowane`);
+    if (!h.includes('noindex')) errors.push(`dist/studio/${f}: brak noindex`);
+  }
+}
+for (const d of fs.readdirSync(path.join(R, 'dist'))) if (/^studio-/.test(d)) errors.push('dist: katalog studia z dawną tajną ścieżką');
 if (html.includes('noindex')) errors.push('dist: noindex w wersji publicznej');
 if (!studio_noindex()) errors.push('studio: brak noindex');
 
