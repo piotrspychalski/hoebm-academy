@@ -1430,15 +1430,23 @@ const CHARTS = {
     // glikogen tlenowo 59–189 min przy 75% VO₂max [bergstrom1967]; tłuszcz ≈100 000 kcal [lange2004]
     const L = t => Math.log10(t) / 5;   // 1 s … 100 000 s
     const a = axes('how long it can carry hard work (log scale)', '', [[L(1), '1 s'], [L(10), '10 s'], [L(60), '1 min'], [L(600), '10 min'], [L(3600), '1 h'], [L(36000), '10 h']], []);
-    const rows = [['Phosphocreatine', 10, 15, C.ink2, 'fastest'], ['Glycolysis → lactate', 30, 90, C.blood, ''], ['Carbohydrate → CO₂', 59 * 60, 189 * 60, C.ink, ''], ['Fat → CO₂', 1e5, 1e5, C.marker, 'slowest']];
-    rows.forEach(([name, t0, t1, c, tag], i) => {
-      const y = a.Y(0.86 - i * 0.25);
-      tx(ch, name, a.X(0) + 4, y - 7, { size: 10.5, w: 600, fill: C.ink });
-      if (tag) tx(ch, tag, a.X(1), y - 7, { size: 10, it: true, anchor: 'end' });
-      if (t0 === t1) { el('rect', { x: a.X(0), y: y - 3, width: a.X(1) - a.X(0) - 6, height: 7, fill: c }, ch); el('path', { d: `M${a.X(1) - 6},${y - 7} l8,7.5 l-8,7.5 Z`, fill: c }, ch); tx(ch, '≈100,000 kcal stored: days', a.X(L(3600)), y + 16, { size: 9.5, it: true, anchor: 'middle' }); }
-      else { el('line', { x1: a.X(0), y1: y + 0.5, x2: a.X(L(t0)), y2: y + 0.5, stroke: c, 'stroke-width': 1.5, opacity: 0.5 }, ch); el('rect', { x: a.X(L(t0)), y: y - 3, width: Math.max(4, a.X(L(t1)) - a.X(L(t0))), height: 7, fill: c }, ch); }
+    // Każdy wiersz to jeden pasek od startu: pełny do dolnej granicy, wygaszany w zakresie, w którym źródło się kończy; liczby na końcu paska.
+    const rows = [['Phosphocreatine', 10, 15, C.ink2, '10–15 s'], ['Glycolysis → lactate', 30, 90, C.blood, '30–90 s'], ['Carbohydrate → CO₂', 59 * 60, 189 * 60, C.ink, '1–3 h'], ['Fat → CO₂', 1e5, 1e5, C.marker, 'days (≈100,000 kcal)']];
+    const defs = el('defs', {}, ch);
+    rows.forEach(([name, t0, t1, c, val], i) => {
+      const y = a.Y(0.9 - i * 0.24), x0 = a.X(0) + 1, xa = a.X(L(t0)), xb = a.X(L(t1));
+      tx(ch, name, a.X(0) + 4, y - 8, { size: 10.5, w: 600, fill: C.ink });
+      if (t0 === t1) {   // tłuszcz: poza skalą, strzałka w prawo
+        el('rect', { x: x0, y: y - 3.5, width: a.X(1) - x0 - 6, height: 7, fill: c }, ch); el('path', { d: `M${a.X(1) - 6},${y - 7.5} l8,7.5 l-8,7.5 Z`, fill: c }, ch);
+        tx(ch, val, a.X(1), y - 8, { size: 10, it: true, anchor: 'end' });
+      } else {
+        const g = el('linearGradient', { id: 'spd' + i, x1: 0, x2: 1 }, defs), f = (xa - x0) / (xb - x0);
+        el('stop', { offset: f, 'stop-color': c }, g); el('stop', { offset: 1, 'stop-color': c, 'stop-opacity': 0.12 }, g);
+        el('rect', { x: x0, y: y - 3.5, width: xb - x0, height: 7, fill: `url(#spd${i})` }, ch);
+        tx(ch, val, xb + 4, y + 3.5, { size: 10, it: true });
+      }
     });
-    return ['Speed vs size: how long each fuel lasts', '<span>Faster sources run out sooner. Carbohydrate → CO₂: Bergström’s range at 75% VO₂max (low to loaded glycogen).</span>'];
+    return ['Speed vs size: how long each fuel lasts', '<span>Rows run from the fastest ATP supply (top) to the slowest; faster sources run out sooner. The fading end of a bar is the range in which the source runs out. Carbohydrate → CO₂: Bergström’s range at 75% VO₂max (low to loaded glycogen).</span>'];
   },
   pcr() {
     // Odbudowa PCr po 30-s sprincie: dwufazowa; faza szybka t½ ≈21 s [harris1976], dopasowana do pomiarów Bogdanisa
