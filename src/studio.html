@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pl" class="studio">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Studio nagrań · Sports Academy</title>
+<link rel="icon" type="image/svg+xml" href="%FAVICON%">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Studio nagrań Sports Academy (prywatne; online zaszyfrowane hasłem). Szkic Akademii w ramce po lewej, podgląd rolki 9:16
+   w środku, panel ROLKA po prawej. Tokeny marki House of EBM — src/core/01-tokeny.js czyta je przez getComputedStyle. */
+:root {
+  --paper: #F2F0F1;        /* tło: jasny róż marki */
+  --ink: #1B5996;          /* linie, wykresy, tekst: granat marki */
+  --ink-2: #38305F;        /* tekst drugorzędny, legendy: ciemny fiolet marki */
+  --marker: #D9C0CF;       /* zakreślacz, wyróżnienia: ciemny róż marki */
+  --hair: #D9C0CF;         /* cienkie linie pomocnicze */
+  --blood: #C2185B;        /* krew — jedyny kolor spoza marki, znaczeniowy */
+  --display: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --line: 2px;             /* osie, ramki */
+  --line-bold: 6px;        /* krzywe danych */
+  --reveal-ms: 1200;       /* „Science made clear”: wyostrzenie tytułu */
+  --clean-ms: 1500;        /* #record: czysta klatka przed sekwencją */
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { color: var(--ink); font: 400 15px/1.5 var(--sans); }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--blood); outline-offset: 2px; }
+html.studio body { background: #000; overflow: hidden; padding: 0; }
+html.studio main { display: flex; justify-content: center; align-items: center; gap: 18px; padding: 0 330px 0 12px; margin: 0; max-width: none; height: 100vh; }
+html.studio .stagecol { display: flex; flex-direction: row; align-items: center; gap: 18px; }
+html.studio #skFrame { flex: none; border: 0; background: var(--paper); box-shadow: 0 0 0 1.5px #555; }
+html.studio .stage-wrap { flex: none; width: min(100vw, (100vh - 24px) * 9 / 16); }
+html.studio canvas#stage { border: 0; aspect-ratio: 9 / 16; }
+html.studio.hidecursor, html.studio.hidecursor * { cursor: none !important; }
+/* Przechwytywanie karty bierze piksele ramki szkicu — nic nie może jej przykryć: pomoc i pasek widoków znikają */
+html.capturing .studiohud, html.recording .studiohud, html.capturing .vnav { display: none !important; }
+.studiohud { position: fixed; left: 12px; top: 12px; z-index: 50; max-width: 300px; background: rgba(242, 240, 241, .94); color: var(--ink);
+  border: 1.5px solid var(--ink); padding: 10px 12px; font: 400 12px/1.6 var(--mono); }
+.studiohud b { font-weight: 600; }
+/* Panel ROLKA (nagrywanie z kamerą, 02-rolka.js) — poza płótnem, więc nie trafia do nagrania */
+.rolka { position: fixed; right: 12px; top: 12px; z-index: 50; width: 300px; max-height: calc(100vh - 24px); overflow: auto;
+  background: rgba(242, 240, 241, .96); color: var(--ink); border: 1.5px solid var(--ink); padding: 10px 12px; font: 400 12px/1.5 var(--mono); }
+.rolka[hidden], .rk-count[hidden] { display: none !important; }
+.rolka.min .rk-body { display: none; }
+.rolka p { margin: 8px 0 0; }
+.rolka button, .rolka select, .rolka input { font: inherit; color: inherit; }
+.rolka button { background: var(--paper); border: 1.5px solid var(--ink); padding: 3px 8px; cursor: pointer; }
+.rolka #rkHide { float: right; padding: 0 7px; }
+.rolka select { display: block; width: 100%; margin-top: 4px; }
+.rolka input[type=text] { width: 100%; box-sizing: border-box; }
+.rolka input[type=number] { width: 4.5em; }
+.rolka .rk-rec { background: var(--blood); color: #fff; border-color: var(--blood); font-weight: 600; width: 100%; padding: 7px; }
+.rolka .rk-help { color: var(--ink-2); }
+.rolka #rkMsg:empty { display: none; }
+.rk-count { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; font: 800 160px var(--display); color: #fff; text-shadow: 0 4px 24px #000; pointer-events: none; }
+.rk-seg { position: fixed; right: 12px; bottom: 12px; z-index: 50; font: 600 12px var(--mono); color: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <div class="stagecol">
+    <div class="stage-wrap"><canvas id="stage" width="1080" height="1920" role="img" aria-label="Podgląd rolki 9:16"></canvas></div>
+  </div>
+</main>
+<script>
+(() => {
+'use strict';
+const VERSION = '%VERSION%';
+const LOGO_SRC = '%LOGO%';
+const SEQS = %SEQS%;   // sekwencje slajdów szkicu (data/slides, rozwinięte przez tools/sketch-slides.js)
+/*CORE*/
+/*STUDIO*/
+})();
+</script>
+</body>
+</html>
