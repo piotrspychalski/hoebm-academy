@@ -88,7 +88,7 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 .pane ul { margin: 0; padding-left: 16px; }
 .pane li { margin: 4px 0; }
 .pane li::marker { color: var(--blood); }
-.ref { color: #7a7090; font-size: 12px; }
+.ref { color: #6e6585; font-size: 12px; }
 .pane p.lead { margin: 2px 0 10px; font-size: 14.5px; line-height: 1.55; color: var(--ink-2); }
 #tMore { margin-top: 10px; border-top: 1px solid var(--hair); }
 #tMore details { border-bottom: 1px solid var(--hair); padding: 5px 0; }
@@ -104,7 +104,7 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 .legend { display: flex; gap: 2px 12px; flex-wrap: wrap; font: 400 12px var(--sans); }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--ink); }
-.foot { display: flex; gap: 18px; align-items: baseline; padding: 4px 18px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--grey, #7a7090); }
+.foot { display: flex; gap: 18px; align-items: baseline; padding: 4px 18px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--grey, #6e6585); }
 .foot .linkbtn { font-size: 12px; }
 #srcDlg { max-width: min(760px, 92vw); max-height: 82dvh; border: 0; border-top: 3px solid var(--ink); padding: 14px 20px 18px; background: var(--paper); color: var(--ink-2); font-size: 12.5px; box-shadow: 0 10px 40px rgba(56,48,95,.25); }
 #srcDlg::backdrop { background: rgba(27,89,150,.18); }
@@ -265,7 +265,7 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 (() => {
 'use strict';
 const NS = 'http://www.w3.org/2000/svg';
-const C = { paper: '#F2F0F1', ink: '#1B5996', ink2: '#38305F', marker: '#D9C0CF', blood: '#C2185B', grey: '#7a7090', skin: '#EDE8EC' };
+const C = { paper: '#F2F0F1', ink: '#1B5996', ink2: '#38305F', marker: '#D9C0CF', blood: '#C2185B', grey: '#6e6585', skin: '#EDE8EC' };
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const MOBILE = () => matchMedia('(max-width: 899px), (pointer: coarse) and (max-height: 520px)').matches;
 const $ = id => document.getElementById(id);
