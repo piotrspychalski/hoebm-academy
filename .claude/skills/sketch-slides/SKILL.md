@@ -21,7 +21,7 @@ Odpowiadaj Piotrowi po polsku. Treść slajdów (`label`, `note`) po angielsku, 
    reszta dziedziczy się po poprzednim (jak w prezentacji). Nie zgaduj liczb, których Piotr nie podał: zostaw wartość domyślną / odziedziczoną
    i powiedz to w podsumowaniu. Jeśli opis jest niejednoznaczny co do tematu (np. „oddychanie” może być 3.2 albo 4.1), zapytaj jednym pytaniem.
 3. **Zapisz** `data/slides/<id>.json` (id = krótki kebab-case, równy nazwie pliku). Nowa sekwencja ma `"status": "draft"`;
-   `published` tylko na wyraźne polecenie Piotra (bez tego studio nakłada znak DRAFT i pokazuje sekwencję tylko z `?preview`).
+   `published` tylko na wyraźne polecenie Piotra. Studio (prywatne, online za hasłem) pokazuje też szkice — z dopiskiem DRAFT na liście i w HUD, bez znaku wodnego na obrazie.
 4. **Sprawdź**: `node tools/sketch-slides.js data/slides/<id>.json` — wypisuje rozwinięte slajdy (pełny stan każdego) albo błędy. Popraw błędy.
 5. **Zbuduj**: `node build.js` → `studio/sketch/index.html` (lokalnie, katalog w .gitignore).
 6. **Pokaż Piotrowi** krótką tabelę slajdów (nr · etykieta · co się zmienia) i jak odtworzyć:
@@ -104,10 +104,10 @@ Typowe słowa Piotra: „ściana” → 2.3 + `play: "wall"`; „oddychanie / pr
 W studiu nagrań (`studio/index.html`, online `…/sports-academy/studio/` po haśle) wybierz sekwencję w panelu ROLKA.
 Na scenie „animacja” **spacja / → / pilot** = następny slajd, **←** = poprzedni, a „dalej” po ostatnim slajdzie kończy nagranie
 i zapisuje MP4. Szkic w studiu nagrań ma układ telefonu (ramka 500 × 515 albo 450 × 800), więc `aspect` sekwencji jest tam
-pomijany, a `pane` / `zoom` mogą wyglądać inaczej niż w odtwarzaczu 16:9. Szkice sekwencji (`draft`) tylko lokalnie z `?preview`.
+pomijany, a `pane` / `zoom` mogą wyglądać inaczej niż w odtwarzaczu 16:9. Szkice sekwencji (`draft`) są na liście z dopiskiem DRAFT.
 
 ## Odtwarzacz slajdów (16:9) — klawisze
 
 ← → slajd (PageUp/PageDown z pilota też) · **R** albo klik w ramkę: restart od slajdu 1 z czystą klatką 1,5 s ·
 **Space** pauza (przejścia i odtwarzanie czasu) · **S** strefa bezpieczna (16:9: 5% marginesu; 9:16: strefa Reels jak w studiu rycin) ·
-**F** pełny ekran · **H** pomoc / HUD. Bez `?seq=` HUD pokazuje listę sekwencji. Szkice (`draft`) tylko lokalnie z `?preview`, ze znakiem DRAFT.
+**F** pełny ekran · **H** pomoc / HUD. Bez `?seq=` HUD pokazuje listę sekwencji. Szkice (`draft`) z dopiskiem DRAFT w HUD.

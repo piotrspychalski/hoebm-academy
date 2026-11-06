@@ -223,9 +223,13 @@ function clearMedia() {
 
 // ── Nagrywanie
 const MIME = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-function startRec() {
+async function startRec() {
   if (!window.MediaRecorder) return rolkaMsg('Ta przeglądarka nie nagrywa (MediaRecorder). Użyj Chrome.');
-  if (!ROLKA.cap) return rolkaMsg('Najpierw „Przechwyć animację (ta karta)” — bez tego scena 4 byłaby pusta.');
+  if (!ROLKA.cap) {   // jedno kliknięcie: najpierw przechwycenie animacji (Chrome pyta o tę kartę), potem nagranie
+    rolkaMsg('Chrome zapyta o udostępnienie — wybierz „Ta karta” i „Udostępnij”.');
+    await startCapture();
+    if (!ROLKA.cap) return rolkaMsg('Bez przechwyconej animacji nie nagrywam (scena 4 byłaby pusta). Kliknij „Nagraj rolkę” i wybierz tę kartę.');
+  }
   if (ROLKA.rec || !$('rkCount').hidden) return;
   ROLKA.frozen = null; ROLKA.frozen = reelTitle();
   $('rkPanel').hidden = true; $('rkCount').hidden = false;
@@ -292,9 +296,9 @@ function setFrame() {
     rolkaMsg(`Okno ma ${innerHeight} px wysokości — kadr „pełne 9:16” potrzebuje ${FRAMES.full.h + 24}. Używam strefy Reels.`);
   }
   const f = FRAMES[ROLKA.opt.frame] || FRAMES.reel, fr = $('skFrame'), panel = $('rkPanel');
-  const side = panel && !panel.classList.contains('min') ? 330 : 60;
+  const side = panel && !panel.classList.contains('min') ? 284 : 60;
   fr.style.width = f.w + 'px'; fr.style.height = f.h + 'px';
-  const stageW = Math.max(160, Math.min((innerHeight - 24) * 9 / 16, innerWidth - side - 12 - 18 - f.w));
+  const stageW = Math.max(140, Math.min((innerHeight - 24) * 9 / 16, innerWidth - side - 12 - 18 - f.w));
   $('stage').closest('.stage-wrap').style.width = stageW + 'px';
   // ostrzeżenie tylko przy zmianie kadru (nie przy zmianie rozmiaru okna, np. pasek „udostępniasz tę kartę”)
   if (ROLKA.cap && ROLKA.lastFrame && ROLKA.lastFrame !== ROLKA.opt.frame && !ROLKA.cropped) rolkaMsg('Zmieniono kadr — przechwyć animację ponownie.');
@@ -305,15 +309,16 @@ function initRolka() {
   // Ramka ze szkicem (Akademia) obok podglądu rolki
   const fr = el('iframe', { id: 'skFrame', src: './sketch/energy-map.html', title: 'Animacja Akademii (szkic)' });
   $('stage').closest('.stage-wrap').before(fr);
-  const seqs = SEQS.filter(q => q.status === 'published' || PREVIEW);
+  const seqs = SEQS;   // studio prywatne (online za hasłem): wszystkie sekwencje, szkice z dopiskiem DRAFT
   const radio = (name, val, label) => `<label><input type="radio" name="${name}" value="${val}"> ${label}</label>`;
   const panel = el('div', { id: 'rkPanel', class: 'rolka' });
   panel.innerHTML = `<b>ROLKA</b> · nagranie z kamerą <button type="button" id="rkHide" aria-label="Zwiń">–</button>
     <div class="rk-body">
+    <p><button type="button" id="rkRec" class="rk-rec">● Nagraj rolkę (N)</button></p>
     <p><button type="button" id="rkCapBtn"></button></p>
     <p>Kadr animacji: ${radio('rkFrame', 'reel', FRAMES.reel.label)}<br>${radio('rkFrame', 'full', FRAMES.full.label)}</p>
     <p><label>Sekwencja slajdów <select id="rkSeq"><option value="">— bez sekwencji (ręcznie) —</option>${seqs.map(q => `<option value="${q.id}">${q.title}${q.status !== 'published' ? ' · DRAFT' : ''}</option>`).join('')}</select></label>
-       <span id="rkSlide"></span>${SEQS.length > seqs.length ? '<br><i>Szkice sekwencji tylko lokalnie z ?preview.</i>' : ''}</p>
+       <span id="rkSlide"></span>${SEQS.length ? '' : '<br><i>Brak sekwencji — poproś Claude o slajdy (skill sketch-slides).</i>'}</p>
     <p><label>Tytuł rolki <input type="text" id="rkTitle" placeholder="puste = nazwa tematu" maxlength="70"></label></p>
     <p><button type="button" id="rkCamBtn"></button></p>
     <p id="rkDev" hidden><select id="rkCam" aria-label="Kamera"></select><select id="rkMic" aria-label="Mikrofon"></select></p>
@@ -324,7 +329,6 @@ function initRolka() {
     <p>Układ zdjęcia: ${radio('rkVar', 'half', 'pół ekranu')} ${radio('rkVar', 'full', 'pełny ekran')}</p>
     <p><label>Tytuł, s <input type="number" id="rkDurT" min="1" max="10" step="0.5"></label>
        <label>Zdjęcie, s <input type="number" id="rkDurM" min="1" max="20" step="0.5"></label></p>
-    <p><button type="button" id="rkRec" class="rk-rec">● Nagraj rolkę (N)</button></p>
     <p class="rk-help">Kolejność: tytuł → zdjęcie → twarz → animacja. Dalej: spacja / → / pilot (na animacji: następny slajd; po ostatnim — koniec i zapis). Esc — przerwij bez zapisu. Podgląd: 1–4, 0 wyłącz. W trakcie nagrania klawisze działają także z kursorem w szkicu.</p>
     <p id="rkMsg" role="status"></p></div>`;
   document.body.append(panel, el('div', { id: 'rkCount', class: 'rk-count', hidden: '' }), el('div', { id: 'rkSeg', class: 'rk-seg' }));

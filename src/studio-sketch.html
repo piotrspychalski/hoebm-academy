@@ -36,7 +36,7 @@ html.hidecursor, html.hidecursor * { cursor: none !important; }
 const params = new URLSearchParams(location.search);
 const LOCAL = ['localhost', '127.0.0.1', '[::1]', ''].includes(location.hostname);
 const PREVIEW = LOCAL && params.has('preview');
-const visible = SEQS.filter(q => q.status === 'published' || PREVIEW);
+const visible = SEQS;   // studio prywatne (online za hasłem): wszystkie sekwencje; szkic oznaczony tylko w HUD
 const CLEAN_MS = 1500;   // jak --clean-ms w studiu rycin: czysta klatka przed sekwencją
 const $ = id => document.getElementById(id), root = document.documentElement;
 const seq = visible.find(q => q.id === params.get('seq')) || (visible.length === 1 ? visible[0] : null);
@@ -56,7 +56,7 @@ function buildSafe() {
     .map(([a, b, c, d]) => `<div style="left:${P(a)};top:${P(b)};width:${P(c - a)};height:${P(d - b)}"></div>`).join('');
 }
 buildSafe();
-$('draft').hidden = !seq || seq.status === 'published';
+$('draft').hidden = true;   // bez znaku wodnego na obrazie — DRAFT tylko w HUD (nagrania)
 
 function renderHud() {
   if (!seq) {
