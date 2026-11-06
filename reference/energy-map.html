@@ -268,7 +268,7 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
     <div class="ctl"><span class="lab">Glycogen at start</span><span class="seg" id="status"><button type="button" data-v="low">low</button><button type="button" data-v="normal">normal</button><button type="button" data-v="loaded">loaded</button></span></div>
     <div class="ctl"><label for="alt">Altitude</label><div class="slider short"><input id="alt" type="range" min="0" max="5000" step="100" value="0"><div class="ticks" id="altTicks"></div></div><output id="altOut"></output></div>
     <div class="ctl"><span class="lab">Days there</span><input class="num" id="days" type="number" min="0" max="14" value="0" aria-label="Days at this altitude"><span class="lab">Acetazolamide</span><span class="seg" id="acz"><button type="button" data-v="0">no</button><button type="button" data-v="1">yes</button></span></div>
-    <div class="ctl"><span class="lab">Athlete</span><input class="num" id="vo2max" type="number" min="25" max="90" value="55" aria-label="VO2max in ml per kg per min"><span>ml/kg/min VO₂max,</span><input class="num" id="mass" type="number" min="40" max="130" value="70" aria-label="Body mass in kg"><span>kg</span><output id="ftpOut" title="Estimated: power at OBLA (Latin 1993 cycling equation). A measured FTP can differ by about ±45 W."></output></div>
+    <div class="ctl"><span class="lab">Athlete</span><input class="num" id="vo2max" type="number" min="25" max="90" value="55" aria-label="VO2max in ml per kg per min"><span>ml/kg/min VO₂max,</span><input class="num" id="mass" type="number" min="40" max="130" value="70" aria-label="Body mass in kg"><span>kg, FTP</span><input class="num" id="ftp" type="number" min="50" max="600" step="1" aria-label="FTP in watts; leave empty to use the estimate" title="Your measured FTP in watts. Empty: estimated as the power at OBLA (Latin 1993 cycling equation), which in a single rider can be off by about ±45 W."><span>W</span><output id="ftpOut"></output></div>
   </div>
 </div>
 
@@ -473,7 +473,7 @@ const SRC = {
    „Low” = ilustracyjne (połowa), bez źródła liczbowego. Udział glikogenu w CHO i glukoneogeneza — ilustracyjne.          */
 const STATUS = { low: { m: 200, l: 45 }, normal: { m: 400, l: 90 }, loaded: { m: 720, l: 120 } };
 const WORK = 0.6;   // część glikogenu w pracujących mięśniach (nogi) — ilustracyjnie; reszta (ramiona, tułów) jest dla nich niedostępna
-const S = { pace: 65, p: 65, alt: 0, days: 0, acz: false, t: 0, gph: 60, comp: 'gf', status: 'normal', vo2max: 55, mass: 70, topic: 'vo2', organ: 'blood', playing: false };
+const S = { pace: 65, p: 65, alt: 0, days: 0, acz: false, t: 0, gph: 60, comp: 'gf', status: 'normal', vo2max: 55, mass: 70, ftp: 0, topic: 'vo2', organ: 'blood', playing: false };
 const TMAX = 300, PMAX = 150;   // intensywność do 150% VO₂max (ponad 100% = część beztlenowa)
 const LT = () => clamp(50 + 0.45 * (S.vo2max - 30), 50, 82);     // położenie LT1: wyżej u wytrenowanych (kierunek; liczby nie pokazujemy)
 const OBLA = () => Math.min(97, LT() + 14);
@@ -482,7 +482,9 @@ const OBLA = () => Math.min(97, LT() + 14);
 // FTP ≈ moc przy 4 mmol/L (OBLA) [jeffries2021] ≈ MLSS [borszcz2019]; na wysokości próg leży przy tym samym % niższego VO₂max,
 // więc te same waty to wyższy % FTP [wehrlin2006]. % FTP nie zależy od nachylenia równania, tylko od wyrazu wolnego.
 const watts = p => Math.max(0, (p / 100 * S.vo2max * S.mass - 3.5 * S.mass - 260) / (1.9 * 6.12));
-const FTPw = (alt = 0) => watts(OBLA() * VF(alt));
+// FTP wpisane przez zawodnika (S.ftp, W, poziom morza) zastępuje szacunek; na wysokości spada w tej samej proporcji co szacunek
+const FTPest = (alt = 0) => watts(OBLA() * VF(alt));
+const FTPw = (alt = 0) => S.ftp ? S.ftp * (alt ? FTPest(alt) / FTPest() : 1) : FTPest(alt);
 // %HRmax: prosta przez punkty Swaina (40/60/80/85% VO₂max → 63/76/89/92% HRmax, młodzi dorośli, poziom morza) [swain1994]
 const hrPct = p => Math.min(100, Math.round(0.646 * p + 37.2));
 /* WYSOKOŚĆ I ODDYCHANIE
@@ -1655,7 +1657,8 @@ function renderControls() {
   $('intMain').textContent = main.length > 19 ? main.replace(' → ', '→') : main;
   $('intSub').textContent = `${S.p}% VO₂max` + (S.p < 15 ? '' : hr >= 100 ? ' · HR max' : ` · ${hr}% HRmax`);
   $('intOut').title = `${zone(S.p)}. % FTP is % of sea-level FTP${hi ? '; “here” is % of the lower FTP at this altitude, and the second line is at this altitude too' : ''}. FTP ≈ power at OBLA; % HRmax from a sea-level average.`;
-  $('ftpOut').textContent = `FTP ≈ ${Math.round(FTPw())} W` + (hi ? `, ${Math.round(FTPw(S.alt))} W here` : '');
+  $('ftp').placeholder = Math.round(FTPest());
+  $('ftpOut').textContent = (S.ftp ? '' : 'est.') + (hi ? `${S.ftp ? '' : ','} ${Math.round(FTPw(S.alt))} W here` : '');
   $('tteOut').textContent = 'TTE ' + fmtDur(TTE());
   $('altOut').textContent = S.alt ? `${S.alt} m` : 'sea level';
   $('alt').value = S.alt;
@@ -1678,7 +1681,7 @@ $('srcOpen').addEventListener('click', openSrc);
 document.querySelector('.mobnav [data-src]').addEventListener('click', openSrc);
 $('srcClose').addEventListener('click', () => srcDlg.close());
 srcDlg.addEventListener('click', ev => { if (ev.target === srcDlg) srcDlg.close(); });
-$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~75% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE: a fatigue curve through the sourced points (LT1, MLSS, CP, VO₂max; interpolated, TTE at LT1 scaled by VO₂max; starting glycogen scales it by Bergström’s ratios). Up to OBLA, TTE is the glycogen wall: the glycogen pool in the working fibres is sized so that, without eating, the wall falls on the curve; eating lengthens it ×1.33 at ≥60 g/h absorbed (Coyle 1986). Above OBLA, TTE is the shorter of the curve and the wall; VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity; the PCr refilling curve is a two-phase fit to Bogdanis’s measurements; anaerobic carbohydrate use above VO₂max; FTP placed exactly at OBLA (a single rider can differ by tens of watts); watts from the Latin 1993 equation, which was measured up to 900 kgm/min (≈147 W) and is extended above that, and is used as-is for women; above 100% VO₂max, watts are the oxygen demand extended past VO₂max; % HRmax is a straight line through Swain’s sea-level averages, not adjusted for altitude, heat or drift during long efforts; at altitude the threshold is kept at the same % of the lower VO₂max; above OBLA any carbohydrate intake acts like the 2.8% power gain from a mouth rinse (Carter 2004), read off the TTE curve, in full for efforts of 45 min or more and fading to none at 20 min (the 20 and 45 min limits are illustrative).</li>';
+$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~75% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE: a fatigue curve through the sourced points (LT1, MLSS, CP, VO₂max; interpolated, TTE at LT1 scaled by VO₂max; starting glycogen scales it by Bergström’s ratios). Up to OBLA, TTE is the glycogen wall: the glycogen pool in the working fibres is sized so that, without eating, the wall falls on the curve; eating lengthens it ×1.33 at ≥60 g/h absorbed (Coyle 1986). Above OBLA, TTE is the shorter of the curve and the wall; VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity; the PCr refilling curve is a two-phase fit to Bogdanis’s measurements; anaerobic carbohydrate use above VO₂max; FTP, when not entered, placed exactly at OBLA (a single rider can differ by tens of watts); an entered FTP changes only the % FTP readouts, not the thresholds; watts from the Latin 1993 equation, which was measured up to 900 kgm/min (≈147 W) and is extended above that, and is used as-is for women; above 100% VO₂max, watts are the oxygen demand extended past VO₂max; % HRmax is a straight line through Swain’s sea-level averages, not adjusted for altitude, heat or drift during long efforts; at altitude the threshold is kept at the same % of the lower VO₂max; above OBLA any carbohydrate intake acts like the 2.8% power gain from a mouth rinse (Carter 2004), read off the TTE curve, in full for efforts of 45 min or more and fading to none at 20 min (the 20 and 45 min limits are illustrative).</li>';
 
 /* ───────────── INTERAKCJA ───────────── */
 function renderNav() {
@@ -1708,6 +1711,8 @@ $('comp').addEventListener('click', ev => { const b = ev.target.closest('button'
 $('status').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) { S.status = b.dataset.v; render(); } });
 $('vo2max').addEventListener('change', ev => { S.vo2max = clamp(+ev.target.value || 55, 25, 90); ev.target.value = S.vo2max; render(); });
 $('mass').addEventListener('change', ev => { S.mass = clamp(+ev.target.value || 70, 40, 130); ev.target.value = S.mass; render(); });
+// FTP: puste pole = szacunek z modelu (placeholder pokazuje jego wartość)
+$('ftp').addEventListener('change', ev => { const v = Math.round(+ev.target.value); S.ftp = v ? clamp(v, 50, 600) : 0; ev.target.value = S.ftp || ''; render(); });
 // Klik w narząd przenosi nawigację: zostaje bieżący temat, jeśli dotyczy tego narządu; inaczej temat główny narządu
 const ORG_TOPIC = { gut: 'gut', liver: 'glycogen', blood: 'vo2', lungs: 'vent', kidney: 'acz', adipose: 'fuel', muscle: 'fuel', mito: 'mito' };
 const pickOrgan = (k, open = true) => {
@@ -1766,7 +1771,7 @@ $('play').addEventListener('click', () => { if (S.playing) return stopPlay(); if
    · adres #s=<JSON slajdu>. Klawisz C kopiuje bieżący stan jako JSON slajdu (do pliku sekwencji w data/slides/).
    Pola: README w .claude/skills/sketch-slides/SKILL.md; walidacja przy budowie: tools/sketch-slides.js. */
 const SLIDE_NUM = { intensity: ['pace', 5, PMAX], time: ['t', 0, TMAX], gph: ['gph', 0, 120], altitude: ['alt', 0, 5000] };
-const SLIDE_INT = { days: ['days', 0, 14], vo2max: ['vo2max', 25, 90], mass: ['mass', 40, 130] };
+const SLIDE_INT = { days: ['days', 0, 14], vo2max: ['vo2max', 25, 90], mass: ['mass', 40, 130], ftp: ['ftp', 0, 600] };
 let TW = null, HOLD = false, PLAY_TO = null, PLAY_REQ = null, WARN = [];
 function topicId(v) {
   const s = String(v).trim(), lc = s.toLowerCase();
@@ -1808,7 +1813,7 @@ function applySlide(st = {}, tween = 0) {
   if (st.comp != null) { if (['glc', 'mal', 'suc', 'gf'].includes(st.comp)) S.comp = st.comp; else warn.push(`unknown comp "${st.comp}"`); }
   if (st.glycogen != null) { if (STATUS[st.glycogen]) S.status = st.glycogen; else warn.push(`unknown glycogen "${st.glycogen}"`); }
   if (st.acetazolamide != null) S.acz = !!st.acetazolamide;
-  $('days').value = S.days; $('vo2max').value = S.vo2max; $('mass').value = S.mass;
+  $('days').value = S.days; $('vo2max').value = S.vo2max; $('mass').value = S.mass; $('ftp').value = S.ftp || '';
   if (tween > 0 && !REDUCE && Object.keys(to).some(k => to[k] !== S[k])) TW = { from: Object.fromEntries(Object.keys(to).map(k => [k, S[k]])), to, t0: performance.now(), ms: tween };
   else Object.assign(S, to);
   render();
@@ -1825,6 +1830,7 @@ function applySlide(st = {}, tween = 0) {
 function slideState() {
   const st = { topic: topicNum(S.topic), organ: S.organ, intensity: S.pace, time: Math.round(S.t), gph: S.gph, comp: S.comp, glycogen: S.status,
     altitude: S.alt, days: S.days, acetazolamide: S.acz, vo2max: S.vo2max, mass: S.mass };
+  if (S.ftp) st.ftp = S.ftp;
   const open = [...$('tMore').querySelectorAll('details')].map((d, i) => d.open ? i + 1 : 0).filter(Boolean);
   if (open.length) st.open = open;
   if ($('detWrap').classList.contains('zoom')) st.zoom = true;

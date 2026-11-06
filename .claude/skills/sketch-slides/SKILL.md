@@ -67,6 +67,7 @@ Odpowiadaj Piotrowi po polsku. Treść slajdów (`label`, `note`) po angielsku, 
 | `acetazolamide` | `true` / `false` | tak |
 | `vo2max` | 25–90 ml/kg/min | tak |
 | `mass` | 40–130 kg | tak |
+| `ftp` | 50–600 W (FTP zawodnika); `0` = szacunek modelu (moc przy OBLA) | tak |
 | `open` | sekcje lewego panelu: numery od 1 (`[1, 3]`), fragmenty nagłówków (`["supplementation"]`) albo `"all"` | nie (brak = zamknięte) |
 | `zoom` | `true` = rycina narządu na pełnym ekranie | nie |
 | `play` | `true` (czas do końca osi), liczba minut, albo `"wall"` (do ściany glikogenowej); start od `time` slajdu | nie |
@@ -76,7 +77,7 @@ Odpowiadaj Piotrowi po polsku. Treść slajdów (`label`, `note`) po angielsku, 
 | `note` | notatka dla mówiącego, tylko w HUD (nie trafia do nagrania) | — |
 
 Wartości domyślne szkicu (pierwszy slajd startuje od nich): intensity 65, time 0, gph 60, comp gf, glycogen normal,
-altitude 0, days 0, acetazolamide false, vo2max 55, mass 70, topic 1.1.
+altitude 0, days 0, acetazolamide false, vo2max 55, mass 70, ftp 0 (szacunek), topic 1.1.
 
 **Zasady treści**: bez dawek i nazw handlowych w `label`/`note` (sprawdza to walidator listą z `tests/zakazane.json`);
 liczby w notatkach tylko takie, które szkic już pokazuje ze źródłem. Slajd nie dodaje treści do ryciny — pokazuje jej stan.
