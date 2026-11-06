@@ -10,7 +10,7 @@
 <style>
 /* SZKIC v3 (reference): anatomiczna mapa energii. Tokeny jak w src/shell.html.
    Układ: cała strona w jednym ekranie bez przewijania. Komputer: panel tematu (lewy) | mapa | panel narządu (prawy).
-   Telefon: mapa na cały ekran, panele jako arkusze nakładane od dołu (jak SURGITOME).
+   Telefon: mapa na cały ekran; Topic wysuwa się z lewej, Organ z prawej, Intake z góry.
    Liczby: zweryfikowane w literaturze 2026-11-05 (lista SRC w skrypcie); kształty krzywych ilustracyjne. */
 :root {
   --paper: #F2F0F1; --ink: #1B5996; --ink-2: #38305F; --marker: #D9C0CF; --hair: #D9C0CF; --blood: #C2185B;
@@ -180,6 +180,11 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
   .mobnav .linkbtn { font: 600 12.5px var(--sans); }
   .pane.settings { top: 0; bottom: auto; border-top: 0; border-bottom: 2px solid var(--ink); box-shadow: 0 6px 20px rgba(56,48,95,.12); transform: translateY(-105%); }
   .pane.settings.open { transform: none; }
+  /* Topic z lewej, Organ z prawej (jak kolumny na komputerze); pełna wysokość nad dokiem */
+  .pane.left, .pane.right { top: 0; bottom: calc(46px + env(safe-area-inset-bottom)); max-height: none; width: min(88vw, 440px); border-top: 0; }
+  .pane.left { left: 0; right: auto; border-right: 2px solid var(--ink); box-shadow: 6px 0 20px rgba(56,48,95,.12); transform: translateX(-105%); }
+  .pane.right { right: 0; left: auto; border-left: 2px solid var(--ink); box-shadow: -6px 0 20px rgba(56,48,95,.12); transform: translateX(105%); }
+  .pane.left.open, .pane.right.open { transform: none; }
   body.sheet #scrim { display: block; position: fixed; inset: 0; background: rgba(27,89,150,.14); z-index: 15; }
   #settingsSlot { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 4px 0 8px; }
   #settingsSlot .slider { width: 220px; flex: none; }
