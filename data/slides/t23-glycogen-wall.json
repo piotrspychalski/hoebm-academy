@@ -1,0 +1,48 @@
+{
+  "id": "t23-glycogen-wall",
+  "title": "Glycogen and the wall",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "2.3",
+      "intensity": 75,
+      "glycogen": "low",
+      "gph": 0,
+      "label": "75% VO₂max, low glycogen, no food",
+      "pane": "topic"
+    },
+    {
+      "play": "wall",
+      "label": "Run to the wall: low stores"
+    },
+    {
+      "glycogen": "normal",
+      "time": 0,
+      "play": "wall",
+      "label": "Normal stores"
+    },
+    {
+      "glycogen": "loaded",
+      "time": 0,
+      "play": "wall",
+      "label": "Loaded stores"
+    },
+    {
+      "gph": 60,
+      "time": 0,
+      "play": "wall",
+      "label": "Loaded and eating 60 g/h"
+    },
+    {
+      "label": "Muscle glycogen left",
+      "pane": "organ"
+    },
+    {
+      "organ": "liver",
+      "label": "Liver keeps blood glucose up",
+      "pane": "organ"
+    }
+  ]
+}

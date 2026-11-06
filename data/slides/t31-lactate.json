@@ -1,0 +1,37 @@
+{
+  "id": "t31-lactate",
+  "title": "Lactate, LT1 and OBLA",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "3.1",
+      "intensity": 50,
+      "label": "Below LT1",
+      "pane": "topic"
+    },
+    {
+      "intensity": 70,
+      "label": "Around LT1",
+      "pane": "topic"
+    },
+    {
+      "intensity": 90,
+      "label": "Above OBLA",
+      "pane": "topic"
+    },
+    {
+      "label": "Blood lactate",
+      "pane": "organ"
+    },
+    {
+      "organ": "liver",
+      "label": "The liver recycles lactate",
+      "pane": "organ"
+    },
+    {
+      "label": "Map: lactate between organs"
+    }
+  ]
+}

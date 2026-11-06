@@ -1,0 +1,40 @@
+{
+  "id": "t21-gut-blood-flow",
+  "title": "Gut blood flow during exercise",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "2.1",
+      "intensity": 30,
+      "label": "Easy: the gut is well perfused"
+    },
+    {
+      "label": "Gut blood flow at easy pace",
+      "pane": "organ"
+    },
+    {
+      "intensity": 90,
+      "label": "Hard: gut blood flow falls",
+      "pane": "organ"
+    },
+    {
+      "label": "Long: 2.5 h at 65% VO₂max",
+      "pane": "organ",
+      "intensity": 65,
+      "time": 150
+    },
+    {
+      "label": "Cardiac output is redistributed",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "Gut symptoms and gut training",
+      "pane": "topic"
+    }
+  ]
+}

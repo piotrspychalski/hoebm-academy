@@ -1,0 +1,42 @@
+{
+  "id": "t42-ams",
+  "title": "Acute mountain sickness",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "4.2",
+      "altitude": 2500,
+      "days": 0,
+      "label": "Arriving at 2500 m",
+      "pane": "topic"
+    },
+    {
+      "altitude": 3500,
+      "label": "3500 m",
+      "pane": "topic"
+    },
+    {
+      "altitude": 4500,
+      "label": "4500 m",
+      "pane": "topic"
+    },
+    {
+      "days": 3,
+      "label": "After a few days",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "Risk, prevention and warning signs",
+      "pane": "topic"
+    },
+    {
+      "label": "Lungs at altitude",
+      "pane": "organ"
+    }
+  ]
+}

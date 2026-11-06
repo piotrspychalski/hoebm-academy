@@ -1,0 +1,42 @@
+{
+  "id": "t53-women",
+  "title": "Women and energy availability",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "5.3",
+      "label": "Sex differences in fuel use",
+      "pane": "topic"
+    },
+    {
+      "label": "Adipose tissue",
+      "pane": "organ"
+    },
+    {
+      "intensity": 40,
+      "label": "Easy pace",
+      "pane": "topic"
+    },
+    {
+      "intensity": 80,
+      "label": "Hard pace",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "Sex differences and the menstrual cycle",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        2
+      ],
+      "label": "Low energy availability and REDs",
+      "pane": "topic"
+    }
+  ]
+}

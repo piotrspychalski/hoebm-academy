@@ -1,0 +1,37 @@
+{
+  "id": "t54-supplements",
+  "title": "Supplements with evidence",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "5.4",
+      "label": "Few supplements have good evidence",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "How they work, how much they help",
+      "pane": "topic"
+    },
+    {
+      "topic": "1.5",
+      "open": [
+        "supplementation"
+      ],
+      "label": "Creatine: topic 1.5",
+      "pane": "topic"
+    },
+    {
+      "topic": "5.4",
+      "label": "Back to supplements: the working muscle",
+      "pane": "organ"
+    },
+    {
+      "label": "Map"
+    }
+  ]
+}

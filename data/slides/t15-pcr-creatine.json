@@ -1,0 +1,43 @@
+{
+  "id": "t15-pcr-creatine",
+  "title": "Phosphocreatine and creatine",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "1.5",
+      "intensity": 60,
+      "label": "Steady pace: PCr stays full",
+      "pane": "organ"
+    },
+    {
+      "intensity": 150,
+      "label": "Sprint: PCr drops in seconds",
+      "pane": "organ"
+    },
+    {
+      "label": "The instant ATP reserve",
+      "pane": "topic"
+    },
+    {
+      "intensity": 40,
+      "label": "Recovery needs oxygen",
+      "pane": "organ"
+    },
+    {
+      "open": [
+        "where creatine"
+      ],
+      "label": "Where creatine comes from",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        "supplementation"
+      ],
+      "label": "Creatine supplementation",
+      "pane": "topic"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "t32-breathing",
+  "title": "Breathing, thresholds and TTE",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "3.2",
+      "intensity": 50,
+      "label": "Easy breathing",
+      "pane": "organ"
+    },
+    {
+      "intensity": 80,
+      "label": "Past the first threshold",
+      "pane": "organ"
+    },
+    {
+      "intensity": 100,
+      "label": "Near VO₂max",
+      "pane": "organ"
+    },
+    {
+      "label": "Thresholds and time to exhaustion",
+      "pane": "topic"
+    },
+    {
+      "intensity": 120,
+      "label": "Above VO₂max: fast but short",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "Time to exhaustion",
+      "pane": "topic"
+    }
+  ]
+}

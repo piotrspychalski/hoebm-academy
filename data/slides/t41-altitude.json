@@ -1,0 +1,45 @@
+{
+  "id": "t41-altitude",
+  "title": "Altitude and hypoxia",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "4.1",
+      "intensity": 70,
+      "altitude": 0,
+      "label": "Sea level, 70% VO₂max",
+      "pane": "organ"
+    },
+    {
+      "altitude": 2500,
+      "label": "2500 m",
+      "pane": "organ"
+    },
+    {
+      "altitude": 4000,
+      "label": "4000 m",
+      "pane": "organ"
+    },
+    {
+      "label": "Same pace, bigger share of VO₂max",
+      "pane": "topic"
+    },
+    {
+      "days": 7,
+      "label": "After a week at altitude",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        2
+      ],
+      "label": "Acclimatisation: hours, days, weeks",
+      "pane": "topic"
+    },
+    {
+      "label": "Map at 4000 m"
+    }
+  ]
+}

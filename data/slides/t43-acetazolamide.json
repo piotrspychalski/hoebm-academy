@@ -1,0 +1,43 @@
+{
+  "id": "t43-acetazolamide",
+  "title": "Acetazolamide and the kidney",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "4.3",
+      "altitude": 3500,
+      "days": 1,
+      "acetazolamide": false,
+      "label": "Kidney at 3500 m",
+      "pane": "organ"
+    },
+    {
+      "acetazolamide": true,
+      "label": "With acetazolamide",
+      "pane": "organ"
+    },
+    {
+      "label": "How it works",
+      "pane": "topic"
+    },
+    {
+      "days": 5,
+      "label": "Days at altitude",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "Side effects and use",
+      "pane": "topic"
+    },
+    {
+      "organ": "lungs",
+      "label": "Breathing responds more",
+      "pane": "organ"
+    }
+  ]
+}

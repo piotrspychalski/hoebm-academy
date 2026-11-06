@@ -1,0 +1,35 @@
+{
+  "id": "t11-vo2max-intensity",
+  "title": "VO₂max and intensity",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "1.1",
+      "intensity": 40,
+      "label": "Easy pace: 40% VO₂max"
+    },
+    {
+      "label": "What % of VO₂max means",
+      "pane": "topic"
+    },
+    {
+      "intensity": 85,
+      "label": "Hard: 85% VO₂max",
+      "pane": "topic"
+    },
+    {
+      "label": "Heart & blood: VO₂ now vs max",
+      "pane": "organ"
+    },
+    {
+      "vo2max": 70,
+      "label": "Fitter athlete, same pace: smaller share",
+      "pane": "organ"
+    },
+    {
+      "label": "Map: blood to the working muscle"
+    }
+  ]
+}

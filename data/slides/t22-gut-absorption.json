@@ -1,0 +1,41 @@
+{
+  "id": "t22-gut-absorption",
+  "title": "Carbohydrate absorption: two doors",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "2.2",
+      "gph": 60,
+      "comp": "glc",
+      "label": "60 g/h glucose: one door",
+      "pane": "organ"
+    },
+    {
+      "gph": 90,
+      "label": "90 g/h glucose only",
+      "pane": "organ"
+    },
+    {
+      "comp": "gf",
+      "label": "Glucose + fructose: two doors",
+      "pane": "organ"
+    },
+    {
+      "gph": 120,
+      "label": "120 g/h glucose + fructose",
+      "pane": "organ"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "Transporters and limits",
+      "pane": "topic"
+    },
+    {
+      "label": "Map: absorbed carbohydrate to the liver"
+    }
+  ]
+}

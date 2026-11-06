@@ -1,0 +1,45 @@
+{
+  "id": "t44-heat-hydration",
+  "title": "Heat and hydration",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "4.4",
+      "intensity": 60,
+      "time": 0,
+      "label": "Heat from working muscle",
+      "pane": "topic"
+    },
+    {
+      "time": 120,
+      "label": "Two hours of sweating",
+      "pane": "topic"
+    },
+    {
+      "label": "Long: 2.5 h at 65% VO₂max",
+      "pane": "topic",
+      "intensity": 65,
+      "time": 150
+    },
+    {
+      "label": "Heart and blood in the heat",
+      "pane": "organ"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "Sweat and dehydration",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        2
+      ],
+      "label": "Low blood sodium and heat acclimatisation",
+      "pane": "topic"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "t12-fuel-mix",
+  "title": "Fuel mix and the crossover",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "1.2",
+      "intensity": 30,
+      "label": "Easy: fat and carbohydrate together"
+    },
+    {
+      "label": "Fuel mix at easy pace",
+      "pane": "topic"
+    },
+    {
+      "intensity": 65,
+      "label": "The crossover",
+      "pane": "topic"
+    },
+    {
+      "intensity": 95,
+      "label": "Hard: carbohydrate dominates",
+      "pane": "topic"
+    },
+    {
+      "label": "Working muscle burns glycogen",
+      "pane": "organ"
+    },
+    {
+      "organ": "liver",
+      "label": "Liver supplies blood glucose",
+      "pane": "organ"
+    },
+    {
+      "label": "Map: lactate leaves the muscle"
+    }
+  ]
+}

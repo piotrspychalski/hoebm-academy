@@ -1,0 +1,31 @@
+{
+  "id": "t16-bcaa",
+  "title": "BCAA: protein as fuel",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "1.6",
+      "label": "Protein: a minor fuel",
+      "pane": "topic"
+    },
+    {
+      "label": "BCAA in the working muscle",
+      "pane": "organ"
+    },
+    {
+      "glycogen": "low",
+      "label": "Low glycogen: more BCAA burned",
+      "pane": "organ"
+    },
+    {
+      "organ": "liver",
+      "label": "Alanine to the liver, new glucose",
+      "pane": "organ"
+    },
+    {
+      "label": "Map: nitrogen to the liver"
+    }
+  ]
+}

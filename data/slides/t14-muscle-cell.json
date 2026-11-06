@@ -1,0 +1,34 @@
+{
+  "id": "t14-muscle-cell",
+  "title": "Inside the muscle cell",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "1.4",
+      "intensity": 40,
+      "label": "Easy: mitochondria do the work",
+      "pane": "organ"
+    },
+    {
+      "intensity": 90,
+      "label": "Hard: glycolysis and lactate",
+      "pane": "organ"
+    },
+    {
+      "label": "ATP from sugar and fat",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        2
+      ],
+      "label": "Mitochondrion and ATP yields",
+      "pane": "topic"
+    },
+    {
+      "label": "Map at hard pace"
+    }
+  ]
+}

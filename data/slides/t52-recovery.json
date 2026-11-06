@@ -1,0 +1,38 @@
+{
+  "id": "t52-recovery",
+  "title": "Recovery and refuelling",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "5.2",
+      "glycogen": "low",
+      "label": "After hard exercise: low glycogen",
+      "pane": "topic"
+    },
+    {
+      "label": "Refilling muscle glycogen",
+      "pane": "organ"
+    },
+    {
+      "organ": "liver",
+      "label": "Liver glycogen",
+      "pane": "organ"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "Muscle glycogen: eat now or wait",
+      "pane": "topic"
+    },
+    {
+      "open": [
+        2
+      ],
+      "label": "Liver glycogen and muscle protein",
+      "pane": "topic"
+    }
+  ]
+}

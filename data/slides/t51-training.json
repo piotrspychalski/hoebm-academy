@@ -1,0 +1,42 @@
+{
+  "id": "t51-training",
+  "title": "Training adaptations",
+  "status": "draft",
+  "aspect": "9:16",
+  "tween": 1100,
+  "slides": [
+    {
+      "topic": "5.1",
+      "vo2max": 45,
+      "intensity": 65,
+      "label": "Untrained: VO₂max 45",
+      "pane": "topic"
+    },
+    {
+      "vo2max": 70,
+      "label": "Trained: VO₂max 70, same pace",
+      "pane": "topic"
+    },
+    {
+      "label": "Trained muscle",
+      "pane": "organ"
+    },
+    {
+      "vo2max": 45,
+      "label": "Before training",
+      "pane": "organ"
+    },
+    {
+      "open": [
+        1
+      ],
+      "label": "In the muscle",
+      "pane": "topic"
+    },
+    {
+      "organ": "blood",
+      "label": "Heart and blood",
+      "pane": "organ"
+    }
+  ]
+}
