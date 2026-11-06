@@ -308,7 +308,7 @@ function rolkaHud() {
   $('rkDev').hidden = !ROLKA.stream;
   $('rkCapBtn').textContent = ROLKA.cap ? 'Zatrzymaj przechwytywanie' : 'Przechwyć animację (ta karta)';
   const q = ROLKA.seq;
-  $('rkSlide').textContent = q ? `slajd ${ROLKA.slide + 1} / ${q.slides.length}: ${q.slides[ROLKA.slide].label}` : 'bez sekwencji — sterujesz szkicem ręcznie';
+  $('rkSlide').textContent = q ? `▸ slajd ${ROLKA.slide + 1} / ${q.slides.length}: ${q.slides[ROLKA.slide].label}` : 'bez sekwencji — sterujesz szkicem ręcznie';
   const n = scenes().length;
   $('rkSeg').textContent = ROLKA.idx >= 0 ? `${ROLKA.rec ? '● REC · ' : 'podgląd · '}scena ${ROLKA.idx + 1}/${n}: ${SCENE_PL(curScene())}` : '';
   $('rkCr').value = o.cr;
@@ -352,7 +352,7 @@ function initRolka() {
     <p><b>Na koniec</b> (po animacji) — zdjęcia / filmy:<br><input type="file" id="rkEndFile" accept="image/*,video/*" multiple><ul class="rk-list" id="rkEndList"></ul></p>
     <p><label>Podpis <input type="text" id="rkCap" placeholder="np. Aconcagua, 2024" maxlength="60"></label></p>
     <p>Układ zdjęcia: ${radio('rkVar', 'half', 'pół ekranu')} ${radio('rkVar', 'full', 'pełny ekran')}</p>
-    <p class="rk-help">Kolejność: tytuł → zdjęcia/filmy na początek → animacja → zdjęcia/filmy na koniec. Każda scena czeka: spacja / → / pilot / klik w podgląd = dalej (na animacji: następny slajd), ← wstecz; po ostatniej scenie — koniec i zapis. Esc — przerwij bez zapisu. Podgląd bez nagrania: ← → po scenach, 0 — wyłącz. Pliki można też przeciągnąć na stronę (trafiają na początek).</p>
+    <p class="rk-help">Kolejność: tytuł → zdjęcia/filmy na początek → animacja → zdjęcia/filmy na koniec. Każda scena czeka: spacja / → / pilot / klik w podgląd = dalej (na animacji: następny slajd), ← wstecz; po ostatniej scenie — koniec i zapis. Esc — przerwij bez zapisu. Bez nagrania: z wybraną sekwencją ← → przechodzą po slajdach (przejrzyj je przed nagraniem); bez sekwencji ← → po scenach, 0 — wyłącz. Pliki można też przeciągnąć na stronę (trafiają na początek).</p>
     <p id="rkMsg" role="status"></p></div>`;
   const done = el('dialog', { id: 'rkDone', class: 'rk-done', 'aria-label': 'Nagranie gotowe' });
   done.innerHTML = `<b>Nagranie gotowe</b><video controls playsinline></video><p id="rkInfo"></p>
@@ -371,7 +371,12 @@ function initRolka() {
   $('rkCapBtn').onclick = () => ROLKA.cap ? (stopCapture(), rolkaHud()) : startCapture();
   $('rkCamBtn').onclick = () => ROLKA.stream ? (stopCam(), rolkaHud()) : startCam().then(rolkaHud);
   $('rkCam').onchange = $('rkMic').onchange = () => startCam().then(rolkaHud);
-  $('rkSeq').onchange = e => { ROLKA.seq = SEQS.find(q => q.id === e.target.value) || null; ROLKA.slide = 0; if (ROLKA.seq) applySlide(0, false); rolkaHud(); };
+  $('rkSeq').onchange = e => {
+    ROLKA.seq = SEQS.find(q => q.id === e.target.value) || null; ROLKA.slide = 0; ROLKA.idx = -1;
+    if (ROLKA.seq) applySlide(0, false);
+    e.target.blur();   // strzałki mają przełączać slajdy, nie pozycje listy
+    rolkaHud();
+  };
   $('rkStartFile').onchange = e => { addMedia(e.target.files, 'start'); e.target.value = ''; };
   $('rkEndFile').onchange = e => { addMedia(e.target.files, 'end'); e.target.value = ''; };
   $('rkCr').oninput = e => { o.cr = +e.target.value; rolkaHud(); };
@@ -392,12 +397,14 @@ function initRolka() {
   });
   stage.addEventListener('pointerup', () => { if (drag) { drag = null; rolkaHud(); } });
   $('rkRec').onclick = startRec;
+  panel.addEventListener('click', e => { if (e.target.closest('button')) e.target.closest('button').blur(); });   // po kliknięciu kursor wraca do studia
   addEventListener('dragover', e => e.preventDefault());
   addEventListener('drop', e => { e.preventDefault(); addMedia(e.dataTransfer.files, 'start'); });
   const onKey = e => {
     if ($('rkDone')?.open) return;   // okno nagrania: klawisze należą do niego (Esc zamyka)
     const inPanel = e.target instanceof Element && e.target.closest('#rkPanel');
-    if (inPanel && !e.target.matches('input[type=text], input[type=number], select, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }   // przyciski i radio w panelu działają normalnie
+    // przycisk / przełącznik w panelu: spacja i Enter działają na nim; strzałki, PageDown, N i Esc należą do studia
+    if (inPanel && !e.target.matches('input[type=text], input[type=number], select, textarea')) { if (e.key === ' ' || e.key === 'Enter') return; e.target.blur(); }
     if (e.target instanceof Element && e.target.matches('input[type=text], input[type=number], select, textarea')) {   // w polu: Enter / Esc oddaje klawisze rolce
       if (e.key === 'Enter' || e.key === 'Escape') { e.target.blur(); e.preventDefault(); e.stopImmediatePropagation(); }
       return;
@@ -408,7 +415,7 @@ function initRolka() {
     else if (ROLKA.rec) { if (k === 'Escape') stopRec(false); else if (nextKey) next(); else if (prevKey) prev(); else done = false; }
     else if (k === 'n' || k === 'N') startRec();
     else if (k === '0' || (k === 'Escape' && ROLKA.idx >= 0)) { ROLKA.idx = -1; for (const x of [...ROLKA.start, ...ROLKA.end]) if (x.kind === 'video') x.m.pause(); rolkaHud(); }
-    else if (nextKey) { if (ROLKA.idx < 0) enter(0); else next(); }   // podgląd scen bez nagrania
+    else if (nextKey) { if (ROLKA.idx < 0 && !ROLKA.seq) enter(0); else next(); }   // bez nagrania: z sekwencją → slajdy, bez niej → podgląd scen
     else if (prevKey) prev();
     else done = false;
     if (done) { e.preventDefault(); e.stopImmediatePropagation(); }
