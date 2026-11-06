@@ -64,6 +64,15 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 .num { width: 46px; border: 0; border-bottom: 1.5px solid var(--ink); background: none; font: 400 13px var(--mono); padding: 0 2px; }
 .linkbtn { border: 0; background: none; padding: 0; cursor: pointer; font: 600 13px var(--sans); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
+/* Szybki suwak przy ikonach napoju i góry na mapie */
+#map g.quick { cursor: pointer; }
+#map g.quick:focus-visible { outline: 2px solid var(--blood); outline-offset: 2px; }
+#quick { display: none; position: fixed; z-index: 40; background: var(--paper); border: 1.5px solid var(--ink); box-shadow: 0 6px 20px rgba(56,48,95,.16); padding: 8px 12px 10px; }
+#quick.on { display: grid; grid-template-columns: 200px auto; gap: 4px 12px; align-items: center; }
+#quick label { grid-column: 1 / -1; font: 700 12px var(--display); color: var(--ink-2); }
+#quick input { width: 100%; margin: 0; accent-color: var(--ink); }
+#quick output { font: 400 13px var(--mono); color: var(--ink); white-space: nowrap; min-width: 9ch; }
+
 /* Tematy */
 .topics { display: flex; gap: 18px; align-items: baseline; overflow-x: auto; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 6px 18px; scrollbar-width: none; }
 .topics::-webkit-scrollbar { display: none; }
@@ -287,6 +296,7 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 <footer class="foot"><button type="button" class="linkbtn" id="srcOpen">Sources, and what is illustrative</button><span>Education, not medical advice.</span></footer>
 <dialog id="srcDlg" aria-labelledby="srcTitle"><div class="dlghead"><h2 id="srcTitle">Sources, and what is illustrative</h2><button type="button" class="close" id="srcClose" aria-label="Close">×</button></div><p>Schematic, not to scale. Curve shapes are illustrative; the model uses the sourced values listed here. The last item lists what has no source yet. VT1 and RCP are placed at LT1 and OBLA. Education, not medical advice.</p><ul id="srcList"></ul></dialog>
 <nav class="dock" aria-label="Panels"><button type="button" data-open="paneTopic">Topic</button><button type="button" data-open="paneOrgan">Organ</button></nav><div id="scrim" data-close aria-hidden="true"></div>
+<div id="quick" role="dialog" aria-label="Quick setting"><label for="qIn"></label><input id="qIn" type="range"><output id="qOut"></output></div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -1653,6 +1663,30 @@ const pickOrgan = (k, open = true) => {
   const b = document.querySelector(`#topics [data-topic="${S.topic}"]`); if (b) b.scrollIntoView({ block: 'nearest', inline: 'center' });
 };
 map.addEventListener('click', ev => { const g = ev.target.closest('.organ'); if (g) pickOrgan(g.dataset.organ); });
+// Szybki suwak: klik w ikonę napoju albo góry otwiera przy niej suwak, który steruje tym samym suwakiem co pasek u góry
+const QUICK = { food: ['gph', 'Carbohydrate intake'], alt: ['alt', 'Altitude'] };
+const quick = $('quick'), qIn = $('qIn'), qOut = $('qOut'), qLab = quick.querySelector('label');
+const quickSync = () => { const k = quick.dataset.k; if (!k) return; const src = $(QUICK[k][0]); qIn.value = src.value; qOut.textContent = $(src.id + 'Out').textContent; };
+const quickClose = () => { quick.classList.remove('on'); delete quick.dataset.k; };
+const quickOpen = (k, g) => {
+  if (quick.dataset.k === k) return quickClose();
+  const src = $(QUICK[k][0]); quick.dataset.k = k; qLab.textContent = QUICK[k][1];
+  ['min', 'max', 'step'].forEach(a => { qIn[a] = src[a]; }); quickSync(); quick.classList.add('on');
+  const r = g.getBoundingClientRect(), w = quick.offsetWidth, h = quick.offsetHeight;
+  quick.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + 'px';
+  quick.style.top = Math.max(8, Math.min(innerHeight - h - 8, r.bottom + 6)) + 'px';
+  qIn.focus({ preventScroll: true });
+};
+qIn.addEventListener('input', () => { const src = $(QUICK[quick.dataset.k][0]); src.value = qIn.value; src.dispatchEvent(new Event('input', { bubbles: true })); quickSync(); });
+[[gFood, 'food', [424, 22, 150, 76]], [gAlt, 'alt', [80, 30, 190, 46]]].forEach(([g, k, [x, y, width, height]]) => {
+  g.insertBefore(el('rect', { x, y, width, height, fill: 'transparent' }, g), g.firstChild);
+  g.classList.add('quick'); g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.setAttribute('aria-label', `Change ${QUICK[k][1].toLowerCase()}`);
+  g.addEventListener('click', ev => { ev.stopPropagation(); quickOpen(k, g); });
+  g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); quickOpen(k, g); } });
+});
+document.addEventListener('pointerdown', ev => { if (quick.dataset.k && !quick.contains(ev.target) && !ev.target.closest('#map g.quick')) quickClose(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && quick.dataset.k) { quickClose(); ev.stopImmediatePropagation(); } }, true);
+addEventListener('resize', quickClose);
 map.addEventListener('keydown', ev => { const g = ev.target.closest('.organ'); if (g && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); pickOrgan(g.dataset.organ); } });
 $('organs').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) pickOrgan(b.dataset.organ, false); });
 document.addEventListener('click', ev => {
