@@ -14,6 +14,7 @@ Sports Academy is a **schematic educational tool**, not medical, nutritional or 
 ## Build and test
 
     node build.js     → dist/index.html (the animation, reference/energy-map.html; one self-contained file; no dependencies)
+                        and studio/ (private recording studio; online only encrypted)
     npm test          (or: bash tests/uruchom_wszystkie.sh)
 
 Technical documentation: [docs/TECHNICAL.md](docs/TECHNICAL.md).

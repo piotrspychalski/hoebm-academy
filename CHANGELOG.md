@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.12.0] — 2026-11-06 (sprzątanie po scaleniach)
+
+### Usunięte
+- Silnik rycin kanwy po FIG. 1: rejestr rycin (`tools/registry.js`, `data/figures`, `data/sources.json`), publiczny interfejs przeglądarki rycin (`src/app/*`, `src/shell.html`), układy phone / landscape / reelCam, zaczepy `STUDIO_HOOK.cam/after`, testy na pustych zbiorach (`rejestr`, `zakazane`, `kontrast`, `liczby_strefa`, `szerokosci.json`). Ostatni stan: tag `archiwum/silnik-kanwy`.
+
+### Zmienione
+- Studio budowane z małego szablonu `src/studio.html` + rdzenia kart rolki (`src/core`, 5 plików) + `src/studio/*` (`00-baza` zamiast całej aplikacji).
+- `build.js` krótszy; każda podmiana w szablonie musi trafić (inaczej błąd budowy).
+- Skrypt testów uruchamia każdy test raz i patrzy na kod wyjścia.
+- CI: Node 22, jawny krok budowy, testy także na pull requestach (bez publikacji).
+- `docs/TECHNICAL.md` napisany od nowa pod obecną architekturę.
+
+### Naprawione
+- Komunikat „Zmieniono kadr” nie pojawia się już przy zmianie rozmiaru okna (np. po pasku „udostępniasz tę kartę”).
+
 ## [0.11.0] — 2026-11-06 (po rewizji: bezpieczeństwo, studio, telefon, wydajność)
 
 ### Bezpieczeństwo
