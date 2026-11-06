@@ -113,6 +113,7 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
 .chart h4 { margin: 0; font: 400 13px var(--sans); }
 .chart h4 b { font: 800 14px var(--display); color: var(--ink); margin-right: 6px; }
 .chart svg { display: block; width: 100%; height: auto; }
+.chart svg.hov { cursor: crosshair; }   /* oś % VO₂max: kreska idzie za kursorem, klik ustawia intensywność */
 .legend { display: flex; gap: 2px 12px; flex-wrap: wrap; font: 400 12px var(--sans); }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--ink); }
@@ -1325,7 +1326,7 @@ const DETAIL = {
 /* ───────────── WYKRESY TEMATÓW ───────────── */
 const ch = $('chart');
 function axes(xl, yl, xt, yt) {
-  clear(ch); ch.setAttribute('viewBox', '0 0 330 190');   // wykres VO₂ wydłuża go o skale % FTP i % HRmax
+  clear(ch);
   const X0 = 38, X1 = 322, Y0 = 158, Y1 = 10;
   el('line', { x1: X0, y1: Y0, x2: X1, y2: Y0, stroke: C.ink, 'stroke-width': 1.5 }, ch);
   el('line', { x1: X0, y1: Y0, x2: X0, y2: Y1, stroke: C.ink, 'stroke-width': 1.5 }, ch);
@@ -1338,7 +1339,10 @@ function axes(xl, yl, xt, yt) {
 }
 const PU = p => (p - 5) / (PMAX - 5), PT = [[PU(25), '25'], [PU(50), '50'], [PU(75), '75'], [PU(100), '100'], [PU(125), '125'], [PU(150), '150']];
 const line = (pts, a, o) => el('path', { d: pts.map(([u, v], i) => `${i ? 'L' : 'M'}${a.X(u).toFixed(1)},${a.Y(clamp(v, 0, 1.05)).toFixed(1)}`).join(''), fill: 'none', stroke: o.c || C.ink, 'stroke-width': o.w || 2.5, 'stroke-dasharray': o.d || '' }, ch);
-const vmark = (a, u, s) => { const x = a.X(u); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 1.5, 'stroke-dasharray': '3 3' }, ch); if (s) { const end = x > 240 || x + 4 + s.length * 5.8 > a.X1 + 6; tx(ch, s, end ? x - 4 : x + 4, a.Y1 + 10, { size: 11, it: true, fill: C.blood, anchor: end ? 'end' : 'start' }); } };   // podpis po lewej, gdy po prawej by się nie zmieścił
+const vmark = (a, u, s) => { const x = a.X(u); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 1.5, 'stroke-dasharray': '3 3' }, ch); if (s) { const w = s.length * 5.8, right = x + 4 + w <= a.X1 + 6, left = x - 4 - w >= a.X0; tx(ch, s, right ? x + 4 : left ? x - 4 : a.X1 + 6 - w, a.Y1 + 10, { size: 11, it: true, fill: C.blood, anchor: !right && left ? 'end' : 'start' }); } };   // podpis po prawej; gdy się nie zmieści, po lewej; gdy nigdzie, dosunięty do prawej krawędzi
+// Znacznik intensywności na wykresach z osią % VO₂max: idzie za kursorem (HOV), klik ustawia intensywność. label(p) → podpis przy kresce.
+let HOV = null;
+const pmark = (a, label) => { ch._pAxis = a; ch.classList.add('hov'); const p = HOV ?? S.p; vmark(a, PU(p), label ? label(p) : ''); };
 const LEG = items => items.map(([s, c, d, fill]) => fill ? `<span><i style="border:0;height:10px;background:${fill}"></i>${s}</span>` : `<span><i style="border-top-color:${c};border-top-style:${d ? 'dashed' : 'solid'}"></i>${s}</span>`).join('');
 const range = (n, f) => Array.from({ length: n + 1 }, (_, i) => f(i / n));
 const CHARTS = {
@@ -1351,14 +1355,16 @@ const CHARTS = {
     // Skale pod osią w tych samych kolumnach: % VO₂max (tutaj), % FTP tego zawodnika i % HRmax [latin1993, jeffries2021, swain1994].
     // Na wysokości oś to % niższego VO₂max: % FTP tutaj (próg przy tym samym %) i dodatkowo % FTP z poziomu morza (te same waty).
     const f = VF(S.alt), hiAlt = S.alt > 300, rows = [['% VO₂max', null], [hiAlt ? '% FTP here' : '% FTP', p => Math.round(100 * watts(p * f) / FTPw(S.alt))]];
-    if (hiAlt) rows.push(['% FTP sea level',p => Math.round(100 * watts(p * f) / FTPw())]);
+    if (hiAlt) rows.push(['% FTP sea level', p => Math.round(100 * watts(p * f) / FTPw())]);
     rows.push(['% HRmax', p => p < 40 ? '–' : p >= 100 ? 'max' : hrPct(p)]);
     ch.setAttribute('viewBox', `0 0 330 ${176 + 15 * (rows.length - 1)}`);
     rows.forEach(([lab, val], i) => {
       const y = 172 + 15 * i; tx(ch, lab, 0, y, { size: 9.5, it: true, fill: C.ink2 });
       if (val) [25, 50, 75, 100, 125, 150].forEach(p => tx(ch, String(val(p)), a.X(PU(p)), y, { size: 10, anchor: 'middle' }));
     });
-    vmark(a, PU(S.p), `${fmt(cur.E.vo2, 2)} L/min · ${fmt(cur.E.kcal * 60)} kcal/h`);
+    // podpis kreski: VO₂, kcal/h i % FTP (na wysokości % FTP tutaj) w punkcie kursora albo bieżącej intensywności
+    pmark(a, p => { const E = p === S.p ? cur.E : energy(p, clamp(1 - cur.gm / SIM.w0)), r = rows[1][1](p);
+      return `${fmt(E.vo2, 2)} L/min · ${fmt(E.kcal * 60)} kcal/h` + (p < 15 ? '' : ` · ${r}% FTP${hiAlt ? ' here' : ''}`); });
     return ['VO₂ and intensity', LEG([['VO₂ (L/min)', C.ink], ['your VO₂max', C.grey, 1]])];
   },
   mix() {
@@ -1368,7 +1374,7 @@ const CHARTS = {
     range(50, u => { const sh = shares(5 + (PMAX - 5) * u, dep), tot = sh.f + sh.c; F.push([u, sh.f / tot]); CO.push([u, (sh.f + sh.c * (1 - sh.l)) / tot]); LA.push([u, 1]); });
     const band = (top, bot, fill) => el('path', { d: top.map(([u, v], i) => `${i ? 'L' : 'M'}${a.X(u)},${a.Y(v)}`).join('') + [...bot].reverse().map(([u, v]) => `L${a.X(u)},${a.Y(v)}`).join('') + 'Z', fill }, ch);
     band(F, F.map(([u]) => [u, 0]), C.marker); band(CO, F, C.ink); band(LA, CO, 'url(#hatchL)');
-    vmark(a, PU(S.p));
+    pmark(a);
     return ['Fuel mix and intensity', LEG([['fat → CO₂', 0, 0, C.marker], ['glucose → CO₂', 0, 0, C.ink], ['glucose → lactate (used later)', 0, 0, 'repeating-linear-gradient(135deg,#38305F 0 1.7px,#F2F0F1 1.7px 4.2px)']])];
   },
   stores() {
@@ -1392,7 +1398,7 @@ const CHARTS = {
     line(range(40, u => [u, musFlow(5 + (PMAX - 5) * u)]), a, { c: C.blood, w: 3 });
     line(range(40, u => [u, gutFlow(5 + (PMAX - 5) * u)]), a, { c: C.blood, w: 3, d: '6 4' });
     tx(ch, 'gut ↓ ≥80%', a.X1 - 2, a.Y(0.2) - 8, { size: 11, w: 600, fill: C.blood, anchor: 'end' });
-    vmark(a, PU(S.p));
+    pmark(a);
     return ['Blood flow and intensity', LEG([['working muscle', C.blood], ['gut and liver', C.blood, 1]])];
   },
   absorb() {
@@ -1402,7 +1408,7 @@ const CHARTS = {
     el('path', { d: pts.map(([u, v], i) => `${i ? 'L' : 'M'}${a.X(u)},${a.Y(v)}`).join('') + `L${a.X(1)},${a.Y(S.gph / 120)}L${a.X(0)},${a.Y(S.gph / 120)}Z`, fill: C.blood, opacity: 0.18 }, ch);
     line(pts, a, { c: C.ink, w: 3 });
     tx(ch, 'eaten', a.X(0) + 4, a.Y(S.gph / 120) - 5, { size: 11, it: true });
-    vmark(a, PU(S.p));
+    pmark(a);
     return [`Absorbed vs eaten (${COMPNAME[S.comp]})`, LEG([['absorbed', C.ink], ['not absorbed', 0, 0, 'rgba(194,24,91,.25)']])];
   },
   glycogen() {
@@ -1422,7 +1428,7 @@ const CHARTS = {
     el('line', { x1: a.X0, y1: a.Y(4 / 12), x2: a.X1, y2: a.Y(4 / 12), stroke: C.grey, 'stroke-dasharray': '3 3' }, ch);
     line(range(60, u => [u, lactate(5 + (PMAX - 5) * u) / 12]), a, { c: C.ink2, w: 3 });
     [[LT(), 'LT1'], [OBLA(), 'OBLA']].forEach(([q, s]) => { const x = a.X(PU(q)); el('line', { x1: x, y1: a.Y0, x2: x, y2: a.Y(lactate(q) / 12), stroke: C.ink2 }, ch); tx(ch, s, x - 4, a.Y(lactate(q) / 12) - 6, { size: 11, w: 600, anchor: 'end', fill: C.ink }); });
-    vmark(a, PU(S.p));
+    pmark(a);
     return ['Blood lactate and intensity', LEG([['blood lactate', C.ink2], ['4 mmol/L = OBLA', C.grey, 1]])];
   },
   speed() {
@@ -1466,7 +1472,7 @@ const CHARTS = {
     line(range(60, u => [u, breath(5 + (PMAX - 5) * u).VE / 200]), a, { c: C.ink, w: 3 });
     [[LT(), 'VT1'], [OBLA(), 'RCP']].forEach(([q, s]) => { const x = a.X(PU(q)), y = a.Y(breath(q).VE / 200); el('line', { x1: x, y1: a.Y0, x2: x, y2: y, stroke: C.ink2 }, ch); tx(ch, s, x - 4, y - 6, { size: 11, w: 600, anchor: 'end', fill: C.ink }); });
     el('line', { x1: a.X(PU(100)), y1: a.Y0, x2: a.X(PU(100)), y2: a.Y1, stroke: C.grey, 'stroke-dasharray': '2 3' }, ch); tx(ch, 'VO₂max', a.X(PU(100)) + 3, a.Y1 + 10, { size: 10, it: true });
-    vmark(a, PU(S.p));
+    pmark(a);
     return ['Ventilation and intensity', LEG([['ventilation now', C.ink]].concat(S.alt || S.acz ? [['sea level, no drug', C.grey, 1]] : []))];
   },
   alt() {
@@ -1653,7 +1659,12 @@ function renderTopic() {
     $('tMore').dataset.t = T.id;
     $('tMore').innerHTML = T.more.map(([h, items]) => `<details><summary>${h}</summary><ul>${items.map(([x, k]) => `<li>${x}${srcHTML(k)}</li>`).join('')}</ul></details>`).join('');
   }
-  const [title, legend] = CHARTS[T.chart]();
+  renderChart();
+}
+function renderChart() {
+  // przed każdym wykresem: domyślny kadr (wykres VO₂ wydłuża go o skale % FTP i % HRmax) i bez najechania (włącza je pmark())
+  ch.setAttribute('viewBox', '0 0 330 190'); ch._pAxis = null; ch.classList.remove('hov');
+  const T = TOPICS.find(x => x.id === S.topic), [title, legend] = CHARTS[T.chart]();
   $('chTitle').innerHTML = `<b>${topicNum(T.id)}</b>${title}`; $('chLegend').innerHTML = legend;
 }
 function renderControls() {
@@ -1683,6 +1694,22 @@ function renderControls() {
   $('gphTicks').innerHTML = `<span style="left:50%">60</span><span style="left:75%">90</span>`;
 }
 function render() { recompute(); renderControls(); renderMap(); renderOrgan(); renderTopic(); }
+// Wykresy z osią % VO₂max: kursor przesuwa czerwoną kreskę (rysowany jest tylko wykres), wyjście kursora ją oddaje,
+// klik / dotknięcie ustawia tę intensywność na suwaku (oś to % VO₂max tutaj, suwak — tempo z poziomu morza).
+const chartP = ev => {
+  const a = ch._pAxis; if (!a) return null;
+  const pt = ch.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+  const q = pt.matrixTransform(ch.getScreenCTM().inverse());
+  return q.x < a.X0 - 4 || q.x > a.X1 + 4 ? null : Math.round(5 + (PMAX - 5) * clamp((q.x - a.X0) / (a.X1 - a.X0)));
+};
+let hovRAF = 0;
+const setHov = p => { if (p === HOV) return; HOV = p; cancelAnimationFrame(hovRAF); hovRAF = requestAnimationFrame(renderChart); };
+ch.addEventListener('pointermove', ev => { if (ev.pointerType === 'mouse') setHov(chartP(ev)); });
+ch.addEventListener('pointerleave', () => setHov(null));
+ch.addEventListener('click', ev => {
+  const p = chartP(ev); if (p === null) return;
+  HOV = null; S.pace = clamp(Math.round(p * VF(S.alt)), 5, PMAX); render();
+});
 const srcDlg = $('srcDlg');
 const openSrc = () => { closePanes(); srcDlg.showModal(); };
 $('srcOpen').addEventListener('click', openSrc);
