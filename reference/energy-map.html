@@ -354,6 +354,9 @@ const SRC = {
   borszcz2019: 'Borszcz 2019, Int J Sports Physiol Perform (PMID 30676826): FTP vs MLSS power bias 1.4% ± 9.2% (95% limits); heart rate −1.4% ± 8.2%',
   latin1993: 'Latin 1993, Med Sci Sports Exerc (PMID 8371659): cycling VO₂ (ml/min) = 1.9 × kgm/min + 3.5 × body mass + 260 (1 W = 6.12 kgm/min, so ≈11.6 ml/min per W)',
   swain1994: 'Swain 1994, Med Sci Sports Exerc (PMID 8133731): 40 / 60 / 80 / 85% VO₂max ≈ 63 / 76 / 89 / 92% HRmax (162 adults aged 18–34)',
+  carter2004a: 'Carter 2004, Med Sci Sports Exerc (PMID 15570147): carbohydrate mouth rinse, not swallowed, in a 1-h time trial: 59.6 vs 61.4 min, 259 vs 252 W',
+  carter2004b: 'Carter 2004, Med Sci Sports Exerc (PMID 15354036): glucose infused at 1 g/min did not change a 1-h time trial (59.9 vs 60.0 min)',
+  below1995: 'Below 1995, Med Sci Sports Exerc (PMID 7723643): 50 min at 80% VO₂max then a performance test; 79 g carbohydrate 6.3% faster than none',
   jeukendrup2014: 'Jeukendrup 2014, Sports Med (PMID 24791914): single CHO source oxidised at up to ≈60 g/h (SGLT1 saturation); multiple transportable CHO ≈90 g/h',
   sun2012: 'Sun & Empie 2012, Nutr Metab (PMID 23031075): GLUT5 for fructose, GLUT2 to blood; sucrose hydrolysis not rate-limiting; fructose metabolised mainly in liver',
   wagenmakers1993: 'Wagenmakers 1993, J Appl Physiol (PMID 8125902): sucrose and maltodextrin oxidised like glucose, plateau ≈1 g/min',
@@ -525,14 +528,26 @@ const T_LT1 = () => 94 + (240 - 94) * clamp((S.vo2max - 40) / 25);
 // Glikogen startowy i jedzenie skalują też krzywę: ×59/126 / ×189/126 [bergstrom1967], ×1,33 przy ≥60 g/h wchłoniętych [coyle1986];
 // wpływ wygasa między OBLA a CP (wyżej decyduje zmęczenie); niedobór glikogenu skraca TTE w całym zakresie (krzywa nie rośnie z intensywnością).
 const KGLY = { low: 59 / 126, normal: 1, loaded: 189 / 126 };
+// Powyżej OBLA (wysiłki ~20–60 min) węglowodany działają głównie przez jamę ustną, nie jako paliwo: płukanie bez połykania
+// poprawiło 1-h jazdę na czas (259 vs 252 W, +2,8%) [carter2004a], a glukoza dożylnie nie [carter2004b]; 79 g CHO w ~1 h: +6,3% [below1995].
+// Dlatego każde spożycie > 0 g/h działa tu jak +2,8% mocy (TTE z krzywej przy tej samej mocy −2,8%), niezależnie od dawki;
+// pełny efekt dla wysiłków ≥45 min, zanika liniowo do zera przy ≤20 min (ilustracyjnie; badania dotyczą ~1 h [jeukendrup2014]).
+// Model bierze większy z dwóch efektów: paliwowego (jak wyżej, wygasa OBLA→CP) i ustnego.
+const MOUTH_P = 259 / 252;
 const tteCP = (p, feed = true) => {
   const lt = LT(), ob = OBLA(), cp = CPp();
   const k = KGLY[S.status] * (feed ? 1 + 0.33 * clamp((SIM ? SIM.tr[0].A.absorbed : 0) / 60) : 1);
   const fade = p <= ob ? 1 : clamp((cp - p) / (cp - ob));
   const kk = k < 1 ? k : 1 + (k - 1) * fade;
-  if (p > cp) return Math.min(T_CP * Math.min(1, k), TLIM100 * (100 - cp) / (p - cp));
-  const base = p > ob ? lerpLog(p, ob, T_MLSS, cp, T_CP) : p <= lt - 15 ? Infinity : p <= lt ? lerpLog(p, lt - 15, T_LT1() * 4, lt, T_LT1()) : lerpLog(p, lt, T_LT1(), ob, T_MLSS);
-  return base * kk;
+  const curve = q => q > cp ? Math.min(T_CP, TLIM100 * (100 - cp) / (q - cp)) : q > ob ? lerpLog(q, ob, T_MLSS, cp, T_CP) : q <= lt - 15 ? Infinity : q <= lt ? lerpLog(q, lt - 15, T_LT1() * 4, lt, T_LT1()) : lerpLog(q, lt, T_LT1(), ob, T_MLSS);
+  const base = curve(p);
+  let t = p > cp ? Math.min(T_CP * Math.min(1, k), base) : base * kk;
+  if (feed && S.gph > 0 && p > ob) {
+    const I = 100 * (3.5 * S.mass + 260) / (S.vo2max * VF(S.alt) * S.mass);   // wyraz wolny równania mocy jako % VO₂max tutaj [latin1993]
+    const gain = 1 + clamp((base - 20) / 25) * (curve(I + (p - I) / MOUTH_P) / base - 1);
+    t = Math.max(t, base * gain * Math.min(1, KGLY[S.status]));
+  }
+  return t;
 };
 const TTE = () => S.p <= OBLA() ? (SIM.wall === null ? Math.max(TMAX + 1, Math.min(tteCP(S.p), TMAX + 1)) : SIM.wall) : Math.min(tteCP(S.p), SIM.wall === null ? Infinity : SIM.wall);   // do OBLA TTE = ściana glikogenowa (pula skalibrowana do krzywej)
 const fmtDur = m => m > TMAX ? '> 5 h' : m >= 60 ? '≈ ' + fmtT(m) : m >= 2 ? `≈ ${Math.round(m)} min` : `≈ ${Math.round(m * 60)} s`;
@@ -680,6 +695,7 @@ const TOPICS = [
         ["“Hitting the wall” (“bonking”) means running out of carbohydrate. In recreational marathons it hits about 28% of men and 17% of women, typically after about 32 km.", "rapoport2010 smyth2021"],
         ["Why about 32 km: running costs about 1 kcal per kg per km, so a 70-kg runner needs ≈2950 kcal for the marathon, ≈70 kcal per km. Glycogen holds ≈2000 kcal; if it paid for everything it would last ≈29 km. Fat covers part of the cost, but only the glycogen in the running legs (plus the liver) can be used, so the stores run out at around 30–35 km.", "rapoport2010 hearris2018 hall2008"],
         ["Carbohydrate eaten during exercise spares the liver, not the muscle, yet still delays fatigue (about 3 → 4 h at 71% VO₂max).", "gonzalez2015 coyle1986"],
+        ["Above FTP, in efforts of about an hour or less, carbohydrate helps mainly through the mouth, not as fuel. Rinsing it without swallowing improved a 1-h time trial (259 vs 252 W), while glucose given into a vein did not; 79 g drunk during about an hour of hard riding made it 6.3% faster. In the sketch any intake therefore counts the same above OBLA, and the effect fades in efforts shorter than about 20–45 min.", "carter2004a carter2004b below1995"],
         ["In this sketch: for VO₂max 55, 75% VO₂max is already at OBLA, so the times here are shorter than Bergström’s (his subjects worked below their threshold); the ratios between low, mixed and high glycogen are the same.", "bergstrom1967"]]],
       ["Loading and why muscle cannot share", [
         ["Carbohydrate loading raises muscle glycogen about 1.8×; it stays high for at least 3 days, up to about 5, at rest.", "goforth1997 arnall2007"],
@@ -1307,11 +1323,11 @@ const DETAIL = {
 /* ───────────── WYKRESY TEMATÓW ───────────── */
 const ch = $('chart');
 function axes(xl, yl, xt, yt) {
-  clear(ch);
+  clear(ch); ch.setAttribute('viewBox', '0 0 330 190');   // wykres VO₂ wydłuża go o skale % FTP i % HRmax
   const X0 = 38, X1 = 322, Y0 = 158, Y1 = 10;
   el('line', { x1: X0, y1: Y0, x2: X1, y2: Y0, stroke: C.ink, 'stroke-width': 1.5 }, ch);
   el('line', { x1: X0, y1: Y0, x2: X0, y2: Y1, stroke: C.ink, 'stroke-width': 1.5 }, ch);
-  tx(ch, xl, X1, 186, { size: 11, anchor: 'end', it: true });
+  if (xl) tx(ch, xl, X1, 186, { size: 11, anchor: 'end', it: true });
   const t = tx(ch, yl, 0, 0, { size: 11, anchor: 'middle', it: true }); t.setAttribute('transform', `translate(11,${(Y0 + Y1) / 2}) rotate(-90)`);
   const a = { X: u => X0 + u * (X1 - X0), Y: v => Y0 - v * (Y0 - Y1), X0, X1, Y0, Y1 };
   (xt || []).forEach(([u, s]) => { tx(ch, s, a.X(u), 172, { size: 10, anchor: 'middle' }); el('line', { x1: a.X(u), y1: Y0, x2: a.X(u), y2: Y0 + 4, stroke: C.ink }, ch); });
@@ -1320,16 +1336,26 @@ function axes(xl, yl, xt, yt) {
 }
 const PU = p => (p - 5) / (PMAX - 5), PT = [[PU(25), '25'], [PU(50), '50'], [PU(75), '75'], [PU(100), '100'], [PU(125), '125'], [PU(150), '150']];
 const line = (pts, a, o) => el('path', { d: pts.map(([u, v], i) => `${i ? 'L' : 'M'}${a.X(u).toFixed(1)},${a.Y(clamp(v, 0, 1.05)).toFixed(1)}`).join(''), fill: 'none', stroke: o.c || C.ink, 'stroke-width': o.w || 2.5, 'stroke-dasharray': o.d || '' }, ch);
-const vmark = (a, u, s) => { const x = a.X(u); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 1.5, 'stroke-dasharray': '3 3' }, ch); if (s) tx(ch, s, x > 240 ? x - 4 : x + 4, a.Y1 + 10, { size: 11, it: true, fill: C.blood, anchor: x > 240 ? 'end' : 'start' }); };
+const vmark = (a, u, s) => { const x = a.X(u); el('line', { x1: x, y1: a.Y1, x2: x, y2: a.Y0, stroke: C.blood, 'stroke-width': 1.5, 'stroke-dasharray': '3 3' }, ch); if (s) { const end = x > 240 || x + 4 + s.length * 5.8 > a.X1 + 6; tx(ch, s, end ? x - 4 : x + 4, a.Y1 + 10, { size: 11, it: true, fill: C.blood, anchor: end ? 'end' : 'start' }); } };   // podpis po lewej, gdy po prawej by się nie zmieścił
 const LEG = items => items.map(([s, c, d, fill]) => fill ? `<span><i style="border:0;height:10px;background:${fill}"></i>${s}</span>` : `<span><i style="border-top-color:${c};border-top-style:${d ? 'dashed' : 'solid'}"></i>${s}</span>`).join('');
 const range = (n, f) => Array.from({ length: n + 1 }, (_, i) => f(i / n));
 const CHARTS = {
   vo2() {
     const vmax = S.vo2max * VF(S.alt) * S.mass / 1000, top = Math.ceil(S.vo2max * S.mass / 1000 + 0.5);
-    const a = axes('% VO₂max', 'VO₂ (L/min)', PT, Array.from({ length: top }, (_, i) => [(i + 1) / top, String(i + 1)]));
+    const a = axes('', 'VO₂ (L/min)', PT, Array.from({ length: top }, (_, i) => [(i + 1) / top, String(i + 1)]));
     line(range(40, u => [u, energy(5 + (PMAX - 5) * u, 0).vo2 / top]), a, { c: C.ink, w: 3 });
     el('line', { x1: a.X0, y1: a.Y(vmax / top), x2: a.X1, y2: a.Y(vmax / top), stroke: C.grey, 'stroke-dasharray': '3 3' }, ch); tx(ch, 'VO₂max', a.X0 + 4, a.Y(vmax / top) - 4, { size: 11, it: true });
-    [[LT(), 'LT1'], [OBLA(), 'OBLA']].forEach(([q, s]) => { const x = a.X(PU(q)); el('line', { x1: x, y1: a.Y0, x2: x, y2: a.Y0 - 8, stroke: C.ink2, 'stroke-width': 1.5 }, ch); tx(ch, s, x, a.Y0 - 12, { size: 10, it: true, anchor: 'middle' }); });
+    [[LT(), 'LT1', 'end', -3], [OBLA(), 'OBLA ≈ FTP', 'start', 3]].forEach(([q, s, an, dx]) => { const x = a.X(PU(q)); el('line', { x1: x, y1: a.Y0, x2: x, y2: a.Y0 - 8, stroke: C.ink2, 'stroke-width': 1.5 }, ch); tx(ch, s, x + dx, a.Y0 - 12, { size: 10, it: true, anchor: an }); });
+    // Skale pod osią w tych samych kolumnach: % VO₂max (tutaj), % FTP tego zawodnika i % HRmax [latin1993, jeffries2021, swain1994].
+    // Na wysokości oś to % niższego VO₂max: % FTP tutaj (próg przy tym samym %) i dodatkowo % FTP z poziomu morza (te same waty).
+    const f = VF(S.alt), hiAlt = S.alt > 300, rows = [['% VO₂max', null], [hiAlt ? '% FTP here' : '% FTP', p => Math.round(100 * watts(p * f) / FTPw(S.alt))]];
+    if (hiAlt) rows.push(['% FTP sea level',p => Math.round(100 * watts(p * f) / FTPw())]);
+    rows.push(['% HRmax', p => p < 40 ? '–' : p >= 100 ? 'max' : hrPct(p)]);
+    ch.setAttribute('viewBox', `0 0 330 ${176 + 15 * (rows.length - 1)}`);
+    rows.forEach(([lab, val], i) => {
+      const y = 172 + 15 * i; tx(ch, lab, 0, y, { size: 9.5, it: true, fill: C.ink2 });
+      if (val) [25, 50, 75, 100, 125, 150].forEach(p => tx(ch, String(val(p)), a.X(PU(p)), y, { size: 10, anchor: 'middle' }));
+    });
     vmark(a, PU(S.p), `${fmt(cur.E.vo2, 2)} L/min · ${fmt(cur.E.kcal * 60)} kcal/h`);
     return ['VO₂ and intensity', LEG([['VO₂ (L/min)', C.ink], ['your VO₂max', C.grey, 1]])];
   },
@@ -1652,7 +1678,7 @@ $('srcOpen').addEventListener('click', openSrc);
 document.querySelector('.mobnav [data-src]').addEventListener('click', openSrc);
 $('srcClose').addEventListener('click', () => srcDlg.close());
 srcDlg.addEventListener('click', ev => { if (ev.target === srcDlg) srcDlg.close(); });
-$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~75% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE: a fatigue curve through the sourced points (LT1, MLSS, CP, VO₂max; interpolated, TTE at LT1 scaled by VO₂max; starting glycogen scales it by Bergström’s ratios). Up to OBLA, TTE is the glycogen wall: the glycogen pool in the working fibres is sized so that, without eating, the wall falls on the curve; eating lengthens it ×1.33 at ≥60 g/h absorbed (Coyle 1986). Above OBLA, TTE is the shorter of the curve and the wall; VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity; the PCr refilling curve is a two-phase fit to Bogdanis’s measurements; anaerobic carbohydrate use above VO₂max; FTP placed exactly at OBLA (a single rider can differ by tens of watts); watts from the Latin 1993 equation, which was measured up to 900 kgm/min (≈147 W) and is extended above that, and is used as-is for women; above 100% VO₂max, watts are the oxygen demand extended past VO₂max; % HRmax is a straight line through Swain’s sea-level averages, not adjusted for altitude, heat or drift during long efforts; at altitude the threshold is kept at the same % of the lower VO₂max.</li>';
+$('srcList').innerHTML = Object.values(SRC).map(s => `<li>${s}</li>`).join('') + '<li>Illustrative (no source yet): the share of muscle glycogen held in the working legs (60%), “low” starting glycogen, liver glycogen after loading, the share of glycogen vs blood glucose, gluconeogenesis rate, the gut-absorption fall above ~75% VO₂max, blood-lactate curve shape, LT1 position; ventilation curve and placing VT1/RCP at LT1/OBLA; CP placed just above OBLA; OBLA treated as MLSS; TTE: a fatigue curve through the sourced points (LT1, MLSS, CP, VO₂max; interpolated, TTE at LT1 scaled by VO₂max; starting glycogen scales it by Bergström’s ratios). Up to OBLA, TTE is the glycogen wall: the glycogen pool in the working fibres is sized so that, without eating, the wall falls on the curve; eating lengthens it ×1.33 at ≥60 g/h absorbed (Coyle 1986). Above OBLA, TTE is the shorter of the curve and the wall; VO₂max loss above 2800 m (line extended); SpO₂ (model: West PB, alveolar gas equation, O₂–Hb curve; drive to breathe, acclimatisation and drug effect are directions only); kidney bicarbonate values; PCr level vs intensity; the PCr refilling curve is a two-phase fit to Bogdanis’s measurements; anaerobic carbohydrate use above VO₂max; FTP placed exactly at OBLA (a single rider can differ by tens of watts); watts from the Latin 1993 equation, which was measured up to 900 kgm/min (≈147 W) and is extended above that, and is used as-is for women; above 100% VO₂max, watts are the oxygen demand extended past VO₂max; % HRmax is a straight line through Swain’s sea-level averages, not adjusted for altitude, heat or drift during long efforts; at altitude the threshold is kept at the same % of the lower VO₂max; above OBLA any carbohydrate intake acts like the 2.8% power gain from a mouth rinse (Carter 2004), read off the TTE curve, in full for efforts of 45 min or more and fading to none at 20 min (the 20 and 45 min limits are illustrative).</li>';
 
 /* ───────────── INTERAKCJA ───────────── */
 function renderNav() {
