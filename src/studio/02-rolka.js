@@ -33,6 +33,8 @@ const toCanvas = ctx => ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 // Tytuł rolki: własny albo nazwa bieżącego tematu szkicu; etykieta: grupa tematu
 function reelTitle() {
+  if (ROLKA.frozen) return ROLKA.frozen;   // w trakcie nagrania tytuł i nazwa pliku się nie zmieniają
+  if (!ROLKA.opt.title.trim() && ROLKA.seq) return { title: ROLKA.seq.title, label: 'SPORTS ACADEMY' };
   const own = ROLKA.opt.title.trim(); if (own) return { title: own, label: 'SPORTS ACADEMY' };
   const S = sketch(); if (!S) return { title: 'Science, made clear.', label: 'SPORTS ACADEMY' };
   const st = S.get(), t = S.topics().find(x => x.id === st.topic || x.num === st.topic) || {};
@@ -120,7 +122,7 @@ function rolkaDraw(ctx, now) {
   } else if (seg === 'face') segFace(ctx);
   else segAnim(ctx);
   toCanvas(ctx);
-  if (STATE.safe) frameSafeZone(ctx);
+  if (STATE.safe && !ROLKA.rec) frameSafeZone(ctx);   // nakładka tylko w podglądzie, nigdy w pliku
   return true;
 }
 
@@ -186,13 +188,18 @@ async function startCapture() {
   const [track] = ROLKA.cap.getVideoTracks();
   ROLKA.cropped = false;
   if (window.CropTarget && track.cropTo) { try { await track.cropTo(await CropTarget.fromElement($('skFrame'))); ROLKA.cropped = true; } catch { /* zwykła karta: wycinamy ręcznie */ } }
-  track.addEventListener('ended', () => { ROLKA.cap = null; rolkaHud(); rolkaMsg('Przechwytywanie animacji zatrzymane.'); });
+  track.addEventListener('ended', () => {
+    ROLKA.cap = null; document.documentElement.classList.remove('capturing');
+    if (ROLKA.rec) { stopRec(true); rolkaMsg('Przechwytywanie animacji zatrzymane w trakcie nagrania — zapisano nagranie do tej chwili.'); }
+    else { rolkaHud(); rolkaMsg('Przechwytywanie animacji zatrzymane.'); }
+  });
   const v = ROLKA.capEl || (ROLKA.capEl = Object.assign(document.createElement('video'), { muted: true, playsInline: true }));
   v.srcObject = ROLKA.cap; await v.play().catch(() => {});
+  document.documentElement.classList.add('capturing');   // pomoc i pasek widoków chowają się (nie mogą wejść w kadr)
   rolkaMsg(ROLKA.cropped ? 'Animacja przechwycona (ramka szkicu).' : 'Animacja przechwycona. Nie zmieniaj rozmiaru okna w trakcie nagrania.');
   rolkaHud();
 }
-function stopCapture() { ROLKA.cap?.getTracks().forEach(t => t.stop()); ROLKA.cap = null; }
+function stopCapture() { ROLKA.cap?.getTracks().forEach(t => t.stop()); ROLKA.cap = null; document.documentElement.classList.remove('capturing'); }
 
 // ── Zdjęcie / wideo z wyprawy (tylko w pamięci tej karty)
 function setMedia(file) {
@@ -218,7 +225,9 @@ function clearMedia() {
 const MIME = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
 function startRec() {
   if (!window.MediaRecorder) return rolkaMsg('Ta przeglądarka nie nagrywa (MediaRecorder). Użyj Chrome.');
-  if (!ROLKA.cap) rolkaMsg('Uwaga: animacja nie jest przechwycona — scena 4 będzie pusta.');
+  if (!ROLKA.cap) return rolkaMsg('Najpierw „Przechwyć animację (ta karta)” — bez tego scena 4 byłaby pusta.');
+  if (ROLKA.rec || !$('rkCount').hidden) return;
+  ROLKA.frozen = null; ROLKA.frozen = reelTitle();
   $('rkPanel').hidden = true; $('rkCount').hidden = false;
   enter('title'); ROLKA.t0 = performance.now() + 1e9;   // karta tytułowa stoi rozmyta w czasie odliczania
   let n = 3; $('rkCount').textContent = n;
@@ -226,11 +235,12 @@ function startRec() {
     n--; if (n > 0) { $('rkCount').textContent = n; return; }
     clearInterval(ROLKA.countdown); $('rkCount').hidden = true;
     const type = MIME.find(t => MediaRecorder.isTypeSupported(t)) || '';
-    const tracks = [...$('stage').captureStream(30).getVideoTracks(), ...(ROLKA.stream?.getAudioTracks() || [])];
+    const canvasTracks = $('stage').captureStream(30).getVideoTracks();
+    const tracks = [...canvasTracks, ...(ROLKA.stream?.getAudioTracks() || [])];
     const rec = new MediaRecorder(new MediaStream(tracks), { mimeType: type || undefined, videoBitsPerSecond: 10e6, audioBitsPerSecond: 160e3 });
     ROLKA.chunks = []; ROLKA.rec = rec;
     rec.ondataavailable = e => { if (e.data.size) ROLKA.chunks.push(e.data); };
-    rec.onstop = () => saveRec(rec);
+    rec.onstop = () => { canvasTracks.forEach(t => t.stop()); saveRec(rec); ROLKA.chunks = []; };
     rec.start(1000); document.documentElement.classList.add('recording'); enter('title');
   }, 1000);
 }
@@ -240,12 +250,14 @@ function stopRec(keep) {
   if (rec) { rec.keep = keep; if (rec.state !== 'inactive') rec.stop(); }
   ROLKA.seg = null; if (ROLKA.mediaKind === 'video') ROLKA.media.pause();
   $('rkPanel').hidden = false; rolkaHud();
+  if (!rec) ROLKA.frozen = null;   // odliczanie przerwane; po nagraniu tytuł zwalnia saveRec
   if (!keep) rolkaMsg('Nagranie przerwane, nic nie zapisano.');
 }
 function saveRec(rec) {
+  const title = reelTitle().title; ROLKA.frozen = null;
   if (!rec.keep || !ROLKA.chunks.length) return;
   const type = rec.mimeType || 'video/webm', ext = type.includes('mp4') ? 'mp4' : 'webm';
-  const slug = reelTitle().title.normalize('NFKD').toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'rolka';
+  const slug = title.normalize('NFKD').replace(/\p{M}/gu, '').replace(/[łŁ]/g, 'l').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'rolka';
   const d = new Date(), p = n => String(n).padStart(2, '0');
   const name = `sports-academy-${slug}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.${ext}`;
   if (ROLKA.saved) URL.revokeObjectURL(ROLKA.saved.url);
@@ -271,10 +283,20 @@ function rolkaHud() {
   $('rkSeg').textContent = ROLKA.seg ? `${ROLKA.rec ? '● REC · ' : 'podgląd · '}${SEGS.indexOf(ROLKA.seg) + 1}/4 ${SEG_PL[ROLKA.seg]}` : '';
   store.set('hoebm-rolka', { title: o.title, caption: o.caption, variant: o.variant, durTitle: o.durTitle, durMedia: o.durMedia, frame: o.frame, circle: o.circle });
 }
+// Ramka ma stały rozmiar (szkic zawsze w tym samym układzie telefonu), bez skalowania CSS — z CSS zoom przechwycony
+// obraz traci dół szkicu. Na ekranie Retina 500 px CSS = 1000 px obrazu, więc strefa Reels (950 px) jest ostra.
+// Kadr „pełne 9:16” (800 px) na za niskim oknie przełącza się na strefę Reels. Podgląd 9:16 dostaje resztę szerokości.
 function setFrame() {
-  const f = FRAMES[ROLKA.opt.frame] || FRAMES.reel, fr = $('skFrame');
+  if (ROLKA.opt.frame === 'full' && innerHeight < FRAMES.full.h + 24) {
+    ROLKA.opt.frame = 'reel'; const r = $('rkPanel')?.querySelector('input[name=rkFrame][value=reel]'); if (r) r.checked = true;
+    rolkaMsg(`Okno ma ${innerHeight} px wysokości — kadr „pełne 9:16” potrzebuje ${FRAMES.full.h + 24}. Używam strefy Reels.`);
+  }
+  const f = FRAMES[ROLKA.opt.frame] || FRAMES.reel, fr = $('skFrame'), panel = $('rkPanel');
+  const side = panel && !panel.classList.contains('min') ? 330 : 60;
   fr.style.width = f.w + 'px'; fr.style.height = f.h + 'px';
-  if (ROLKA.cap && ROLKA.cropped) rolkaMsg('Zmieniono kadr — przechwyć animację ponownie, jeśli obraz się nie zgadza.');
+  const stageW = Math.max(160, Math.min((innerHeight - 24) * 9 / 16, innerWidth - side - 12 - 18 - f.w));
+  $('stage').closest('.stage-wrap').style.width = stageW + 'px';
+  if (ROLKA.cap) rolkaMsg('Zmieniono kadr — przechwyć animację ponownie, jeśli obraz się nie zgadza.');
 }
 function initRolka() {
   const o = ROLKA.opt;
@@ -301,7 +323,7 @@ function initRolka() {
     <p><label>Tytuł, s <input type="number" id="rkDurT" min="1" max="10" step="0.5"></label>
        <label>Zdjęcie, s <input type="number" id="rkDurM" min="1" max="20" step="0.5"></label></p>
     <p><button type="button" id="rkRec" class="rk-rec">● Nagraj rolkę (N)</button></p>
-    <p class="rk-help">Kolejność: tytuł → zdjęcie → twarz → animacja. Dalej: spacja / → / pilot (na animacji: następny slajd; po ostatnim — koniec i zapis). Esc — przerwij bez zapisu. Podgląd: 1–4, 0 wyłącz. Po kliknięciu w szkic wróć kursorem na podgląd, żeby klawisze działały.</p>
+    <p class="rk-help">Kolejność: tytuł → zdjęcie → twarz → animacja. Dalej: spacja / → / pilot (na animacji: następny slajd; po ostatnim — koniec i zapis). Esc — przerwij bez zapisu. Podgląd: 1–4, 0 wyłącz. W trakcie nagrania klawisze działają także z kursorem w szkicu.</p>
     <p id="rkMsg" role="status"></p></div>`;
   document.body.append(panel, el('div', { id: 'rkCount', class: 'rk-count', hidden: '' }), el('div', { id: 'rkSeg', class: 'rk-seg' }));
   const bindRadio = (name, key, after) => {
@@ -323,14 +345,17 @@ function initRolka() {
   $('rkRec').onclick = startRec;
   addEventListener('dragover', e => e.preventDefault());
   addEventListener('drop', e => { e.preventDefault(); setMedia(e.dataTransfer.files[0]); });
-  addEventListener('keydown', e => {
+  const onKey = e => {
+    const inPanel = e.target instanceof Element && e.target.closest('#rkPanel');
+    if (inPanel && !e.target.matches('input[type=text], input[type=number], select, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }   // przyciski i radio w panelu działają normalnie
     if (e.target instanceof Element && e.target.matches('input[type=text], input[type=number], select, textarea')) {   // w polu: Enter / Esc oddaje klawisze rolce
       if (e.key === 'Enter' || e.key === 'Escape') { e.target.blur(); e.preventDefault(); e.stopImmediatePropagation(); }
       return;
     }
     const k = e.key, nextKey = [' ', 'ArrowRight', 'PageDown', 'ArrowDown', 'Enter'].includes(k), prevKey = ['ArrowLeft', 'PageUp', 'ArrowUp'].includes(k);
     let done = true;
-    if (ROLKA.rec || !$('rkCount').hidden) { if (k === 'Escape') stopRec(false); else if (nextKey) next(); else if (prevKey && ROLKA.seq && ROLKA.seg === 'anim') applySlide(ROLKA.slide - 1); else done = false; }
+    if (!$('rkCount').hidden) { if (k === 'Escape') stopRec(false); }   // w trakcie odliczania tylko Esc
+    else if (ROLKA.rec) { if (k === 'Escape') stopRec(false); else if (nextKey) next(); else if (prevKey && ROLKA.seq && ROLKA.seg === 'anim') applySlide(ROLKA.slide - 1); else done = false; }
     else if (k === 'n' || k === 'N') startRec();
     else if (/^[1-4]$/.test(k)) { if (available(SEGS[k - 1])) enter(SEGS[k - 1]); else rolkaMsg(k === '2' ? 'Najpierw dodaj zdjęcie lub wideo.' : 'Najpierw włącz kamerę.'); }
     else if (k === '0' || (k === 'Escape' && ROLKA.seg)) { ROLKA.seg = null; if (ROLKA.mediaKind === 'video') ROLKA.media.pause(); rolkaHud(); }
@@ -338,7 +363,14 @@ function initRolka() {
     else if (prevKey && ROLKA.seq) applySlide(ROLKA.slide - 1);
     else done = false;
     if (done) { e.preventDefault(); e.stopImmediatePropagation(); }
-  }, true);
+  };
+  addEventListener('keydown', onKey, true);
+  // Kursor w ramce szkicu (ten sam origin): w trakcie nagrania klawisze rolki mają pierwszeństwo przed szkicem
+  fr.addEventListener('load', () => {
+    try { fr.contentWindow.addEventListener('keydown', e => { if (ROLKA.rec || !$('rkCount').hidden) onKey(e); }, true); } catch { /* inny origin */ }
+  });
+  addEventListener('resize', setFrame);
+  $('rkHide').addEventListener('click', setFrame);
   STUDIO_HOOK.draw = rolkaDraw;
   setFrame(); rolkaHud();
 }
