@@ -81,15 +81,18 @@ altitude 0, days 0, acetazolamide false, vo2max 55, mass 70, topic 1.1.
 **Zasady treści**: bez dawek i nazw handlowych w `label`/`note` (sprawdza to walidator listą z `tests/zakazane.json`);
 liczby w notatkach tylko takie, które szkic już pokazuje ze źródłem. Slajd nie dodaje treści do ryciny — pokazuje jej stan.
 
-### Tematy (stan na 2026-11-05; aktualne: `--vocab`)
+### Tematy (stan na 2026-11-06; aktualne: `--vocab`)
 
 1 Fuel & energy: 1.1 VO₂max & intensity · 1.2 Fuel mix · 1.3 Energy budget · 1.4 Muscle cell & mitochondrion · 1.5 Phosphocreatine & creatine · 1.6 BCAA
 2 Gut, liver & glycogen: 2.1 Blood flow · 2.2 Gut absorption · 2.3 Glycogen, the wall & TTE
 3 Thresholds & limits: 3.1 Lactate, LT1 & OBLA · 3.2 Breathing, thresholds & TTE
-4 Altitude: 4.1 Altitude & hypoxia · 4.2 Acute mountain sickness · 4.3 Acetazolamide & the kidney
+4 Altitude & heat: 4.1 Altitude & hypoxia · 4.2 Acute mountain sickness · 4.3 Acetazolamide & the kidney · 4.4 Heat & hydration
+5 Training & recovery: 5.1 Training adaptations · 5.2 Recovery & refuelling · 5.3 Women & energy availability · 5.4 Supplements with evidence
+
+Gotowe sekwencje do każdego tematu: `data/slides/t<grupa><temat>-*.json` (np. `t23-glycogen-wall.json`) — zacznij od nich, zamiast pisać od zera.
 
 Widok PCr (prawy panel „Phosphocreatine in the muscle cell”) = temat 1.5 z narządem `mito`.
-Typowe słowa Piotra: „ściana” → 2.3 + `play: "wall"`; „oddychanie / progi” → 3.2; „wysokość” → 4.1; „choroba wysokościowa / AMS” → 4.2;
+Typowe słowa Piotra: „ściana” → 2.3 + `play: "wall"`; „oddychanie / progi” → 3.2; „wysokość” → 4.1; „upał / nawodnienie / pot” → 4.4; „trening / adaptacje” → 5.1; „regeneracja” → 5.2; „kobiety / RED-S” → 5.3; „suplementy” → 5.4; „choroba wysokościowa / AMS” → 4.2;
 „acetazolamid / nerka” → 4.3; „wchłanianie / jelito” → 2.2; „przepływ krwi” → 2.1; „mieszanka paliw / crossover” → 1.2.
 
 ## Ustawianie stanu ręcznie
