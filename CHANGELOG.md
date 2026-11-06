@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.11.0] — 2026-11-06 (po rewizji: bezpieczeństwo, studio, telefon, wydajność)
+
+### Bezpieczeństwo
+- Studio online zaszyfrowane hasłem (PBKDF2 + AES-GCM przy budowie, WebCrypto w przeglądarce; `tools/zamek.js`), pod jawnym adresem `/studio/`. Hasło: sekret repo `STUDIO_PASSWORD`. Dawna tajna ścieżka (`STUDIO_PATH`) trafiała do publicznego artefaktu GitHub Pages — artefakty skasowano, ścieżka nie jest już używana.
+- Kopia szkicu dla studia z `noindex` i `no-referrer`.
+
+### Studio nagrań
+- Pomoc i pasek widoków chowają się przy przechwytywaniu (nie trafiają do kadru); strefa bezpieczna nie nagrywa się do pliku.
+- Bez przechwyconej animacji nagranie nie startuje; zatrzymanie przechwytywania w trakcie zapisuje nagranie do tej chwili.
+- Klawisze rolki działają także z kursorem w szkicu; w odliczaniu tylko Esc; przyciski panelu działają klawiaturą.
+- Kadr „pełne 9:16” na niskim oknie przełącza się na strefę Reels; podgląd dostaje resztę szerokości (od 1024 px).
+- Tytuł zamrożony na czas nagrania; z sekwencją slajdów domyślnie jej tytuł; nazwa pliku bez diakrytyków.
+
+### Akademia
+- Telefon: na 320–360 px nic nie wystaje (dok Topic/Organ znów widoczny), suwak w arkuszu Intake mieści się; wcięcia ekranu (safe-area) w doku, arkuszach i nagłówku; pola dotyku ≥ 40 px; „tap or Esc to close”.
+- Wydajność: cząstki 30 kl./s z policzonymi raz punktami ścieżek — wątek główny w spoczynku ok. 23% zamiast ok. 96%.
+- Szary tekst (źródła, stopka) #7a7090 → #6e6585 (kontrast 4,79:1, WCAG AA).
+
+### Testy
+- `akademia.js`: strona publiczna — kontrast kolorów tekstu, nazwy handlowe i dawki, okno źródeł i zastrzeżenie, brak śladów studia.
+- `budowa.js`: studio online tylko zaszyfrowane; brak katalogów dawnej tajnej ścieżki.
+
 ## [0.10.0] — 2026-11-05 (Akademia = duża animacja; studio nagrywa animację)
 
 ### Zmienione

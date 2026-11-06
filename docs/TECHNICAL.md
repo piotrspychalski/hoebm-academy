@@ -1,3 +1,5 @@
+> **Od 0.11.0:** studio online leży pod `/studio/` i jest zaszyfrowane hasłem (`tools/zamek.js`, sekret `STUDIO_PASSWORD`); opisy tajnej ścieżki `STUDIO_PATH` niżej są historyczne.
+>
 > **Od 0.10.0:** Akademia publiczna = `reference/energy-map.html` (szkic wzorcowy). Studio nagrań (`src/studio/02-rolka.js`) nagrywa szkic osadzony w ramce, przechwycony z karty przeglądarki. Rdzeń kanwy (`src/core`, rejestr rycin) zostaje dla kart rolki i przyszłych rycin, ale nie ma teraz opublikowanych rycin kanwy.
 
 # Sports Academy — kod źródłowy

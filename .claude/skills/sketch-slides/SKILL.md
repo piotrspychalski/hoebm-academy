@@ -1,6 +1,6 @@
 ---
 name: sketch-slides
-description: Turn Piotr's plain description of a recording ("slajdy: fuel mix przy 50%, potem 90%, potem 120%; potem ściana przy 75% z niskim i z załadowanym glikogenem") into an ordered slide sequence of the HoEBM master sketch (reference/energy-map.html), saved as data/slides/<id>.json and played in the recording studio (studio/sketch/). Use when Piotr asks for slides, a slide sequence, a recording plan or "co ma być pokazane po kolei" for the master sketch / energy map, or wants to change, reorder or check an existing sequence.
+description: Turn Piotr's plain description of a recording ("slajdy: fuel mix przy 50%, potem 90%, potem 120%; potem ściana przy 75% z niskim i z załadowanym glikogenem") into an ordered slide sequence of the Sports Academy master sketch (reference/energy-map.html = the public Akademia), saved as data/slides/<id>.json and played in the slide player (studio/sketch/) and in the reel recording studio (studio/, panel ROLKA → Sekwencja slajdów). Use when Piotr asks for slides, a slide sequence, a recording plan or "co ma być pokazane po kolei" for the master sketch / energy map, or wants to change, reorder or check an existing sequence.
 ---
 
 # Slajdy szkicu wzorcowego do studia nagrań
@@ -14,7 +14,7 @@ Odpowiadaj Piotrowi po polsku. Treść slajdów (`label`, `note`) po angielsku, 
 
 ## Kroki
 
-1. **Słownik.** Uruchom `node tools/sketch-slides.js --vocab` (w katalogu repo `hoebm-academy`), żeby mieć aktualne numery tematów
+1. **Słownik.** Uruchom `node tools/sketch-slides.js --vocab` (w katalogu repo — lokalnie folder `hoebm-academy`, na GitHubie `sports-academy`), żeby mieć aktualne numery tematów
    i narządy — szkic się zmienia, nie polegaj tylko na tabeli niżej.
 2. **Przełóż opis na slajdy.** Jedno „potem” / przecinek / „vs” = nowy slajd. „X przy 50%, 90%, 120%” = trzy slajdy tego samego tematu.
    „niski vs załadowany glikogen” = dwa slajdy różniące się jednym polem. Podawaj w slajdzie **tylko to, co się zmienia** —
@@ -99,7 +99,14 @@ Typowe słowa Piotra: „ściana” → 2.3 + `play: "wall"`; „oddychanie / pr
 - Z kodu: `window.HoEBMSketch.set(slajd, tweenMs)` (zwraca listę ostrzeżeń), `.get()`, `.topics()`, `.organs()`;
   z ramki rodzica: `postMessage({ hoebm: 'slide', state, tween })`, `{ hoebm: 'hold', on }`.
 
-## Studio — klawisze
+## Studio nagrań (rolka 9:16) — sekwencja w nagraniu
+
+W studiu nagrań (`studio/index.html`, online `…/sports-academy/studio/` po haśle) wybierz sekwencję w panelu ROLKA.
+Na scenie „animacja” **spacja / → / pilot** = następny slajd, **←** = poprzedni, a „dalej” po ostatnim slajdzie kończy nagranie
+i zapisuje MP4. Szkic w studiu nagrań ma układ telefonu (ramka 500 × 515 albo 450 × 800), więc `aspect` sekwencji jest tam
+pomijany, a `pane` / `zoom` mogą wyglądać inaczej niż w odtwarzaczu 16:9. Szkice sekwencji (`draft`) tylko lokalnie z `?preview`.
+
+## Odtwarzacz slajdów (16:9) — klawisze
 
 ← → slajd (PageUp/PageDown z pilota też) · **R** albo klik w ramkę: restart od slajdu 1 z czystą klatką 1,5 s ·
 **Space** pauza (przejścia i odtwarzanie czasu) · **S** strefa bezpieczna (16:9: 5% marginesu; 9:16: strefa Reels jak w studiu rycin) ·
