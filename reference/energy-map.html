@@ -185,6 +185,28 @@ header h1 { font: 800 21px/1.15 var(--display); color: var(--ink); margin: 0; le
   #settingsSlot .slider { width: 220px; flex: none; }
   .g { grid-template-columns: 130px 1fr; }
 }
+
+/* ───── Telefon: poprawki po kontroli 2026-11-06 (wąskie ekrany, dotyk, wcięcia ekranu iPhone) ───── */
+@media (max-width: 899px), (pointer: coarse) and (max-height: 520px) {
+  /* 360 px i węższe: wiersz Intensity / Time nie może być szerszy niż ekran (wcześniej strona wystawała, a dok znikał) */
+  #intOut, .tte { width: auto; }
+  .ctl.core { min-width: 0; flex-wrap: wrap; }
+  .ctl.core .slider { min-width: 0; }
+  #settingsSlot { align-items: stretch; }
+  #settingsSlot .ctl { max-width: 100%; flex-wrap: wrap; }
+  #settingsSlot .slider { width: auto; flex: 1 1 140px; min-width: 120px; }
+  /* Wcięcia ekranu (home indicator, notch w poziomie) */
+  .dock { height: calc(46px + env(safe-area-inset-bottom)); }
+  .main { padding-bottom: calc(46px + env(safe-area-inset-bottom)); }
+  .pane { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .top, .controls, .topics { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+  /* Pola dotyku ≥ 40 px bez zmiany układu: większy obszar przez padding i ujemny margines */
+  .mobnav .linkbtn, #play { padding: 12px 4px; margin: -12px -4px; }
+  .close { min-width: 44px; min-height: 44px; }
+  .seg button { padding-top: 9px; padding-bottom: 9px; margin: -8px 0; }
+  .topics .nav { min-width: 32px; }
+}
+@media (hover: none) { .zhint { font-size: 0; } .zhint::after { content: 'tap or Esc to close'; font-size: 11px; } }
 </style>
 </head>
 <body>
